@@ -1,0 +1,5 @@
+bin/
+BUILDs/
+build/
+CMakeLists.txt.user
+src/core/ext/
