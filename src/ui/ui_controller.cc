@@ -1,9 +1,10 @@
 #include "ui/ui_controller.h"
 
 #include <cstdlib>
+
+#include "core/graphics.h"
 #include "ui/imgui_wrapper.h"
 #include "ui/ui_view.h"
-#include "core/graphics.h"
 
 // -----------------------------------------------------------------------------
 

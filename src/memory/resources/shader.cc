@@ -1,5 +1,6 @@
 #include "memory/resources/shader.h"
 
+#include <array>
 #include <regex>
 #include "core/graphics.h"
 

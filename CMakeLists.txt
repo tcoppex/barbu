@@ -212,6 +212,9 @@ if(USE_GCC OR USE_CLANG)
     -Wl,--gc-sections 
     -Wl,--color-diagnostics
   )
+  
+  # For C++17 filesystem support, might became depecrated.
+  set(STD_CXX_FILESYSTEM_LIB stdc++fs)
 elseif(USE_MSVC)
   list(APPEND CXX_FLAGS
     /W4 
@@ -235,8 +238,9 @@ elseif(USE_MSVC)
    -D_WINDOWS
    -D_CRT_SECURE_NO_WARNINGS
    -D_HAS_EXCEPTIONS=0
-   -DVC_EXTRALEAN
-   -DWIN32_LEAN_AND_MEAN
+   #-DVC_EXTRALEAN
+   #-DWIN32_LEAN_AND_MEAN
+   -D_USE_MATH_DEFINES
   )
 endif()
 
@@ -331,20 +335,21 @@ list(APPEND IMGUI_SOURCES
   # ${IM3D_INCLUDE_DIR}/im3d.cpp
   # ${IM3D_INCLUDE_DIR}/im3d.h
 )
-set(IMGUI_LIB imgui)
-add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
-target_compile_options(
-  ${IMGUI_LIB}
-  PRIVATE
-    ""
-    "$<$<CONFIG:Debug>:>"
-    "$<$<CONFIG:Release>:>"
-    "$<$<CONFIG:DebugWithRelInfo>:>"
-)
-set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
 
-# For C++17 filesystem support, might became depecrated.
-set(STD_CXX_FILESYSTEM_LIB stdc++fs)
+if(0)
+  set(IMGUI_LIB imgui)
+  add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
+  target_compile_options(
+    ${IMGUI_LIB}
+    PRIVATE
+      ""
+      "$<$<CONFIG:Debug>:>"
+      "$<$<CONFIG:Release>:>"
+      "$<$<CONFIG:DebugWithRelInfo>:>"
+  )
+  set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS "${CustomLinkFlags}")
+endif()
+
 
 # Add Library dependencies.
 list(APPEND CustomLibs
@@ -358,6 +363,8 @@ list(APPEND CustomLibs
 list(APPEND Thirdparties
   ${IM3D_INCLUDE_DIR}/im3d.cpp
   ${IM3D_INCLUDE_DIR}/im3d.h
+
+  ${IMGUI_SOURCES}
 )
 
 # -----------------------------------------------------------------------------
@@ -390,6 +397,9 @@ list(APPEND CustomIncludeDirs
   ${GLEW_INCLUDE_DIRS}
   ${GLM_INCLUDE_DIR}
   ${IMGUI_INCLUDE_DIR}
+
+  # OpenGL header for Windows.
+  ${BARBU_THIRD_PARTY_DIR}/include
 )
 
 # Libraries.

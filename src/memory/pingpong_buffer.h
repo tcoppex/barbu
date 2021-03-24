@@ -54,7 +54,7 @@ class PingPongBuffer {
   int  attrib_buffer_bytesize() const noexcept { return attrib_buffer_bytesize_; }
   int storage_buffer_bytesize() const noexcept { return storage_buffer_bytesize_; }
 
-  uint attrib_index(uint attrib_bind) const noexcept {
+  uint32_t attrib_index(uint32_t attrib_bind) const noexcept {
     return attrib_bind - base_binding_;
   }
 

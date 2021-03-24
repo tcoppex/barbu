@@ -122,7 +122,7 @@ void LineWidth(float width);
 void PolygonMode(Face face, RenderMode mode);
 
 template<typename T>
-T Get(uint32_t pname) { return 0u; }
+T Get(uint32_t pname);// { return 0u; }
 
 template<uint32_t>
 uint32_t Get(uint32_t pname);

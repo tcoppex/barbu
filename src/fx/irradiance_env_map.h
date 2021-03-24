@@ -2,8 +2,11 @@
 #define BARBU_FX_IRRADIANCE_ENV_MAP_H_
 
 #include <array>
+
+#include "glm/gtc/constants.hpp"
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
+
 #include "memory/resources/resources.h" //
 
 // ----------------------------------------------------------------------------

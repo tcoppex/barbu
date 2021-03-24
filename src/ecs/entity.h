@@ -2,7 +2,9 @@
 #define BARBU_ECS_ENTITY_H_
 
 #include <cassert>
+#include <array>
 #include <vector>
+#include <string_view>
 
 #include "ecs/component.h"
 #include "ecs/components/transform.h"

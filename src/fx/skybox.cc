@@ -1,10 +1,10 @@
 
 #include "fx/skybox.h"
 
-#include "core/camera.h"
 #include "core/graphics.h"
+#include "core/camera.h"
 #include "fx/irradiance_env_map.h"
-#include "memory/assets/assets.h"
+#include "memory/assets/assets.h"    
 
 // ----------------------------------------------------------------------------
 
@@ -20,7 +20,6 @@ void Skybox::init() {
 
   // Cubemap.
   {
-
 #if 1
     ResourceInfoList const dependencies( {
       ASSETS_DIR "/textures/cubemap/Lycksele2/posx.jpg",
@@ -48,7 +47,6 @@ void Skybox::init() {
       //IrradianceEnvMap::PrefilterHDR( res, shMatrices_);
     }
 #endif
-
   }
 
   CHECK_GX_ERROR();

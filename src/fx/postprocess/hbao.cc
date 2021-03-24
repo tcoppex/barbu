@@ -57,8 +57,8 @@ void HBAO::process(Camera const& camera, GLuint const tex_linear_depth, GLuint &
 // ----------------------------------------------------------------------------
 
 void HBAO::init_textures() {
-  uint32_t const width  = params_.ao_resolution.x; 
-  uint32_t const height = params_.ao_resolution.y;
+  auto const width  = params_.ao_resolution.x; 
+  auto const height = params_.ao_resolution.y;
 
   // Textures.
   glCreateTextures( GL_TEXTURE_2D, kNumTextureName, textures_.data());

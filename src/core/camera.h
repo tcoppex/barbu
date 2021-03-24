@@ -4,6 +4,17 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#ifdef WIN32
+  // MSVC like to define those for some reasons.
+  // (could be bypassed if windows.h is included afterward)
+  #ifdef far
+    #undef far
+  #endif
+  #ifdef near
+    #undef near
+  #endif
+#endif
+
 // ----------------------------------------------------------------------------
 
 class Camera {

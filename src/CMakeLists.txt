@@ -8,9 +8,9 @@ list(APPEND Sources
   main.cc
   scene.cc
 
+  core/graphics.cc
   core/app.cc
   core/events.cc
-  core/graphics.cc
 
   ecs/scene_hierarchy.cc
 
@@ -129,16 +129,13 @@ foreach(target ${Targets})
       "$<$<CONFIG:DebugWithRelInfo>:${CXX_FLAGS_RELWITHDEBINFO}>"
   )
   target_compile_definitions(${target} PRIVATE ${CustomDefinitions})
-  target_include_directories(${target} 
-    PRIVATE 
-      ${CustomIncludeDirs}
-      
+  target_include_directories(${target} PRIVATE ${CustomIncludeDirs}
 #    INTERFACE
 #      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
 #      $<INSTALL_INTERFACE:include>
   )
-  target_link_libraries(${target} PRIVATE ${CustomLibs})
-  set_target_properties(${target} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
+  target_link_libraries(${target} ${CustomLibs})
+  set_target_properties(${target} PROPERTIES LINK_FLAGS "${CustomLinkFlags}")
 
   # Force Debug / Release output in the same directory (for MSVC).
   helpers_setTargetOutputDirectory(${target} ${BARBU_BINARY_DIR})

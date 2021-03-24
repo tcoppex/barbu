@@ -4,6 +4,7 @@
 #include <cstring>
 #include <clocale>
 #include <cmath>
+#include <array>
 #include <sstream>
 #include <map>
 

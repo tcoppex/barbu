@@ -1,6 +1,8 @@
 #include "fx/marschner.h"
-#include "ui/views/fx/MarschnerView.h"
+
+#include "core/graphics.h"
 #include "memory/assets/assets.h"
+#include "ui/views/fx/MarschnerView.h"
 
 // ----------------------------------------------------------------------------
 

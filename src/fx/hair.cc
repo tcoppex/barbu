@@ -335,7 +335,7 @@ void Hair::init_mesh(MeshData const& scalpMesh) {
  
   // -- Attributes.
   auto const vbo = pbuffer_.read_ssbo_id();
-  std::array<uint[2], 2> const buffer_attrib_bindings{
+  std::array<uint32_t[2], 2> const buffer_attrib_bindings{
     vbo, SSBO_HAIR_SIM_POSITION_READ,
     vbo, SSBO_HAIR_SIM_TANGENT_READ,
   };

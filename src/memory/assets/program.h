@@ -1,6 +1,7 @@
 #ifndef BARBU_MEMORY_ASSETS_PROGRAM_H_
 #define BARBU_MEMORY_ASSETS_PROGRAM_H_
 
+#include <array>
 #include "memory/assets/asset_factory.h"
 #include "memory/resources/shader.h"
 #include "core/graphics.h"

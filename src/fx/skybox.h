@@ -7,8 +7,8 @@
 #include "memory/assets/texture.h"
 class Camera;
 
-// (already defined in irradiance_env_map.h)
-using IrradianceMatrices_t = std::array<glm::mat4, 3>; //
+// for IraddianceMatrices
+#include "fx/irradiance_env_map.h"
 
 // ----------------------------------------------------------------------------
 

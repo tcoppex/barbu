@@ -4,7 +4,6 @@
 // ----------------------------------------------------------------------------
 
 #include <chrono>
-
 #include "glm/mat4x4.hpp"
 
 #include "core/camera.h"
