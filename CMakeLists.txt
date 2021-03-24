@@ -326,6 +326,8 @@ set(IM3D_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/im3d)
 list(APPEND IMGUI_SOURCES 
   ${IMGUI_INCLUDE_DIR}/imgui.cpp
   ${IMGUI_INCLUDE_DIR}/imgui_draw.cpp
+  ${IMGUI_INCLUDE_DIR}/imgui_widgets.cpp
+  ${IMGUI_INCLUDE_DIR}/imgui_tables.cpp
   # ${IM3D_INCLUDE_DIR}/im3d.cpp
   # ${IM3D_INCLUDE_DIR}/im3d.h
 )

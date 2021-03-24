@@ -6,14 +6,11 @@
 namespace views {
 
 void SceneView::render() {
-  ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
-  
   if (!ImGui::CollapsingHeader("Scene")) {
     return;
   }
     
   // Scene parameters.
-  ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
   if (ImGui::TreeNode("General")) {
     ImGui::Checkbox("Show gizmo", &params_.show_transform);
     ImGui::Checkbox("Show grid", &params_.show_grid);

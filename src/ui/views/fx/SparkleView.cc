@@ -25,18 +25,12 @@ void SparkleView::render() {
   }
 
   if (ImGui::TreeNode("Simulation")) {
-  
-    ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
     simulation_panel(params_.simulation);
-
     ImGui::TreePop();
   }
 
   if (ImGui::TreeNode("Rendering")) {
-
-    ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
     rendering_panel(params_.rendering);
-  
     ImGui::TreePop();
   }
 
@@ -110,8 +104,6 @@ void SparkleView::simulation_panel(GPUParticle::SimulationParameters_t &sp) {
   }
 
   // Forces.
-
-  ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
   if (ImGui::TreeNode("Forces")) {
     ImGui::Checkbox("Scattering", &sp.enable_scattering);
     if (sp.enable_scattering) {
