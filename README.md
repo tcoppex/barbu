@@ -35,6 +35,10 @@ git submodule init
 git submodule update
 ```
 
+Other dependencies are shipped directly :
+* [im3d](https://github.com/john-chapman/im3d/)
+* stb_image
+
 ### Build
 
 We will first create a build directory then generate the CMake cache depending on your system.
