@@ -212,7 +212,7 @@ if(USE_GCC OR USE_CLANG)
     -Wl,--gc-sections 
     -Wl,--color-diagnostics
   )
-  
+
   # For C++17 filesystem support, might became depecrated.
   set(STD_CXX_FILESYSTEM_LIB stdc++fs)
 elseif(USE_MSVC)
@@ -224,7 +224,7 @@ elseif(USE_MSVC)
     /w14555   # expression with no effect or side-effect.
     /wd4100   # keep unused parameters.
     /MP       # build with multiple process.
-    /EHsc-    # no exception.
+    #/EHsc-    # no exception.
     /GR-      # disable RTTI.
     /permissive-
   )

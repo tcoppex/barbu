@@ -17,6 +17,7 @@ namespace fs = std::filesystem;
 namespace fs = std::experimental::filesystem;
 #else
 #pragma GCC error "std::filesystem is required."
+//#pragma message( "std::filesystem is required." )
 #endif
 
 #include "core/logger.h"

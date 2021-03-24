@@ -15,7 +15,7 @@ using namespace Im3d;
 
 void Gizmo::init() {
   pgm_.points = PROGRAM_ASSETS.createRender(
-    "gizmo:::point",
+    "gizmo::point",
     SHADERS_DIR "/im3d/vs_points.glsl",
     SHADERS_DIR "/im3d/fs_points.glsl"
   )->id;

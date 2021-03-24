@@ -511,17 +511,17 @@ bool LoadFile(std::string_view filename, char **buffer, size_t *buffersize) {
 
   // Read it.
   size_t const rbytes = fread(*buffer, 1u, filesize, fd);
+  
+  bool const succeed = (rbytes == filesize) || (feof(fd) && !ferror(fd));
   fclose(fd);
 
-  bool const read_succeed = (rbytes == filesize);
-  
-  if (!read_succeed) {
+  if (!succeed) {
     LOG_ERROR( "Fail to load file :", filename);
     delete [] *buffer;
     return false;
   }
   
-  return read_succeed;
+  return succeed;
 }
 
 // This method parses all the geometry and fed 'raw' in one pass.
@@ -798,9 +798,11 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
     return false;
   }
 
+#ifdef WIN32
   // (to prevent expecting comas instead of points when parsing floating point values)
-  //char *locale = std::setlocale(LC_ALL, nullptr);
-  //std::setlocale(LC_ALL, "C");
+  char *locale = std::setlocale(LC_ALL, nullptr);
+  std::setlocale(LC_ALL, "C");
+#endif
 
   constexpr bool bSplitObjects = false; //
 
@@ -865,8 +867,10 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
   }
   delete [] buffer;
 
+#ifdef WIN32
   // reset to previous locale.
-  //std::setlocale(LC_ALL, locale);
+  std::setlocale(LC_ALL, locale);
+#endif
 
   // Determine the file type (point cloud or triangle mesh).
   auto &raw = meshfile.meshes[0]; //

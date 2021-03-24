@@ -74,7 +74,6 @@ bool Program::setup() {
       && !Resources::CheckVersion<Shader>(info)) {
       continue;
     }
-    //LOG_MESSAGE("  *", info.id.c_str());
 
     auto h = Resources::GetUpdated<Shader>( info );
     if (!h.is_valid()) {

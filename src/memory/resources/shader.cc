@@ -38,7 +38,7 @@ ShaderType GetShaderTypeFromName(std::string const& basename) {
 
 // ----------------------------------------------------------------------------
 
-bool ReadFile(const char* filename, const unsigned int maxsize, char out[]) {
+bool ReadFile(const char* filename, const unsigned int maxsize, char out_[]) {
   FILE* fd = nullptr;
   size_t nelems = 0;
   size_t nreads = 0;
@@ -47,17 +47,18 @@ bool ReadFile(const char* filename, const unsigned int maxsize, char out[]) {
     LOG_WARNING( "\"", filename , "\" not found." ); //
     return false;
   }
-  memset(out, 0, maxsize);
+  memset(out_, 0, maxsize);
 
   fseek(fd, 0, SEEK_END);
   nelems = static_cast<size_t>(ftell(fd));
   nelems = (nelems > maxsize) ? maxsize : nelems;
   fseek(fd, 0, SEEK_SET);
 
-  nreads = fread(out, sizeof(char), nelems, fd);
+  nreads = fread(out_, sizeof(char), nelems, fd);
+  bool const succeed = (nreads == nelems) || (feof(fd) && !ferror(fd));
   fclose(fd);
 
-  return nreads == nelems;
+  return succeed;
 }
 
 /* Return true if the given filename is in the list of special extensions. */
