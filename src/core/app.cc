@@ -54,7 +54,7 @@ bool App::init(char const* title, AppScene *scene) {
 
   // Make the window's context current.
   glfwMakeContextCurrent(window_);
-  glfwSwapInterval(1);
+  glfwSwapInterval(0);
   
   // Init the event manager.
   InitEvents(window_); //
