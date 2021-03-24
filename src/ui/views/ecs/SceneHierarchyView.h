@@ -16,6 +16,7 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
   {}
 
   void render() override {
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (!ImGui::TreeNode("Hierarchy")) {
       return;
     }
@@ -78,9 +79,9 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
     node_flags |= (is_selected(i) ? ImGuiTreeNodeFlags_Selected : 0);
 
     // Automatically open in-between nodes.
-    // if (!children.empty()) {
-    //   ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
-    // }
+    if (!children.empty()) {
+      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    }
 
     auto node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "%s", name);
     node_clicked_  = (ImGui::IsItemClicked()) ? i : node_clicked_;

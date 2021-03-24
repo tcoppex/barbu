@@ -22,6 +22,7 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
 
     ImGui::Begin("Marschner parameters", &show_window_, ImGuiWindowFlags_AlwaysAutoResize);
     
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once); 
     if (ImGui::TreeNode("M lookup")) 
     {
       ImGui::DragFloat("Long. shift", &params_.shading.ar, 0.1f, -10.0f, -5.0f);
@@ -34,6 +35,7 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
       ImGui::TreePop();
     }
 
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("N lookup")) 
     {
       ImGui::DragFloat("Refraction index", &params_.shading.eta, 0.005f, 1.001f, 4.0f);

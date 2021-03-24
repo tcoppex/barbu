@@ -6,7 +6,7 @@ namespace views {
 // ----------------------------------------------------------------------------
 
 void SparkleView::render() {
-  //ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
+  //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (!ImGui::CollapsingHeader("Particles")) {
     return;
   }
@@ -25,12 +25,18 @@ void SparkleView::render() {
   }
 
   if (ImGui::TreeNode("Simulation")) {
+  
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     simulation_panel(params_.simulation);
+
     ImGui::TreePop();
   }
 
   if (ImGui::TreeNode("Rendering")) {
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     rendering_panel(params_.rendering);
+  
     ImGui::TreePop();
   }
 
@@ -61,7 +67,7 @@ void SparkleView::simulation_panel(GPUParticle::SimulationParameters_t &sp) {
 
   // Emitter.
 
-  //ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
+  //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Emitter")) {
     ImGui::Combo("Type", reinterpret_cast<int*>(&sp.emitter_type),
       kEmitterTypeDescriptions, IM_ARRAYSIZE(kEmitterTypeDescriptions)
@@ -92,7 +98,7 @@ void SparkleView::simulation_panel(GPUParticle::SimulationParameters_t &sp) {
 
   // Bounding Volume.
 
-  //ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
+  //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Bounding Volume")) {
     ImGui::Combo("Type", reinterpret_cast<int*>(&sp.bounding_volume),
       kSimulationVolumeDescriptions, IM_ARRAYSIZE(kSimulationVolumeDescriptions)
@@ -104,6 +110,8 @@ void SparkleView::simulation_panel(GPUParticle::SimulationParameters_t &sp) {
   }
 
   // Forces.
+
+  ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Forces")) {
     ImGui::Checkbox("Scattering", &sp.enable_scattering);
     if (sp.enable_scattering) {
@@ -156,7 +164,7 @@ constexpr float SparkleView::kFadingFactorMax;
 void SparkleView::rendering_panel(GPUParticle::RenderingParameters_t &rp) {
   // Material.
 
-  //ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
+  //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Material")) {
     ImGui::Combo("Type", reinterpret_cast<int*>(&rp.rendermode),
       kRenderModeDescriptions, IM_ARRAYSIZE(kRenderModeDescriptions));
@@ -181,7 +189,7 @@ void SparkleView::rendering_panel(GPUParticle::RenderingParameters_t &rp) {
     ImGui::TreePop();
   }
 
-  //ImGui::SetNextTreeNodeOpen(true, ImGuiSetCond_Once);
+  //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   if (ImGui::TreeNode("Color")) {
     ImGui::Combo("Mode", reinterpret_cast<int*>(&rp.colormode),
       kColorModeDescriptions, IM_ARRAYSIZE(kColorModeDescriptions));
