@@ -242,6 +242,10 @@ elseif(USE_MSVC)
    #-DWIN32_LEAN_AND_MEAN
    -D_USE_MATH_DEFINES
   )
+
+  list(APPEND CustomLinkFlags 
+    ""
+  )
 endif()
 
 # -----------------------------------------------------------------------------
@@ -336,7 +340,7 @@ list(APPEND IMGUI_SOURCES
   # ${IM3D_INCLUDE_DIR}/im3d.h
 )
 
-if(0)
+if(1)
   set(IMGUI_LIB imgui)
   add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
   target_compile_options(
@@ -347,7 +351,7 @@ if(0)
       "$<$<CONFIG:Release>:>"
       "$<$<CONFIG:DebugWithRelInfo>:>"
   )
-  set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS "${CustomLinkFlags}")
+  set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
 endif()
 
 
@@ -363,8 +367,7 @@ list(APPEND CustomLibs
 list(APPEND Thirdparties
   ${IM3D_INCLUDE_DIR}/im3d.cpp
   ${IM3D_INCLUDE_DIR}/im3d.h
-
-  ${IMGUI_SOURCES}
+  #${IMGUI_SOURCES}
 )
 
 # -----------------------------------------------------------------------------
@@ -413,10 +416,6 @@ list(APPEND CustomLibs
 list(APPEND CustomDefinitions 
   -DSHADERS_DIR="${BARBU_SHADERS_DIR}"
   -DASSETS_DIR="${BARBU_ASSETS_DIR}"
-)
-
-list(APPEND CustomLinkFlags 
-  ""
 )
 
 # -----------------------------------------------------------------------------
