@@ -2,7 +2,7 @@
 
 #include <thread>
 
-#include "core/graphics.h"
+#include "core/glfw.h"
 #include "core/events.h"
 #include "core/logger.h"
 #include "memory/assets/assets.h"

@@ -13,23 +13,8 @@
 //
 // ----------------------------------------------------------------------------
 
-#include <cassert>
-#include <string_view>
 #include "core/logger.h"
-
-// extensions -----------------------------------------------------------------
-
-#ifdef USE_GLEW
-#include "GL/glew.h"
-#else
-#include "core/ext/_extensions.h"
-#endif
-
-// window manager -------------------------------------------------------------
-
-#include "GLFW/glfw3.h"
-
-// ----------------------------------------------------------------------------
+#include "core/glfw.h"
 
 namespace gx {
 

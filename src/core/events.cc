@@ -1,7 +1,7 @@
 #include "events.h"
 
 #include <cstring>
-#include "core/graphics.h"
+#include "core/glfw.h"
 #include "ui/imgui_wrapper.h"
 
 // ----------------------------------------------------------------------------
