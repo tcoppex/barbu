@@ -262,7 +262,7 @@ find_package(OpenGL REQUIRED)
 if(OPT_USE_GLEW)
   find_package(GLEW 1.13 REQUIRED)
   if(${GLEW_FOUND})
-    list(APPEND Definitions -DUSE_GLEW=1)
+    list(APPEND CustomDefinitions -DUSE_GLEW=1)
   endif()
 else()
   # Automatically generate header to load OpenGL extensions.
@@ -351,7 +351,9 @@ if(1)
       "$<$<CONFIG:Release>:>"
       "$<$<CONFIG:DebugWithRelInfo>:>"
   )
-  set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
+  if (NOT ("${CustomLinkFlags}" MATCHES ""))
+    set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
+  endif()
 endif()
 
 
