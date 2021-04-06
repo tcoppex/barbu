@@ -152,6 +152,7 @@ void Hair::render(Camera const& camera) {
         // (FS)
         gx::SetUniform( pgm, "uLongitudinalLUT",  0);
         gx::SetUniform( pgm, "uAzimuthalLUT",     1);
+        gx::SetUniform( pgm, "uAlbedo",           params_.render.albedo);
 
         marschner_.bind_lookups();
 

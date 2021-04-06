@@ -29,14 +29,15 @@ class Hair {
     } sim;
 
     struct {
-      int ninstances   = 1;
+      int ninstances   = 3;
       int nlines       = 2;
-      int nsubsegments = 4;
+      int nsubsegments = 16;
     } tess;
 
     struct {
-      float linewidth   = 0.01f;
-      float lengthScale = 1.20f;
+      glm::vec3 albedo  = glm::vec3(0.35, 0.19, 0.14);
+      float linewidth   = 0.014f;
+      float lengthScale = 1.450f;
       bool bShowDebugCP = false;
     } render;
 
