@@ -1,5 +1,8 @@
+_docs_/
+assets/
 bin/
-BUILDs/
 build/
-CMakeLists.txt.user
+BUILDs/
 src/core/ext/
+CMakeLists.txt.user
+.travis.yml
