@@ -45,7 +45,8 @@ class HairView : public ParametrizedUIView<Hair::Parameters_t> {
     ImGui::Separator();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Rendering")) {
-      ImGui::DragFloat("line width", &params_.render.linewidth, 0.0001f, 0.001f, 0.02f);
+      ImGui::ColorEdit3("Albedo", glm::value_ptr(params_.render.albedo));
+      ImGui::DragFloat("line width", &params_.render.linewidth, 0.0001f, 0.003f, 0.05f);
       ImGui::DragFloat("length scale factor", &params_.render.lengthScale, 0.01f, 0.01f, 10.0f);
       ImGui::Checkbox("Show control points", &params_.render.bShowDebugCP);
       

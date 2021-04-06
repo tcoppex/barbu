@@ -38,7 +38,7 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("N lookup")) 
     {
-      ImGui::DragFloat("Refraction index", &params_.shading.eta, 0.005f, 1.001f, 4.0f);
+      ImGui::DragFloat("Refraction index", &params_.shading.eta, 0.001f, 1.001f, 4.0f);
       ImGui::DragFloat("Absorption coeff", &params_.shading.absorption, 0.001f, 0.05f, +100.0f);
 
       // ImGui::DragFloat("Eccentricity", &params_.shading.eccentricity, 0.001f, 0.85f, +1.0f);
