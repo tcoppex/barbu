@@ -174,7 +174,7 @@ if(USE_GCC OR USE_CLANG)
     -Wshadow
     -Wmisleading-indentation
     -Wformat=2 -Wformat-truncation -Wformat-overflow
-    -Wduplicated-branches 
+    #-Wduplicated-branches 
     -Wduplicated-cond
     -Wno-unused-function 
     -Wno-unused-parameter
