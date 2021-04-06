@@ -812,7 +812,7 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
 
   // Handle MTL file materials if any.
   if (!meshfile.material_id.empty()) {
-    constexpr bool debug_log = true;
+    constexpr bool debug_log = false;
 
     // Determine the material file full path.
     std::string fn( filename );
