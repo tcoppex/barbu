@@ -11,13 +11,13 @@ Marschner::~Marschner() {
 }
 
 void Marschner::init() {
-
-  // 1) Create the CS programs.
+  // Create the CS programs.
   pgm_[0] = PROGRAM_ASSETS.create( SHADERS_DIR "/hair/marschner/cs_marschner_m.glsl" )->id;  
   pgm_[1] = PROGRAM_ASSETS.create( SHADERS_DIR "/hair/marschner/cs_marschner_n.glsl" )->id;
 
   // Setup textures.
-  for (int i=0; i<kNumLUTs; ++i) {
+  // TODO use TextureAsset instead.
+  for (int i = 0; i < kNumLUTs; ++i) {
     auto &tex = tex_[i];
     glCreateTextures(GL_TEXTURE_2D, 1u, &tex);
     glTextureStorage2D(tex, 1, kTextureFormat, kTextureResolution, kTextureResolution);
@@ -37,11 +37,11 @@ void Marschner::init() {
 // ----------------------------------------------------------------------------
 
 void Marschner::update(bool bForceUpdate) {
-  if (bForceUpdate || !(lastShadingParams_ == params_.shading)) {
+  if (bForceUpdate || !(previous_shading_params_ == params_.shading)) {
     generate();
   }
 
-  lastShadingParams_ = params_.shading;
+  previous_shading_params_ = params_.shading;
 }
 
 // ----------------------------------------------------------------------------
@@ -69,8 +69,8 @@ void Marschner::generate() {
       gx::SetUniform( pgm, "uDeltaCaustic",   params_.shading.deltaCaustic);
       gx::SetUniform( pgm, "uDeltaHm",        params_.shading.deltaHm);
     }
-    gx::SetUniform( pgm, "uInvResolution",      inv_resolution);
-    gx::SetUniform( pgm, "uDstImg",             0);
+    gx::SetUniform( pgm, "uInvResolution",    inv_resolution);
+    gx::SetUniform( pgm, "uDstImg",           0);
 
     gx::UseProgram(pgm);
     gx::DispatchCompute<kComputeBlockSize, kComputeBlockSize>(kTextureResolution, kTextureResolution);

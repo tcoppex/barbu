@@ -14,7 +14,7 @@ class UIView;
 class Marschner {
  public:
   constexpr static int kNumLUTs = 2;
-  constexpr static int kTextureResolution = 256;
+  constexpr static int kTextureResolution = 128;
   constexpr static int kComputeBlockSize  = 16; // 
   constexpr static GLenum kTextureFormat  = GL_RGBA16F;
 
@@ -26,7 +26,7 @@ class Marschner {
 
     // Surface Properties.
     float ar              = -10.0f;
-    float br              = 5.0f;
+    float br              = +10.0f;//5.0f;
 
     // Glints.
     float glintScale      = 0.5f;
@@ -80,8 +80,9 @@ class Marschner {
  private:
   UIView *ui_view_ = nullptr;
   Parameters_t params_;
-  ShadingParameters_t lastShadingParams_;
+  ShadingParameters_t previous_shading_params_;
 
+  // TODO: use Assets instead.
   std::array<GLuint, kNumLUTs> pgm_;
   std::array<GLuint, kNumLUTs> tex_;
 
