@@ -42,6 +42,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   // Return the number of sub geometry contains in the mesh, which is always at least 1.
   inline int32_t nsubgeometry() const noexcept { return std::max( 1, static_cast<int32_t>(vgroups_.size())); };
 
+  inline bool has_materials() const noexcept { return !vgroups_.empty(); }
   inline VertexGroups_t const& vertex_groups() const noexcept { return vgroups_; }
   inline VertexGroup const& vertex_group(int32_t index) const { return vgroups_.at(index); }
 
