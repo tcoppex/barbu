@@ -12,38 +12,63 @@ struct Light {
 
 // ----------------------------------------------------------------------------
 
-// layout(set = 0, binding = 2) uniform LightsInfo
-// {
-//   uint  count;
-//   Light light[MAX_LIGHT_COUNT];
-// } lights;
+// Simple Lambert diffuse model.
+vec3 apply_light(in vec3 N, in vec3 L, in vec3 color) {
+  return color * max(0.0, dot(N, L));
+}
+
+// Diffuse and specular model.
+vec3 apply_light(in vec3 N, in vec3 L, in vec3 R, in vec3 V, in vec3 color, float exponent) {
+  const float NdotL = dot(N, L);
+  const float RdotV = dot(R, V);
+
+  const float Kd = max(0.0, NdotL);
+  const float Ks = pow(max(0.0, RdotV), exponent) * (1.0 - step(NdotL, 0.0));
+  
+  const vec3 lighting = color * (Kd + Ks);
+
+  return clamp(lighting, vec3(0), vec3(1));
+}
+
+vec3 blinn(in vec3 N, in vec3 L, in vec3 H, in vec3 color, float exponent) {
+  return apply_light( N, L, N, H, color, exponent);
+}
+
+vec3 phong(in vec3 N, in vec3 L, in vec3 V, in vec3 color, float exponent) {
+  const vec3 R = reflect(N, L);
+  return apply_light( N, L, R, V, color, exponent);
+}
 
 // ----------------------------------------------------------------------------
 
-vec3 apply_diffuse_light(in vec4 color, in vec3 world_to_light, in vec3 normal) {
-  return color.w * color.rgb * clamp(dot(world_to_light, normal), 0.0, 1.0);
+vec3 apply_directional_light(in Light light, in vec3 N) {
+  const vec3 L = - normalize(light.direction.xyz);
+  return apply_light( N, L, light.color.rgb)
+       * light.color.a
+       ;
 }
 
-vec3 apply_directional_light(in Light light, in vec3 normal) {
-  const vec3 world_to_light = - normalize(light.direction.xyz);
-  return apply_diffuse_light(light.color, world_to_light, normal);
-}
-
-vec3 apply_point_light(in Light light, in vec3 pos, in vec3 normal) {
-  const float kMaxDist = 200.0; //
-  const float kMaxDistSquared = kMaxDist * kMaxDist;
+vec3 apply_point_light(in Light light, in vec3 pos, in vec3 N, float radius) {
+  const float kMaxDistSquared = radius * radius;
 
   // World light position.
   const vec3 lightWS = light.position.xyz - pos;
 
   // Calculate attenuation.
-  const float light_d2 = dot(lightWS, lightWS);
-  const float atten = smoothstep(0.0, 1.0, kMaxDistSquared / light_d2);
+  const float lds = dot(lightWS, lightWS);
+  const float atten = (lds > kMaxDistSquared) ? smoothstep(0.0, 1.0, kMaxDistSquared / lds) : 1.0;
 
   // Normalize vector to light.
-  const vec3 to_light = lightWS * inversesqrt(light_d2);
+  const vec3 L = lightWS * inversesqrt(lds);
   
-  return atten * apply_diffuse_light( light.color, to_light, normal);
+  return apply_light( N, L, light.color.rgb)
+       * light.color.a
+       * atten 
+       ;
+}
+
+vec3 apply_point_light(in Light light, in vec3 pos, in vec3 N) {
+  return apply_point_light(light, pos, N, 200.0);
 }
 
 // ----------------------------------------------------------------------------

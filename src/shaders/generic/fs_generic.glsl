@@ -33,25 +33,25 @@ vec3 color_keylights(in vec3 rgb) {
   // Create a Key / Fill / Back lighting setup.
   Light keylight;
   keylight.direction.xyz  = vec3(-1.0, -1.0, -1.0);
-  keylight.color          = vec4(1.0, 1.0, 0.95, 0.8);
+  keylight.color          = vec4(1.0, 1.0, 0.95, 0.5);
 
   Light filllight;
-  filllight.direction.xyz = vec3(+1.0, -1.0, -4.0);
-  filllight.color         = vec4(1.0, 0.5, 0.2, 0.4);
+  filllight.direction.xyz = vec3(+4.0, -1.0, +4.0);
+  filllight.color         = vec4(0.5, 0.75, 0.2, 0.95);
 
   Light backlight;
   backlight.position.xyz  = vec3(-10.0, 15.0, -12.0);
-  backlight.color         = vec4(0.4, 0.4, 1.0, 1.0);
+  backlight.color         = vec4(0.4, 0.4, 1.0, 0.8);
 
   vec3 diffuse = apply_directional_light(keylight, inNormalWS)
                + apply_directional_light(filllight, inNormalWS)
                + apply_point_light(backlight, inPositionWS, inNormalWS)
                ;
 
-  // saturate
+  vec3 ambient = vec3(0.1);
   diffuse = clamp(diffuse, vec3(0), vec3(1));
 
-  return mix(rgb, diffuse, 0.5);
+  return rgb * (ambient + diffuse);
 }
 
 vec3 color_normal(in vec3 rgb) {
@@ -61,8 +61,7 @@ vec3 color_normal(in vec3 rgb) {
 }
 
 vec3 color_irradiance(in vec3 rgb) {
-  // (not physically correct)
-  return rgb * mix( vec3(1.0), inIrradiance, 0.97);
+  return rgb * inIrradiance;
 }
 
 vec3 colorize(in int color_mode, in vec3 rgb) {
@@ -81,7 +80,7 @@ vec3 colorize(in int color_mode, in vec3 rgb) {
 // ----------------------------------------------------------------------------
 
 void main() {
-  vec4 color = vec4(1.0f);
+  vec4 color = vec4(1.0);
 
   if (uHasAlbedo) {
     const vec2 uv = vec2(inTexcoord.x, 1-inTexcoord.y);
