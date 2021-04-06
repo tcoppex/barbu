@@ -100,60 +100,6 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
 }
 
 bool SceneHierarchy::import_model(std::string_view filename) {
-/*
-
-  # Protocol idea for loading a mesh materials.
-
-  When we import a mesh from a file, a list of material can be found in two way :
-   1) it is set internally in the file, or
-   
-   2) it got a reference to another file.
-
-  In the two cases we can immediately load the material list and create in a separate
-  factory each materials as a different asset with a unique AssetId of the type :
-  "MaterialFileBaseName::MaterialName" where MaterialFileBaseName is the basename
-  of the material when it exists or the model's name otherwhise.
-
-  Each mesh containing materials has a set of vertex groups referencing the material
-  names and indices ranges. When an entity is created it contains an empty map of
-  the size of the number of materials it possesses indexed by their names
-  (the same as in the vertex group) and when empty referred directly to the default
-  materials contained in the factory. An entity material can thus be modified when
-  it is not the default one [ala Unity].
-
-  Questions :
-  - How do we transfer the MaterialFileBaseName to the mesh ?
-    Possible solution : change the material name to the whole shebang directly.
-    -> Default materials are load at the same time as the mesh but its vertex groups are
-    rename from "vgroupname" to "materialFileBaseName::vgroupname" for example, which is also
-    the material HashId in the material factory. This more or less prevents collision in the factory.
-
-  - This system means that the MeshData Resource probably creates the Material "Assets".
-  Is it feasible dependency-wise ? is it acceptable ?
-    -> The resource could not create an asset directly but I don't think a Material is a pure Asset 
-     as I defined them so it would just use a different kind of factory.
-    -> Alternatively the meshData resource holds the material excerpt and the
-     MaterialHandle is created afterwards from it, either from here or from "Mesh" for example.
-
-    It might be better if "SceneHierarchy::import" calls upon a MeshData resource and create the
-    underlying assets as needed, for example the 1-to-n mesh entities (when using multiple objects)
-    and their materials. 
-     Who has to deal with dependencies ? 
-      -> still the assets, with added parameters.
-                           |- Mesh_1
-    Resource -> Entity -> { - Mesh_2
-                           |- Material_i
-      -> In this case there is two ways to load an object : 
-        * from MESHES which would automatically join all sub-objects, or
-        * from the scene hierarchy which would allow to subdivide the mesh per object 
-        (with info in asset parameters).
-
-  -> It is not a "mesh data file", it is a "scene file" with multiple sub-data.
-
-  To do :
-    - Material Factory (maybe not an asset ?)
-*/
-
   AssetId const asset_id( filename );
 
   // When successful, add a new model entity to the scene.
@@ -164,18 +110,11 @@ bool SceneHierarchy::import_model(std::string_view filename) {
     // Retrieve the file basename.
     auto const basename = Resource::TrimFilename( std::string(filename) );
     
-    // Create a unique entity.
-    auto entity = std::make_shared<ModelEntity>( basename, mesh);
-
-    // Add it to the scene hierarchy.
-    add_entity( entity );
-
-    return true;
+    auto entity = create_model_entity(basename, mesh);
+    return entity != nullptr;
   }
-
   return false;
 }
-
 
 void SceneHierarchy::update_selected_local_matrices() {
   // [slight bug with hierarchical multiselection : the update might use the non updated
@@ -196,7 +135,27 @@ void SceneHierarchy::update_selected_local_matrices() {
   }
 }
 
+EntityHandle SceneHierarchy::add_bounding_sphere() {
+  constexpr int32_t kDefaultRes = 16;
+  if (auto mesh = MESH_ASSETS.createSphere(kDefaultRes, kDefaultRes); mesh) {
+    return create_model_entity("BSphere", mesh);
+  }
+  return nullptr;
+}
+
 // ----------------------------------------------------------------------------
+
+EntityHandle SceneHierarchy::create_model_entity(std::string const& basename, MeshHandle mesh) {
+  // Create a unique entity.
+  auto entity = std::make_shared<ModelEntity>( basename, mesh);
+
+  // Add it to the scene hierarchy.
+  if (entity != nullptr) {
+    add_entity(entity);
+  }
+
+  return entity;
+}
 
 void SceneHierarchy::update_hierarchy(float const dt) {
   // (the root is used as a virtual entity and is hence not updated).
@@ -229,8 +188,6 @@ void SceneHierarchy::update_sub_hierarchy(float const dt, EntityHandle entity, i
   }
   frame_.matrices_stack.pop();
 }
-
-// ----------------------------------------------------------------------------
 
 void SceneHierarchy::sort_drawables(Camera const& camera) {
   auto const& eye_pos = camera.position();

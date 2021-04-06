@@ -52,6 +52,9 @@ class SceneHierarchy {
   EntityList_t const& selected() const { return frame_.selected; }
   EntityList_t const& drawables() const { return frame_.drawables; }
   
+  // [wip] Add a bounding model entity for physic collision.
+  EntityHandle add_bounding_sphere();
+
  private:
   // Set of buffers modified each frame.
   struct PerFrame_t {
@@ -75,6 +78,9 @@ class SceneHierarchy {
       drawables.clear();
     }
   };
+
+  // Create a model entity from a mesh and a basename.
+  EntityHandle create_model_entity(std::string const& basename, MeshHandle mesh);
 
   // Hierarchically prefix-update entities.
   void update_hierarchy(float const dt);

@@ -6,8 +6,6 @@
 
 // ----------------------------------------------------------------------------
 
-// [ Work in progress ]
-
 class ModelEntity : public Entity {
  public:
   ModelEntity(std::string_view name, MeshHandle mesh)
