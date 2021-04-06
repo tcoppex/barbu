@@ -49,6 +49,7 @@ class Scene : public AppScene {
 
   // Scene entities.
   SceneHierarchy scene_hierarchy_;
+  
   MeshHandle debug_sphere_;
 
   // Special rendering.

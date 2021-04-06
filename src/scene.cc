@@ -13,7 +13,8 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
   //gx::ClearColor(0.9f, 0.6f, 0.5f, 1.0f);
 
   scene_hierarchy_.init();
-  debug_sphere_ = MESH_ASSETS.createSphere(24, 24);
+  
+  //scene_hierarchy_.add_bounding_sphere();
 
   // Special Rendering.
   skybox_.init();
@@ -24,14 +25,16 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
 
   // Test scene.
   {
-    // Default model.
-    scene_hierarchy_.import_model( ASSETS_DIR "/models/suzanne.obj" );
+    scene_hierarchy_.import_model( 
+      ASSETS_DIR "/models/suzanne.obj" 
+    );
+    auto const scalpId = AssetId( 
+      ASSETS_DIR "/models/suzanne_scalp.obj" 
+    );
 
-    // Scalp mesh.
-    auto const scalpId = AssetId( ASSETS_DIR "/models/suzanne_scalp.obj" );
     hair_.init( scalpId ); //
 
-    // (idea)
+    // (idea for internal scalp vertices detection)
     // Given two meshes's ResourceId, find the indices of vertices of A that matches the 
     // vertices of B.
   }
