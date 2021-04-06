@@ -37,7 +37,6 @@ void Skybox::init() {
       IrradianceEnvMap::PrefilterU8( dependencies, shMatrices_);
     }
 #else
-    // [wip]
     // Handle crossed HDR only.
     ResourceInfo res( ASSETS_DIR "/textures/cross_hdr/grace_cross_mmp_s.hdr" );
     skytex_ = TEXTURE_ASSETS.createCubemapHDR( res.id );
