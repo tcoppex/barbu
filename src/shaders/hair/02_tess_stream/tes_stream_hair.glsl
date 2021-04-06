@@ -59,6 +59,8 @@ void main() {
         relPos = smoothstep2(0.0, 1.0, relPos);
 
   outPosition   = vec4( pos.xyz, relPos);
+
+  // [might probably output a per-strand coeff as well as the tangent / normals]
   //outColorCoeff = float(inInstanceID + 1.0f) / float(uNumInstances);
 }
 

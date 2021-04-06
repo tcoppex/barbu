@@ -1,12 +1,14 @@
 #version 430 core
 
 #include "shared/inc_maths.glsl"
+#include "shared/inc_lighting.glsl"
 
 // ----------------------------------------------------------------------------
 
 // Inputs.
 layout(location = 0) in vec3 inPosition;
-//layout(location = 1) in float inColorCoeff;
+layout(location = 1) in vec3 inNormal;
+layout(location = 2) in vec3 inTangent;
 
 // Outputs.
 layout(location = 0) out vec4 fragColor;
@@ -16,6 +18,7 @@ layout(location = 0) out vec4 fragColor;
 // Marschner Reflectance LUTs.
 uniform sampler2D uLongitudinalLUT;       // RGBA : MR, MTT, MTRT, cosThetaD
 uniform sampler2D uAzimuthalLUT;          // RGB  : NR, NTT, NTRT
+uniform vec3 uAlbedo;
 
 // ----------------------------------------------------------------------------
 
@@ -29,7 +32,7 @@ vec3 reflectance_ray_polarcoords(
 
   // Calculate the light and eye direction perpendicular to tangent.
   const vec3 light_perp = light_dir - sinThetaI * tangent;
-  const vec3 look_perp  = light_dir - sinThetaO * tangent;
+  const vec3 look_perp  = look_dir - sinThetaO * tangent;
 
   const float cosPhiD = dot(light_perp, look_perp)
                       * inversesqrt(dot(light_perp, light_perp) * dot(look_perp, look_perp))
@@ -62,21 +65,52 @@ float marschner_reflectance(in vec3 light_dir, in vec3 look_dir, in vec3 tangent
 
   const float S = dot(M.xyz, N.xyz) / max(pow(cosThetaD, 2), Epsilon());
 
-  return 99*abs(S);
+  return S; ///
 }
 
 // ----------------------------------------------------------------------------
 
 void main() {
-  fragColor.rgb = /*inColorCoeff * */vec3(0.218, 0.16, 0.142);
+  const vec3 albedo = uAlbedo;
   
-  // [test]
-  fragColor.rgb *= marschner_reflectance(
-    normalize(vec3(0., 0., 1.)),
-    normalize(inPosition.xyz),
-    normalize(vec3(0.0, -1, 0.0))
-  );
+  // ----------------------
 
+  const vec3 ambient = 0.25 * albedo;
+
+  //----
+
+  vec3 reflectance;
+
+  const vec3 light_dir = normalize(vec3(0.0, 0.0, 1.0));
+  const vec3 eye_dir   = normalize(inPosition.xyz);
+  const vec3 tangent   = normalize(inTangent);
+
+  // [test] Marschner reflectance factor.
+  float rfactor = marschner_reflectance( light_dir, eye_dir, tangent);
+
+#if 1
+  //factor = smoothstep( -20.0, 40.0, rfactor*0.8) * 3.0;
+  reflectance = albedo * vec3(pow(0.185*rfactor, 0.125));
+#else
+  reflectance = albedo + vec3(rfactor);
+#endif
+
+  //---
+
+  // [wip] Diffuse light
+  vec3 diffuse;
+  {
+    Light light;
+    light.direction.xyz  = light_dir;
+    light.color          = vec4(1.0, 1.0, 0.98, 0.98);
+    diffuse = apply_directional_light( light, inNormal) * albedo;
+  }
+
+  //-------
+
+  vec3 lighting = ambient + 2.0*reflectance * diffuse;
+
+  fragColor.rgb = lighting;
   fragColor.a = 1.0;
 }
 

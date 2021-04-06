@@ -49,7 +49,8 @@ void main()
   // (we can use any other lobe function here)
   const vec3 lobes = gaussian( widths, vec3(degrees(thetaH)) - shifts);
 
-  const float cosThetaD = sinThetaI;//cos( thetaD ); // sinThetaI
+  const float cosThetaD = cos( thetaD ); 
+                          //sinThetaI;
 
   // --------------------------
 
