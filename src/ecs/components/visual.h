@@ -20,32 +20,48 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
   // Render parts of the mesh matching the RenderMode.
   void render(RenderAttributes const& attributes, RenderMode render_mode) {
-    // Keep track of previous pgm to avoid useless uniform setup (could be improved).
-    uint32_t last_pgm = 1u;
-    auto const nsubgeometry = mesh_->nsubgeometry();
-    for (auto i = 0; i < nsubgeometry; ++i) {
-      auto const& vg = mesh_->vertex_group(i);
-
-      auto mat = (MATERIAL_ASSETS.has(AssetId(vg.name))) ?
-        MATERIAL_ASSETS.get(AssetId(vg.name))->get() :
-        MATERIAL_ASSETS.get_default()->get()
-      ;
-
-      // Check the material render mode.
-      if (render_mode != mat->render_mode()) {
-        continue;
+    if (!mesh_->has_materials()) 
+    {
+    // Case 1 : Mesh with no materials.
+      auto mat = MATERIAL_ASSETS.get_default()->get();
+      if (render_mode == mat->render_mode()) {
+        mat->update_uniforms(attributes);
+        mesh_->draw();
       }
+    } 
+    else 
+    {
+    // Case 2 : Mesh with submaterials.
 
-      // Set material parameters when needed.
-      uint32_t const pgm = mat->program()->id;
-      mat->update_uniforms(attributes, last_pgm == pgm);
-      last_pgm = pgm;
-      
-      // Draw submesh.
-      mesh_->draw_submesh(i);
+      // Keep track of previous pgm to avoid useless uniform setup (could be improved).
+      uint32_t last_pgm = 0u;
+
+      auto const nsubgeometry = mesh_->nsubgeometry();
+      for (auto i = 0; i < nsubgeometry; ++i) {
+        auto const& vg = mesh_->vertex_group(i);
+        auto const material_id = AssetId(vg.name); //
+
+        // If the material exists for the mesh, find it, otherwhise take the default material.
+        auto mat = (MATERIAL_ASSETS.has(material_id)) ?
+          MATERIAL_ASSETS.get(material_id)->get() :
+          MATERIAL_ASSETS.get_default()->get()
+        ;
+
+        // Check the material render mode.
+        if (render_mode != mat->render_mode()) {
+          continue;
+        }
+
+        // Set material parameters when needed.
+        uint32_t const pgm = mat->program()->id;
+        mat->update_uniforms(attributes, last_pgm == pgm);
+        last_pgm = pgm;
+
+        // Draw submesh.
+        mesh_->draw_submesh(i);
+      }
     }
   }
-
 
   // Add a mesh with a default material for each submeshes.
   void set_mesh(MeshHandle mesh) {
