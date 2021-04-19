@@ -21,7 +21,7 @@ namespace fs = std::experimental::filesystem;
 #endif
 
 #include "core/logger.h"
-#include "memory/resources/resource_info_list.h"
+#include "memory/resource_info_list.h"
 
 // ----------------------------------------------------------------------------
 //

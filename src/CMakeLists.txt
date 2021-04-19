@@ -79,7 +79,7 @@ list(APPEND Headers
   memory/assets/material_asset.h
   memory/resources/image.h
   memory/resources/mesh_data.h
-  memory/resources/resource_info_list.h
+  memory/resource_info_list.h
   memory/resource_manager.h
   memory/resources/resources.h
   memory/resources/shader.cc
