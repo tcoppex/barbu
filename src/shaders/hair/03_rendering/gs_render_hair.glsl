@@ -51,7 +51,7 @@ mat3 basisVS(in mat4 viewMatrix, in vec3 p0, in vec3 p1) {
 void fetchVert(in mat4 mvp, in vec4 v, in vec3 tangent) {
   gl_Position = mvp * v;
   outPosition = v.xyz;
-  //outTangent  = tangent;
+  outTangent  = tangent; //
   EmitVertex();
 }
 
@@ -69,35 +69,34 @@ void EmitQuadVS(in vec3 A, in vec3 B, in vec3 Y0, in vec3 Y1) {
   fetchVert( uMVP, vec4(P0, 1.0f), tangent);
   fetchVert( uMVP, vec4(P1, 1.0f), tangent);
 
-  outNormal = normal; // [should be different]
+  outNormal = normal; // [! should be different for interpolation]
   fetchVert( uMVP, vec4(P2, 1.0f), tangent);
   fetchVert( uMVP, vec4(P3, 1.0f), tangent);
 
   EndPrimitive();
 }
 
-
 // ----------------------------------------------------------------------------
 
 void main() {
-  // (attached on view space)
-  const vec3 side = 0.125 * uLineWidth * vec3(
+  // Calculate the side vectors.
+  const float width = 0.25 * uLineWidth;
+  const vec3 side = 0.5 * width * vec3(
     1.0 - inCoeff[0], 
     1.0 - inCoeff[1], 
     0
   );
 
+  // Calculate the ViewSpace Right and Bottom vectors.
   const mat3 Ybasis = basisVS( uView, inPosition[0], inPosition[1]);
+  const vec3 Y0 = Ybasis * side.zxz;
+  const vec3 Y1 = Ybasis * side.zyz; 
 
-  outTangent = normalize(Ybasis * side.zxz);
+  // Determine the tangent from the right vector.
+  //outTangent = normalize(Y0);
 
-  EmitQuadVS( 
-    inPosition[0].xyz, 
-    inPosition[1].xyz, 
-    Ybasis * side.zxz, 
-    Ybasis * side.zyz
-  );
-
+  // Emit the quad.
+  EmitQuadVS( inPosition[0].xyz, inPosition[1].xyz, Y0, Y1);
 }
 
 // ----------------------------------------------------------------------------

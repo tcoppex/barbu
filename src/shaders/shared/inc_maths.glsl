@@ -128,7 +128,7 @@ vec3 sample_sphere_out(float radius, vec2 rn) {
 
 // ----------------------------------------------------------------------------
 
-vec4 hermit_mix(in vec3 p0, in vec3 p1, in vec3 t0, in vec3 t1, in float u) {
+vec4 hermite_mix(in vec3 p0, in vec3 p1, in vec3 t0, in vec3 t1, in float u) {
   const mat4 mHermit = mat4(
     vec4( 2.0, -3.0, 0.0, 1.0),
     vec4(-2.0,  3.0, 0.0, 0.0),

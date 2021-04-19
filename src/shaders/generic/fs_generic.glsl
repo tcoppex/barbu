@@ -48,7 +48,7 @@ vec3 color_keylights(in vec3 rgb) {
                + apply_point_light(backlight, inPositionWS, inNormalWS)
                ;
 
-  vec3 ambient = vec3(0.1);
+  const vec3 ambient = vec3(0.1); //
   diffuse = clamp(diffuse, vec3(0), vec3(1));
 
   return rgb * (ambient + diffuse);

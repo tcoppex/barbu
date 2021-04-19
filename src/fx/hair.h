@@ -35,7 +35,7 @@ class Hair {
     } tess;
 
     struct {
-      glm::vec3 albedo  = glm::vec3(0.35, 0.19, 0.14);
+      glm::vec3 albedo  = glm::vec3(0.9, 0.86, 0.84);
       float linewidth   = 0.014f;
       float lengthScale = 1.450f;
       bool bShowDebugCP = false;
