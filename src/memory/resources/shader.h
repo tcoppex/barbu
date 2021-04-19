@@ -1,7 +1,7 @@
 #ifndef BARBU_MEMORY_RESOURCES_SHADER_H_
 #define BARBU_MEMORY_RESOURCES_SHADER_H_
 
-#include "memory/resources/resource_manager.h"
+#include "memory/resource_manager.h"
 
 // ----------------------------------------------------------------------------
 //

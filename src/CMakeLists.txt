@@ -8,6 +8,9 @@ list(APPEND Sources
   main.cc
   scene.cc
 
+  animation/skeleton.cc
+  animation/skeleton_controller.cc
+
   core/graphics.cc
   core/app.cc
   core/events.cc
@@ -45,7 +48,11 @@ list(APPEND Sources
 
 list(APPEND Headers
   scene.h
-  
+
+  animation/skeleton.h
+  animation/skeleton_controller.h
+  animation/common.h
+
   core/app.h
   core/events.h
   core/graphics.h
@@ -64,7 +71,7 @@ list(APPEND Headers
   fx/postprocess/postprocess.h
   fx/postprocess/hbao.h
 
-  memory/assets/asset_factory.h
+  memory/asset_factory.h
   memory/assets/assets.h
   memory/assets/mesh.h
   memory/assets/texture.h
@@ -73,7 +80,7 @@ list(APPEND Headers
   memory/resources/image.h
   memory/resources/mesh_data.h
   memory/resources/resource_info_list.h
-  memory/resources/resource_manager.h
+  memory/resource_manager.h
   memory/resources/resources.h
   memory/resources/shader.cc
   memory/hash_id.h

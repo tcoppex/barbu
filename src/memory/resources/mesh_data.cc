@@ -10,6 +10,9 @@
 
 #include "glm/glm.hpp"    // abs
 
+#define CGLTF_IMPLEMENTATION
+#include "cgltf/cgltf.h"
+
 // ----------------------------------------------------------------------------
 
 // Vertex ordering operator used to reindex vertices from raw data.
@@ -363,52 +366,52 @@ void MeshData::release() {
 
 // ----------------------------------------------------------------------------
 
-void MeshData::setup(PrimitiveType primtype, RawMeshData &raw) {
-  type = primtype;
-  std::swap(vgroups, raw.vgroups);
+bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
+  type = _type;
+  std::swap(vgroups, _raw.vgroups);
    
   if (type != MeshData::TRIANGLES)
   {
     // When MeshData is not made of triangles we just copy the structures.
 
     // Elements.
-    indices.reserve(raw.elementsAttribs.size());
-    for (auto const& vi : raw.elementsAttribs) {
+    indices.reserve(_raw.elementsAttribs.size());
+    for (auto const& vi : _raw.elementsAttribs) {
       indices.push_back(vi.x);
     }
     
     // Vertices.
-    int const nvertices = static_cast<int>(raw.vertices.size());
+    int const nvertices = static_cast<int>(_raw.vertices.size());
     vertices.resize( nvertices );
     for (int i = 0; i < nvertices; ++i) {
-      vertices[i].position = raw.vertices[i];
+      vertices[i].position = _raw.vertices[i];
     }
-    if (!raw.texcoords.empty()) {
+    if (!_raw.texcoords.empty()) {
       for (int i = 0; i < nvertices; ++i) {
-        vertices[i].texcoord = raw.texcoords[i];
+        vertices[i].texcoord = _raw.texcoords[i];
       }
     }
-    if (!raw.normals.empty()) {
+    if (!_raw.normals.empty()) {
       for (int i = 0; i < nvertices; ++i) {
-        vertices[i].normal = raw.normals[i];
+        vertices[i].normal = _raw.normals[i];
       }
     }
   }
   else 
   {
     // Recalculate normals when none exists.
-    if (raw.normals.empty() && !raw.elementsAttribs.empty()) {
-      raw.recalculate_normals();
+    if (_raw.normals.empty() && !_raw.elementsAttribs.empty()) {
+      _raw.recalculate_normals();
     }
 
     // Reindexing vertices from sparse input.
     std::vector<glm::ivec3> attribIndices;
-    attribIndices.reserve(raw.vertices.size());
-    indices.reserve(raw.elementsAttribs.size());
+    attribIndices.reserve(_raw.vertices.size());
+    indices.reserve(_raw.elementsAttribs.size());
     {
       std::map<glm::ivec3, size_t, VecOrdering_t<glm::ivec3>> mapVertices;
       
-      for (auto const& elem : raw.elementsAttribs) {
+      for (auto const& elem : _raw.elementsAttribs) {
         glm::vec3 key(elem.x, elem.y, elem.z);
         auto it = mapVertices.find(key);
 
@@ -430,17 +433,30 @@ void MeshData::setup(PrimitiveType primtype, RawMeshData &raw) {
       auto const& index = attribIndices[i];
 
       // (positions)
-      vertices[i].position = raw.vertices[index.x];
+      vertices[i].position = _raw.vertices[index.x];
       // (texcoords)
       if (index.y >= 0) {
-        vertices[i].texcoord = raw.texcoords[index.y];
+        vertices[i].texcoord = _raw.texcoords[index.y];
       }
       // (normals)
       if (index.z >= 0) {
-        vertices[i].normal = raw.normals[index.z];
+        vertices[i].normal = _raw.normals[index.z];
       }
     }
   }
+
+  return true;
+}
+
+bool MeshData::setup(RawMeshFile &meshfile) {
+  // DEVNOTE : for now we process only a single mesh, but in the future we will
+  //           handle all sub objects from a file.
+
+  auto &raw = meshfile.meshes[0]; //
+  MeshData::PrimitiveType primtype = raw.elementsAttribs.empty() ? MeshData::POINTS
+                                                                 : MeshData::TRIANGLES
+                                                                 ;
+  return setup( primtype, raw);
 }
 
 // ----------------------------------------------------------------------------
@@ -772,6 +788,16 @@ void ParseMTL(char *input, MaterialFile &matfile) {
 } // namespace
 
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+bool MeshDataManager::CheckExtension(std::string_view ext) {
+  return ("obj" == ext)
+      || ("glb" == ext)
+      || ("gltf" == ext)
+      ;  
+}
+
+// ----------------------------------------------------------------------------
 
 MeshDataManager::Handle MeshDataManager::_load(ResourceId const& id) {
   MeshDataManager::Handle h(id);
@@ -781,8 +807,10 @@ MeshDataManager::Handle MeshDataManager::_load(ResourceId const& id) {
 
   if ("obj" == ext) {
     load_obj( path, *h.data);
+  } else if (("glb" == ext) || ("gltf" == ext)) {
+    load_gltf( path, *h.data);
   } else {
-    LOG_WARNING( ext, "meshes are not supported." );
+    LOG_WARNING( ext, "models are not supported." );
   }
 
   return h;
@@ -872,14 +900,67 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
   std::setlocale(LC_ALL, locale);
 #endif
 
-  // Determine the file type (point cloud or triangle mesh).
-  auto &raw = meshfile.meshes[0]; //
-  MeshData::PrimitiveType type = raw.elementsAttribs.empty() ? MeshData::POINTS
-                                                             : MeshData::TRIANGLES
-                                                             ;
-  meshdata.setup( type, raw); //
+  return meshdata.setup( meshfile ); //
+}
 
-  return true;
+// ----------------------------------------------------------------------------
+
+bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
+  cgltf_options options{};
+  cgltf_data* data = nullptr;
+  cgltf_result result = cgltf_parse_file(&options, filename.data(), &data);
+  
+  if (result != cgltf_result_success) {
+    LOG_WARNING( filename, "failed to load.");
+    return false;
+  }
+
+  // Load buffers data.
+  cgltf_load_buffers(&options, data, filename.data());
+
+  /* ------------ */
+  RawMeshFile meshfile;
+  {
+    assert( data->scenes_count > 0 );
+    assert( data->nodes_count > 0 );
+
+    LOG_INFO( "Scenes :     ", data->scenes_count    );
+    LOG_INFO( "Nodes :      ", data->nodes_count     );
+    LOG_INFO( "Meshes :     ", data->meshes_count    );
+    LOG_INFO( "Skins :      ", data->skins_count     );
+    LOG_INFO( "Materials :  ", data->materials_count );
+    LOG_INFO( "Textures :   ", data->textures_count  );
+
+    //LOG_MESSAGE( "", "ia->offset", "ia->count", "ia->stride", "data_view->offset", "data_view->size");
+    for (int i=0; i < data->nodes_count; ++i) {
+      auto node = data->nodes[i];
+
+      auto *mesh = node.mesh;
+
+      // Primitive are actual submesh, with specific material.
+      LOG_INFO( "Mesh primitives : ", mesh->primitives_count );
+      for (int j=0; j < mesh->primitives_count; ++j) {
+        auto prim = mesh->primitives[j];  
+        
+        // if (prim.material) {
+        //   LOG_MESSAGE( "  * material : ", prim.material->name);
+        // }
+        // if (prim.indices) LOG_MESSAGE( "  * indices : ", prim.indices->component_type);
+        // if (prim.attributes) LOG_MESSAGE( "  * attribs : ", prim.attributes->name);
+        // LOG_MESSAGE("");
+
+        auto ia = prim.indices;
+        LOG_MESSAGE( prim.material->name, ia->offset, ia->count, ia->stride, ia->buffer_view->offset, ia->buffer_view->size);
+        auto buf = ia->buffer_view->buffer;
+        LOG_MESSAGE( buf->size, buf->data );
+      }
+    }
+  }
+  /* ------------ */
+
+  cgltf_free(data);
+
+  return meshdata.setup( meshfile ); //
 }
 
 // ----------------------------------------------------------------------------

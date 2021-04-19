@@ -1,7 +1,7 @@
 #ifndef BARBU_MEMORY_ASSETS_MATERIAL_ASSET_H_
 #define BARBU_MEMORY_ASSETS_MATERIAL_ASSET_H_
 
-#include "memory/assets/asset_factory.h"
+#include "memory/asset_factory.h"
 #include "memory/resources/mesh_data.h"
 
 class Material;

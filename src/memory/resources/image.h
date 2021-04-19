@@ -1,7 +1,7 @@
 #ifndef BARBU_MEMORY_RESOURCES_IMAGE_H_
 #define BARBU_MEMORY_RESOURCES_IMAGE_H_
 
-#include "memory/resources/resource_manager.h"
+#include "memory/resource_manager.h"
 
 // ----------------------------------------------------------------------------
 

@@ -3,11 +3,13 @@
 
 #include <string>
 #include <vector>
+
 #include "glm/vec2.hpp"
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
+struct cgltf_data;
 
-#include "memory/resources/resource_manager.h"
+#include "memory/resource_manager.h"
 
 // ----------------------------------------------------------------------------
 
@@ -121,7 +123,6 @@ struct RawMeshFile {
 // Interleaved vertex attributes (AoS-layout) on the host used to represent
 // various mesh data : pincipally vertices mesh, but possibly materials, skeleton, etc..).
 struct MeshData : public Resource {
- public:
   enum PrimitiveType {
     POINTS,
     LINES,
@@ -141,8 +142,47 @@ struct MeshData : public Resource {
   using IndexBuffer_t  = std::vector<uint32_t>;
 
   static constexpr char const* kDefaultGroupName{ "[Default]" };
+
+  // -------------------
+
+  PrimitiveType  type;
+  VertexBuffer_t vertices;
+  IndexBuffer_t  indices;
+
+  // Range of vertex indices representing sub-part of the mesh, used for materials.
+  VertexGroups_t vgroups;
+
+  // Material data associated ot the mesh.
+  MaterialFile material; //
+
+  // -------------------
+
+  /* Setup from a RawMeshData of specified primitive type. */
+  bool setup(PrimitiveType primtype, RawMeshData &raw); //
+  bool setup(RawMeshFile &meshfile);
+
+  void release() final;
+
+  inline bool loaded() const noexcept final { 
+    return !vertices.empty();
+  }
+
+  /* Calculate the pivot and bound for the current vertices data. */
+  void calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds) const;
+
+  inline int32_t nvertices() const { 
+    return static_cast<int32_t>(vertices.size()); 
+  }
   
- public:
+  inline int32_t nfaces() const { 
+    return static_cast<int32_t>(indices.size() / 3); 
+  }
+
+  inline bool has_materials() const { 
+    return !material.infos.empty(); 
+  }
+
+  // -- Canonical Meshes ---
   static constexpr float kGridDefaultSize         = 1.0f;
   static constexpr float kCubeDefaultSize         = 1.0f;
   static constexpr float kSphereDefaultRadius     = 1.0f;
@@ -153,43 +193,20 @@ struct MeshData : public Resource {
   static void Cube(MeshData &mesh, float size = kCubeDefaultSize);
   static void WireCube(MeshData &mesh, float size = kCubeDefaultSize);
   static void Sphere(MeshData &mesh, int xres = kSphereDefaultXResolution, int yres = kSphereDefaultYResolution, float radius = kSphereDefaultRadius);
-
- public:
-  void release() final;
-
-  inline bool loaded() const noexcept final { return !vertices.empty(); }
-
-  // Setup the internal vertices & indices data from a RawMeshData of specified primitive type.
-  void setup(PrimitiveType type, RawMeshData &raw); //
-
-  // Calculate the pivot and bound for the current vertices data.
-  void calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds) const;
-
-  inline int32_t nvertices() const { return static_cast<int32_t>(vertices.size()); }
-  inline int32_t nfaces() const { return static_cast<int32_t>(indices.size() / 3); }
-
-  inline bool has_materials() const { return !material.infos.empty(); }
-
- public:
-  PrimitiveType  type = PrimitiveType::kInternal;
-  VertexBuffer_t vertices;
-  IndexBuffer_t  indices;
-
-  // Range of vertex indices representing sub-part of the mesh, used for materials.
-  VertexGroups_t vgroups;
-
-  // Material data associated ot the mesh.
-  MaterialFile material; //
 };
 
 // ----------------------------------------------------------------------------
 
 class MeshDataManager : public ResourceManager<MeshData> {
+ public:
+  static bool CheckExtension(std::string_view ext);
+
  private:
   Handle _load(ResourceId const& id) final;
 
-  // Load a Wavefront obj into the specified mesh. Return true when it succeeds.
+  // Load file as single mesh.
   bool load_obj(std::string_view filename, MeshData &mesh);
+  bool load_gltf(std::string_view filename, MeshData &mesh);
 };
 
 // ----------------------------------------------------------------------------
