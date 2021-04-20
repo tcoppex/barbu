@@ -8,6 +8,7 @@
 #define CM_NORMALS      1
 #define CM_KEY_LIGHTS   2
 #define CM_IRRADIANCE   3
+#define CM_TEXCOORDS    4
 
 // ----------------------------------------------------------------------------
 
@@ -64,6 +65,10 @@ vec3 color_irradiance(in vec3 rgb) {
   return rgb * inIrradiance;
 }
 
+vec3 color_texcoords(in vec3 rgb) {
+  return vec3( 0.5 + 0.5*inTexcoord, 0.5);
+}
+
 vec3 colorize(in int color_mode, in vec3 rgb) {
   // (might use a subroutine instead)
   if (color_mode == CM_KEY_LIGHTS) {
@@ -72,6 +77,8 @@ vec3 colorize(in int color_mode, in vec3 rgb) {
     rgb = color_normal(rgb);
   } else if (color_mode == CM_IRRADIANCE) {
     rgb = color_irradiance(rgb);
+  } else if (color_mode == CM_TEXCOORDS) {
+    rgb = color_texcoords(rgb);
   }
 
   return rgb;
@@ -83,8 +90,7 @@ void main() {
   vec4 color = vec4(1.0);
 
   if (uHasAlbedo) {
-    const vec2 uv = vec2(inTexcoord.x, 1-inTexcoord.y);
-    color = texture(uAlbedoTex, uv);
+    color = texture(uAlbedoTex, inTexcoord.xy);
   } else {
     color = uColor;
   }

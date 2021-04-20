@@ -13,6 +13,7 @@ class GenericMaterial : public Material {
     Normal,
     KeyLights,
     Irradiance,
+    TexCoords,
     kCount,
     kDefault = ColorMode::Irradiance
   };
