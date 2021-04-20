@@ -64,6 +64,7 @@ class ShaderManager : public ResourceManager<Shader> {
 
  private:
   Handle _load(ResourceId const& id) final;
+  Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) final { return Handle(); }
 
   char *buffer_ = nullptr;
 };

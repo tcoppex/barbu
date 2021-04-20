@@ -144,7 +144,7 @@ bool Texture::setup() {
   int32_t w = params.w;
   int32_t h = params.h;
   int32_t z = params.depth;
-  void *pixels = nullptr; //
+  void *pixels = params.pixels; //
 
   // Detect potential gamma-corrected format and stored them to sRGB [linear space]
   // (the pipeline should output gamma-corrected image).  
@@ -247,6 +247,9 @@ bool Texture::setup() {
   params.h = h;
   params.depth = z;
 
+  // Empty pixels ptr if any.
+  params.pixels = nullptr;
+
   CHECK_GX_ERROR();
 
   return true;
@@ -268,6 +271,17 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, ResourceId co
   int32_t const levels = 4;
   int32_t const internalFormat = GL_RGB8;
   return create2d(id, levels, internalFormat, resource);
+}
+
+TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels) {
+  Parameters_t params;
+  params.target         = GL_TEXTURE_2D;
+  params.levels         = levels;
+  params.internalFormat = internalFormat;
+  params.w              = w;
+  params.h              = h;
+  params.pixels         = pixels;
+  return create(id, params);
 }
 
 // ----------------------------------------------------------------------------

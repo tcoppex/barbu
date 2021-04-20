@@ -131,6 +131,7 @@ class MeshDataManager : public ResourceManager<MeshData> {
 
  private:
   Handle _load(ResourceId const& id) final;
+  Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) final { return Handle(); }
 
   // Load file as single mesh.
   bool load_obj(std::string_view filename, MeshData &mesh);

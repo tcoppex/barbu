@@ -14,6 +14,8 @@
 #define CGLTF_IMPLEMENTATION
 #include "cgltf/cgltf.h"
 
+#include "memory/assets/assets.h" // wip
+
 // ----------------------------------------------------------------------------
 
 // Vertex ordering operator used to reindex vertices from raw data.
@@ -1051,8 +1053,24 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           } else {
             // GLB / GLTF file with internal data.
 
-            // auto buff = img->buffer_view->buffer;
-            LOG_WARNING( "GLTF internal data are not supported yet." );
+            info.diffuse_map = img->name;
+
+            if (img->buffer_view) {
+              auto buffer_view = img->buffer_view;
+
+              // Create the resource internally.
+              Resources::LoadInternal<Image>( 
+                ResourceId(info.diffuse_map), 
+                buffer_view->size, 
+                ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
+                img->mime_type
+              ); 
+
+              LOG_INFO( img->name, buffer_view->offset, buffer_view->size );
+
+              // [optional] Create the texture directly.
+              //TEXTURE_ASSETS.create2d(AssetId(info.diffuse_map)); 
+            }
           }
         }
       }

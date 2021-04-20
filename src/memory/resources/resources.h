@@ -33,6 +33,9 @@ class Resources final {
   static bool Has( ResourceId const& id );
 
   template<typename T>
+  static typename ResourceManager<T>::Handle LoadInternal( ResourceId const& id, int32_t size, void const* data, std::string_view mime_type = "");
+  
+  template<typename T>
   static typename ResourceManager<T>::Handle Get( ResourceId const& id );
 
   template<typename T>

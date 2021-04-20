@@ -172,6 +172,14 @@ class ResourceManager {
     return h;
   }
 
+  Handle load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) {
+    auto h = _load_internal(id, size, data, mime_type);
+    if (h.is_valid()) {
+      resources_[id] = h;
+    }
+    return h;
+  }
+
   // Retrieve the requested resource, or try reloading it when necessary.
   inline Handle get(ResourceId const& id) {
     auto const tuple = resources_.find(id);
@@ -192,7 +200,7 @@ class ResourceManager {
 
   // Add a resource with id "basename (#)", " (#)" being a numbered suffix
   // when the id is already used.
-  ResourceId add(std::string_view basename, TResource const& resource) {
+  inline ResourceId add(std::string_view basename, TResource const& resource) {
     // (find unique id)
     ResourceId id( ResourceId::FindUnique(basename, 
       [this](ResourceId const& _id) { 
@@ -299,6 +307,7 @@ class ResourceManager {
 
   // Specialized loader for the resource.
   virtual Handle _load(ResourceId const& id) = 0;
+  virtual Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) = 0;
 
   StatHashmap_t stats_;
   ResourceHashmap_t resources_;

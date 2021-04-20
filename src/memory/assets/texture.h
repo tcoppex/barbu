@@ -13,6 +13,7 @@ struct TextureParameters : AssetParameters {
   int32_t w = 0;
   int32_t h = 0;
   int32_t depth = 0;
+  void* pixels = nullptr;
 };
 
 // ----------------------------------------------------------------------------
@@ -58,7 +59,7 @@ class TextureFactory : public AssetFactory<Texture> {
   // Texture 2d.
   Handle create2d(AssetId const& id, int levels, int internalFormat, ResourceId const& resource = nullptr);   // external with params
   Handle create2d(AssetId const& id, ResourceId const& resource = nullptr);                                   // external with defaults
-  // Handle create2d(AssetId const& id, int levels, int internalFormat, int w, int h);                           // internal with params
+  Handle create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels = nullptr);   // internal with params
 
   // Cubemap.
   Handle createCubemap(AssetId const& id, int levels, int internalFormat, ResourceInfoList const& dependencies);

@@ -11,6 +11,11 @@
   } \
   \
   template<> \
+  name##Manager::Handle Resources::LoadInternal< name >( ResourceId const& id, int32_t size, void const* data, std::string_view mime_type ) { \
+    return s##name.load_internal( id, size, data, mime_type); \
+  } \
+  \
+  template<> \
   name##Manager::Handle Resources::Get< name >( ResourceId const& id ) { \
     return s##name.get( id ); \
   } \
