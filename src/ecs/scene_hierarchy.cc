@@ -100,17 +100,20 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
 }
 
 bool SceneHierarchy::import_model(std::string_view filename) {
-  AssetId const asset_id( filename );
+  /// This whole load the whole geometry of the file as a single mesh.
+  /// TODO : create an importer for scene structure.
 
   // When successful, add a new model entity to the scene.
-  if (auto mesh = MESH_ASSETS.create( asset_id ); mesh && mesh->loaded()) {
+  if (auto mesh = MESH_ASSETS.create( AssetId(filename) ); mesh && mesh->loaded()) {
     // Import materials separetely.
-    MATERIAL_ASSETS.import( ResourceId(filename) );
+    MATERIAL_ASSETS.import_from_meshdata( ResourceId(filename) );
 
     // Retrieve the file basename.
-    auto const basename = Resource::TrimFilename( std::string(filename) );
+    auto const basename = Resource::TrimFilename( std::string(filename) );    
     
+    // Create a new mesh entity node.
     auto entity = create_model_entity(basename, mesh);
+
     return entity != nullptr;
   }
   return false;

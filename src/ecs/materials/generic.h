@@ -30,7 +30,9 @@ class GenericMaterial : public Material {
   }
 
   void setup(MaterialInfo const& info) override {
-    tex_albedo_ = (info.diffuse_map.empty()) ? nullptr : TEXTURE_ASSETS.create2d( AssetId(info.diffuse_map) );
+    tex_albedo_ = (info.diffuse_map.empty()) ? nullptr 
+                                             : TEXTURE_ASSETS.create2d( AssetId(info.diffuse_map) )
+                                             ;
     color_      = info.diffuse_color;
 
     // if (!info.alpha_map.empty() || (color_.a < 1.0f)) {

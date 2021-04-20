@@ -40,6 +40,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
       for (auto i = 0; i < nsubgeometry; ++i) {
         auto const& vg = mesh_->vertex_group(i);
         auto const material_id = AssetId(vg.name); //
+        //LOG_INFO("material : ", material_id.c_str(), MATERIAL_ASSETS.has(material_id));
 
         // If the material exists for the mesh, find it, otherwhise take the default material.
         auto mat = (MATERIAL_ASSETS.has(material_id)) ?
@@ -59,6 +60,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
         // Draw submesh.
         mesh_->draw_submesh(i);
+        //CHECK_GX_ERROR();
       }
     }
   }
