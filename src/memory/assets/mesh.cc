@@ -124,19 +124,19 @@ bool Mesh::setup() {
     {
       uint32_t attrib_index, num_component;
 
-      attrib_index = ATTRIB_POSITION;
+      attrib_index = Mesh::ATTRIB_POSITION;
       num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::position) / sizeof(MeshData::Vertex_t::position[0u]));
       glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, position));
       glVertexAttribBinding(attrib_index, binding_index);
       glEnableVertexAttribArray(attrib_index);
 
-      attrib_index = ATTRIB_TEXCOORD;
+      attrib_index = Mesh::ATTRIB_TEXCOORD;
       num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::texcoord) / sizeof(MeshData::Vertex_t::texcoord[0u]));
       glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, texcoord));
       glVertexAttribBinding(attrib_index, binding_index);
       glEnableVertexAttribArray(attrib_index);
 
-      attrib_index = ATTRIB_NORMAL;
+      attrib_index = Mesh::ATTRIB_NORMAL;
       num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::normal) / sizeof(MeshData::Vertex_t::normal[0u]));
       glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, normal));
       glVertexAttribBinding(attrib_index, binding_index);
