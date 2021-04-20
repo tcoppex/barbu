@@ -37,7 +37,7 @@ class ArcBallController : public Camera::ViewController {
       (double)dt,
       e.bMouseMove, 
       e.bMiddleMouse || e.bLeftAlt,
-      e.bRightMouse,
+      e.bRightMouse || e.bLeftShift,
       (double)e.mouseX, (double)e.mouseY, (double)e.wheelDelta
     );
 
