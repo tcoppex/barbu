@@ -100,7 +100,7 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
 }
 
 bool SceneHierarchy::import_model(std::string_view filename) {
-  /// This whole load the whole geometry of the file as a single mesh.
+  /// This load the whole geometry of the file as a single mesh.
   /// TODO : create an importer for scene structure.
 
   // When successful, add a new model entity to the scene.
@@ -156,7 +156,6 @@ EntityHandle SceneHierarchy::create_model_entity(std::string const& basename, Me
   if (entity != nullptr) {
     add_entity(entity);
   }
-
   return entity;
 }
 

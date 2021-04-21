@@ -896,7 +896,6 @@ void DisplayStats_GLTF(cgltf_data* data) {
       // }
       if (prim.indices) LOG_MESSAGE( "  * indices : ", prim.indices->component_type);
 
-
       for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) { 
         LOG_MESSAGE( "  * attribs : ", prim.attributes[attrib_index].name);
       }
@@ -959,61 +958,94 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         continue;
       }
 
-      //cgltf_float world_matrix[16];
+      // Node's transform.
       glm::mat4 world_matrix;
       cgltf_node_transform_world( &node, glm::value_ptr(world_matrix));
 
+      // RawMeshData to update.
       auto &raw = meshfile.meshes.back();
-
-      raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : "[unnamed]");
+      raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : "[unnamed]"); //
 
       // When meshes are not joined, we should probably reset this to 0.
       //last_vertex_index = 0;
 
-      // Primitive are actually submeshes, with specific material.
-      for (cgltf_size j=0; j < mesh->primitives_count; ++j) {
-        auto prim = mesh->primitives[j];
+      // Primitives / submeshes.
+      for (cgltf_size j = 0; j < mesh->primitives_count; ++j) {
+        auto const& prim = mesh->primitives[j];
 
         if (prim.has_draco_mesh_compression) {
-          LOG_WARNING("Draco mesh compression not implemented.");
+          LOG_WARNING( "GLTF Draco mesh compression is not supported." );
           continue;
+        }
+
+        if (prim.type != cgltf_primitive_type_triangles) {
+          LOG_WARNING( "GLTF non TRIANGLES primitives not implemented : ", raw.name );
         }
 
         // Attributes.
         for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) {
-          auto attrib = prim.attributes[attrib_index];
-          
+          auto const& attrib = prim.attributes[attrib_index];
+
+          // Check accessors layout.
           if (attrib.data->is_sparse) {
-            LOG_WARNING("sparse attribs not implemented.");
+            LOG_WARNING( "GLTF sparse attributes are not supported." );
             continue;
           }
+          //LOG_MESSAGE("Accessor type :", attrib.data->component_type);
+
+          // Used to reserve memory.
+          auto const attribsize = attrib.data->count;
 
           // Postions.
           if (attrib.type == cgltf_attribute_type_position) {
+            raw.vertices.reserve(attribsize);
+            
             glm::vec3 vertex;
-            for (auto index = 0; index < attrib.data->count; ++index) {
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
               cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(vertex), 3);
               vertex = glm::vec3(world_matrix * glm::vec4(vertex, 1.0f));
               raw.vertices.push_back( vertex );
             }
           }
-
           // Normals.
-          if (attrib.type == cgltf_attribute_type_normal) {
+          else if (attrib.type == cgltf_attribute_type_normal) {
+            raw.normals.reserve(attribsize);
+            
             glm::vec3 normal;
-            for (auto index = 0; index < attrib.data->count; ++index) {
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
               cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(normal), 3);
               normal = glm::vec3(world_matrix * glm::vec4(normal, 0.0f));
               raw.normals.push_back( normal );
             }
           }
-
           // Texcoords.
-          if (attrib.type == cgltf_attribute_type_texcoord/* && (attrib.index = 0)*/) {
+          else if (attrib.type == cgltf_attribute_type_texcoord) {
+            raw.texcoords.reserve(attribsize);
+            
             glm::vec2 texcoord;
-            for (auto index = 0; index < attrib.data->count; ++index) {
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
               cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(texcoord), 2);
               raw.texcoords.push_back( texcoord );
+            }
+          }
+          // Joints.
+          else if (attrib.type == cgltf_attribute_type_joints) {
+            raw.joints.reserve(attribsize);
+            
+            glm::uvec4 joints;
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_uint( attrib.data, index, glm::value_ptr(joints), 4);
+              raw.joints.push_back( joints );
+            }
+          }
+          // Weights.
+          else if (attrib.type == cgltf_attribute_type_weights) {
+            raw.weights.reserve(attribsize);
+
+            glm::vec4 weights;
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(weights), 4);
+              raw.weights.push_back( weights );
             }
           }
         }
@@ -1021,7 +1053,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         // Indices.
         if (prim.indices) {
           if (prim.indices->is_sparse) {
-            LOG_WARNING("sparse indexing not implemented");
+            LOG_WARNING( "GLTF sparse indexing is not implemented." );
           } else {
             for (auto index = prim.indices->offset; index < prim.indices->count; ++index) {
               auto const vid = cgltf_accessor_read_index(prim.indices, index);
@@ -1036,7 +1068,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             // -------- FIXME
             // (sometimes materials are unnamed, which made the system fails to resolve them)
             char matname[32]{};
-            sprintf(matname, "[material %00d]", default_material_id++);
+            sprintf(matname, "[material %03d]", default_material_id++);
             char *name = (mat->name != nullptr) ? mat->name : matname;
             // --------
 
@@ -1046,10 +1078,15 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             raw.vgroups.push_back(vg);
           }
         } else {
-          LOG_WARNING("No indices associated with GLTF :", filename);
+          LOG_WARNING( "No indices associated with GLTF :", filename );
         }
 
         last_vertex_index = raw.vertices.size(); //
+      }
+
+      // Skin datas.
+      if (auto *skin = node.skin; skin) {
+        LOG_WARNING( "GLTF skinning data not handled yet." );
       }
     }
 
@@ -1109,6 +1146,10 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           }
         }
       }
+
+      info.bDoubleSided = mat.double_sided;
+      info.bUnlit       = mat.unlit;
+
       mtl.infos.push_back(info);
     }
 

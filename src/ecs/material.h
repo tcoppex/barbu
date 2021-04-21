@@ -64,9 +64,21 @@ class Material {
     update_internals();
   }
 
-  inline ProgramHandle program() { return PROGRAM_ASSETS.get(program_id_); }
-  inline RenderMode render_mode() const { return render_mode_; }
-  inline UIView* ui_view() { return ui_view_; }
+  inline ProgramHandle program() {
+    return PROGRAM_ASSETS.get(program_id_);
+  }
+
+  inline RenderMode render_mode() const {
+    return render_mode_;
+  }
+
+  inline bool double_sided() const {
+    return bDoubleSided_;
+  }  
+
+  inline UIView* ui_view() {
+    return ui_view_;
+  }
 
   inline void set_render_mode(RenderMode const& render_mode) {
     render_mode_ = render_mode;
@@ -77,6 +89,7 @@ class Material {
 
   AssetId    program_id_;
   RenderMode render_mode_;
+  bool bDoubleSided_ = false;
 
  public:
   UIView *ui_view_ = nullptr; // [not used yet]

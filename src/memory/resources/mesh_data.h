@@ -41,10 +41,9 @@
 //
 // ----------------------------------------------------------------------------
 
-
-// [rename (eg. SceneData) ?]
-// Interleaved vertex attributes (AoS-layout) on the host used to represent
-// various mesh data : pincipally vertices mesh, but possibly materials, skeleton, etc..).
+//
+// Static & animated Mesh representation on the Host, using interleaved data.
+//
 struct MeshData : public Resource {
   // Compatible primitive type.
   enum PrimitiveType {
@@ -63,8 +62,15 @@ struct MeshData : public Resource {
     glm::vec3 normal;
   };
 
-  using VertexBuffer_t = std::vector<Vertex_t>;
-  using IndexBuffer_t  = std::vector<uint32_t>;
+  // WIP
+  struct Skinning_t {
+    glm::uvec4 joints;
+    glm::vec4 weights;
+  };
+
+  using VertexBuffer_t    = std::vector<Vertex_t>;
+  using IndexBuffer_t     = std::vector<uint32_t>;
+  using SkinningBuffer_t  = std::vector<Skinning_t>;
 
   // Default vertex group identifier when there is none.
   static constexpr char const* kDefaultGroupName{ 
@@ -127,13 +133,14 @@ struct MeshData : public Resource {
 
 class MeshDataManager : public ResourceManager<MeshData> {
  public:
+  /* Return true if the extension is supported by the manager. */
   static bool CheckExtension(std::string_view ext);
 
  private:
   Handle _load(ResourceId const& id) final;
   Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) final { return Handle(); }
 
-  // Load file as single mesh.
+  /* Load file as single mesh. */
   bool load_obj(std::string_view filename, MeshData &mesh);
   bool load_gltf(std::string_view filename, MeshData &mesh);
 };

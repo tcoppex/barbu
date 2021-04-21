@@ -58,9 +58,20 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
         mat->update_uniforms(attributes, last_pgm == pgm);
         last_pgm = pgm;
 
+        // Force Double-Sided ?
+        bool const bCullFace = gx::IsEnabled( gx::State::CullFace );
+        if (mat->double_sided()) {
+          gx::Disable( gx::State::CullFace );
+        }
+
         // Draw submesh.
         mesh_->draw_submesh(i);
         //CHECK_GX_ERROR();
+
+        // Restore pipeline state.
+        if (bCullFace) {
+          gx::Enable( gx::State::CullFace );
+        }
       }
     }
   }

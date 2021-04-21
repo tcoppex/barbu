@@ -36,6 +36,11 @@ class GenericMaterial : public Material {
                                              ;
     color_      = info.diffuse_color;
 
+    if (info.bUnlit) {
+      color_mode_ = ColorMode::Unlit;
+    }
+    bDoubleSided_ = info.bDoubleSided;
+    
     // if (!info.alpha_map.empty() || (color_.a < 1.0f)) {
     //   set_render_mode(RenderMode::Transparent);
     // }
