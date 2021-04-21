@@ -7,6 +7,7 @@
 #include <array>
 #include <sstream>
 #include <map>
+#include <unordered_map>
 
 #include "glm/glm.hpp"    // abs
 #include "glm/gtc/type_ptr.hpp"
@@ -928,15 +929,6 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
     return false;
   }
 
-  //---------------------------
-  // There is 3 type of GLTF files :
-  //  * gltf with external file
-  //  * gltf with internal buffer
-  //  * compressed glb file
-  // For now, to use live edit and external Image Resource loader, we focus only
-  // on the first kind.
-  //---------------------------
-
   /* ------------ */
   RawMeshFile meshfile;
   {
@@ -947,8 +939,16 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
       meshfile.meshes.resize(1);
     }
 
+    // Map to solve name for unknown materials.
+    std::unordered_map< cgltf_material const*, std::string > material_names( data->materials_count );
+    for (cgltf_size i = 0; i < data->materials_count; ++i) {
+      cgltf_material const& mat = data->materials[i];
+      char matname[32]{};
+      sprintf(matname, "[material %02d]", i);
+      material_names[ &mat ] = std::string( mat.name ? mat.name : matname );
+    }
+
     // -- MESH ATTRIBUTES & INDICES.
-    int32_t default_material_id = 0;
     cgltf_size last_vertex_index = 0;
     for (cgltf_size i=0; i < data->nodes_count; ++i) {
       auto node = data->nodes[i];
@@ -1055,7 +1055,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           if (prim.indices->is_sparse) {
             LOG_WARNING( "GLTF sparse indexing is not implemented." );
           } else {
-            for (auto index = prim.indices->offset; index < prim.indices->count; ++index) {
+            for (cgltf_size index = 0; index < prim.indices->count; ++index) {
               auto const vid = cgltf_accessor_read_index(prim.indices, index);
               raw.elementsAttribs.push_back(glm::ivec3( last_vertex_index + vid ));
             }
@@ -1064,49 +1064,62 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           // Vertex Group.
           if (auto mat = prim.material; mat) {
             VertexGroup vg;
-        
-            // -------- FIXME
-            // (sometimes materials are unnamed, which made the system fails to resolve them)
-            char matname[32]{};
-            sprintf(matname, "[material %03d]", default_material_id++);
-            char *name = (mat->name != nullptr) ? mat->name : matname;
-            // --------
 
-            vg.name = std::string(name);
+            vg.name = material_names[mat];
             vg.start_index = raw.elementsAttribs.size() - prim.indices->count; // 
             vg.end_index   = raw.elementsAttribs.size(); //
             raw.vgroups.push_back(vg);
           }
         } else {
-          LOG_WARNING( "No indices associated with GLTF :", filename );
+          LOG_WARNING( "No indices are associated with GLTF file :", filename );
         }
 
         last_vertex_index = raw.vertices.size(); //
       }
 
-      // Skin datas.
+      // Skeleton datas.
       if (auto *skin = node.skin; skin) {
-        LOG_WARNING( "GLTF skinning data not handled yet." );
+        auto const njoints = skin->joints_count;
+
+        meshdata.skeleton = std::make_shared<Skeleton>( njoints );
+        auto &skl = meshdata.skeleton;
+
+        // Map to find (parent) nodes index.
+        std::unordered_map< cgltf_node*, int32_t> joint_indices( njoints );
+        for (cgltf_size index = 0; index < njoints; ++index) {
+          auto *joint = skin->joints[index];
+          joint_indices[ joint ] = index;
+        }
+        
+        // Fill skeleton data.
+        for (cgltf_size index = 0; index < njoints; ++index) {
+          auto *joint = skin->joints[index];
+
+          // Joint name.
+          char jointname[32]{};
+          sprintf(jointname, "[joint %02d]", index);
+          skl->names.push_back( (joint->name) ? joint->name : jointname );
+
+          // Joint parent index.
+          auto const& it = joint_indices.find( joint->parent );
+          skl->parents.push_back( (it != joint_indices.end()) ? it->second : -1 );
+        }
+
+        // Fill the inverse bind matrix buffer.
+        cgltf_accessor_unpack_floats( skin->inverse_bind_matrices, glm::value_ptr(*skl->inverse_bind_matrices.data()), 16 * njoints); //
       }
     }
-
-    default_material_id = 0;
 
     // -- MATERIALS.
     auto &mtl = meshdata.material;
     std::string const fn( filename );
     std::string const dirname = fn.substr(0, fn.find_last_of('/'));
 
-    for (cgltf_size i=0; i<data->materials_count; ++i) {
-      auto mat = data->materials[i];
+    for (cgltf_size i = 0; i < data->materials_count; ++i) {
+      auto const& mat = data->materials[i];
       
-      // -------- FIXME
-      char matname[32]{"[material 000]"};
-      char *name = (mat.name != nullptr) ? mat.name : matname;
-      // --------
-
       MaterialInfo info;
-      info.name = std::string(name);
+      info.name = material_names[ &mat ];
       if (mat.has_pbr_metallic_roughness) {
         auto const pmr = mat.pbr_metallic_roughness;
 
@@ -1158,7 +1171,13 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
     mtl.id = fn.substr(fn.find_last_of('/') + 1);
     mtl.id = mtl.id.substr(0, mtl.id.find_last_of('.'));
     meshfile.prefix_material_vg_names(mtl);
+  
+    // -- ANIMATION DATAS.
+    for (cgltf_size i=0; i < data->animations_count; ++i) {
+      LOG_WARNING( "GLTF animation data is not supported yet." );
+    }
   }
+
   /* ------------ */
 
   cgltf_free(data);

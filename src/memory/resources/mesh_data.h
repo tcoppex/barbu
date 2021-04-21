@@ -7,6 +7,7 @@
 #include "memory/resource_manager.h"
 
 #include "utils/raw_mesh_file.h" // VertexGroups_t, RawMeshFile, MaterialFile
+#include "animation/skeleton.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -64,13 +65,13 @@ struct MeshData : public Resource {
 
   // WIP
   struct Skinning_t {
-    glm::uvec4 joints;
-    glm::vec4 weights;
+    glm::uvec4 joint_indices;
+    glm::vec4 joint_weights;
   };
 
   using VertexBuffer_t    = std::vector<Vertex_t>;
-  using IndexBuffer_t     = std::vector<uint32_t>;
   using SkinningBuffer_t  = std::vector<Skinning_t>;
+  using IndexBuffer_t     = std::vector<uint32_t>;
 
   // Default vertex group identifier when there is none.
   static constexpr char const* kDefaultGroupName{ 
@@ -79,15 +80,22 @@ struct MeshData : public Resource {
 
   // -------------------
 
-  PrimitiveType  type;
-  VertexBuffer_t vertices;
-  IndexBuffer_t  indices;
+  PrimitiveType     type;
+
+  // Attributes.
+  VertexBuffer_t    vertices;
+  SkinningBuffer_t  skinnings; //
+
+  // Elements.
+  IndexBuffer_t     indices;
 
   // Range of vertex indices representing sub-part of the mesh, used for materials.
-  VertexGroups_t vgroups;
+  VertexGroups_t    vgroups;
 
   // Material data associated to the mesh.
-  MaterialFile material; //
+  MaterialFile      material; //
+
+  SkeletonHandle    skeleton = nullptr; //
 
   // -------------------
 
