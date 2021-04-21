@@ -40,6 +40,9 @@ class SceneHierarchy {
   // Remove an entity to the list of entity and update its relationship links.
   void remove_entity(EntityHandle entity, bool bRecursively = false);
 
+  // Reset the entity local transform.
+  void reset_entity(EntityHandle entity, bool bRecursively = false);
+
   // Create a model entity by importing an external model file.
   bool import_model(std::string_view filename);
 

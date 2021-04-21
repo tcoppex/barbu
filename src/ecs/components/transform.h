@@ -18,6 +18,10 @@ class TransformComponent final : public ComponentParams<Component::Transform> {
     : matrix_{1.0f}
   {}
 
+  inline void reset() {
+    matrix_ = glm::mat4(1.0f);
+  }
+
   inline glm::mat4& matrix() { return matrix_; }
   inline glm::mat4 const& matrix() const { return matrix_; }
 

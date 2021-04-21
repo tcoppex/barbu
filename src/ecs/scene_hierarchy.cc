@@ -99,6 +99,24 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
   entity->children_.clear();
 }
 
+void SceneHierarchy::reset_entity(EntityHandle entity, bool bRecursively) {
+  if (nullptr == entity) {
+    LOG_WARNING(__FUNCTION__, ": invalid parameters.");
+    return;
+  }
+
+  // Children.
+  if (bRecursively) {
+    // Remove them recursively.
+    for (auto &child : entity->children_) {
+      reset_entity(child, bRecursively);
+    }
+  }
+
+  // Reset transform.
+  entity->transform().reset();
+}
+
 bool SceneHierarchy::import_model(std::string_view filename) {
   /// This load the whole geometry of the file as a single mesh.
   /// TODO : create an importer for scene structure.

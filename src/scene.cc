@@ -24,6 +24,7 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
+    #if 0
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -35,6 +36,12 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
       ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" 
     );
     hair_.init( scalpId ); //
+    #else
+    scene_hierarchy_.import_model( 
+      ASSETS_DIR "/models/gltf_samples/SimpleSkin.gltf" 
+    );
+    params_.enable_hair = false;
+    #endif
   }
   
   // UI Views.
@@ -64,8 +71,12 @@ void Scene::update(float const dt, Camera const& camera) {
     params_.show_wireframe ^= true;
   }
 
-  // Delete selection.
+  // Reset / Delete selection.
   if ('x' == eventData.lastChar) {
+    for (auto &e : scene_hierarchy_.selected()) {
+      scene_hierarchy_.reset_entity(e);
+    }
+  } else if ('X' == eventData.lastChar) {
     for (auto &e : scene_hierarchy_.selected()) {
       scene_hierarchy_.remove_entity(e);
     }
