@@ -80,7 +80,6 @@ class App {
   
  private:
   void frame();
-  void update_resources();
   void update_time();
 
   GLFWwindow *window_;

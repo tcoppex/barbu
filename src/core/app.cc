@@ -135,15 +135,19 @@ void App::frame() {
   // Update UI.
   ui_controller_.update();
 
+  // Time tracker.
+  update_time();
+
   // Resources watchers for live update.
-  update_resources();
+  Resources::WatchUpdate(deltatime_, Assets::UpdateAll);
 
   // Generic updates.
-  update_time();
-  camera_.update(deltatime_);
-
-  if ('h' == GetEventData().lastChar) {
-    params_.show_ui ^= true;
+  {
+    camera_.update(deltatime_);
+    
+    if ('h' == GetEventData().lastChar) {
+      params_.show_ui ^= true;
+    }
   }
 
   //------------------------------------------  
@@ -171,29 +175,6 @@ void App::frame() {
   
   // Render UI.
   ui_controller_.render(params_.show_ui);
-}
-
-void App::update_resources() {
-  // [ to put inside a thread, eventually ]
-
-  // It would be more interesting to have different watch time depending on the resources,
-  // (eg. a shader should be quicker to reload than a texture).
-  float constexpr kLimitSeconds = 1.25f;
-  static float current_tick = 0.0f; //
-  
-  if (current_tick > kLimitSeconds) {
-    // release internal memory from last frames.
-    Resources::ReleaseAll(); // 
-
-    // watch for resource modifications.
-    Resources::UpdateAll(); 
-
-    // upload newly modified dependencies to their assets.
-    Assets::UpdateAll();
-    
-    current_tick = 0.0f;
-  }
-  current_tick += deltatime_;
 }
 
 void App::update_time() {

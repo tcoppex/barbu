@@ -1091,6 +1091,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             if (img->buffer_view) {
               auto buffer_view = img->buffer_view;
 
+              // TODO : tag the image when it has already been gamma corrected.
+
               // Create the resource internally.
               Resources::LoadInternal<Image>( 
                 ResourceId(info.diffuse_map), 
@@ -1099,7 +1101,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
                 img->mime_type
               ); 
 
-              //LOG_INFO( img->name, buffer_view->offset, buffer_view->size );
+              //LOG_INFO( img->name, img->mime_type, buffer_view->offset, buffer_view->size );
 
               // [optional] Create the texture directly.
               //TEXTURE_ASSETS.create2d(AssetId(info.diffuse_map)); 
