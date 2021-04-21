@@ -103,7 +103,7 @@ void keyboard_cb(GLFWwindow *window, int key, int, int action, int) {
     io.KeyAlt   = io.KeysDown[GLFW_KEY_LEFT_ALT]     || io.KeysDown[GLFW_KEY_RIGHT_ALT];
     io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER]   || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
     
-    return;
+    //return;
   }
 
   UpdateButton(key, action, GLFW_KEY_LEFT_CONTROL, s_Global.bLeftCtrl);
