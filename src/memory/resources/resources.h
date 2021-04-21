@@ -16,9 +16,9 @@
 //
 class Resources final {
  public:
-  static constexpr int32_t kUpdateMilliseconds = 950;
+  static constexpr int32_t kUpdateMilliseconds = 750;
 
-  static void WatchUpdate(float deltatime, void (*callback)() ) {
+  static void WatchUpdate(float deltatime, void (*update_cb)() ) {
     // [ to put inside a thread, eventually ]
     // It would be more interesting to have different watch time depending on the resources,
     // (eg. a shader should be quicker to reload than a texture).
@@ -35,7 +35,7 @@ class Resources final {
 
       // upload newly modified dependencies to their assets.
       //Assets::UpdateAll();
-      callback();
+      update_cb();
 
       current_tick = 0.0f;
     }
