@@ -13,7 +13,6 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
   //gx::ClearColor(0.9f, 0.6f, 0.5f, 1.0f);
 
   scene_hierarchy_.init();
-  
   //scene_hierarchy_.add_bounding_sphere();
 
   // Special Rendering.
@@ -23,20 +22,19 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
   // Simulation FX.
   particle_.init();
 
-  // Test scene.
+  // Sample scene.
   {
+    // Model.
     scene_hierarchy_.import_model( 
-      ASSETS_DIR "/models/suzanne.obj" 
+      ASSETS_DIR "/models/InfiniteScan/Head.glb" 
     );
+
+    // Scalp.
+    // [todo: extract from the GLTF model directly]
     auto const scalpId = AssetId( 
-      ASSETS_DIR "/models/suzanne_scalp.obj" 
+      ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" 
     );
-
     hair_.init( scalpId ); //
-
-    // (idea for internal scalp vertices detection)
-    // Given two meshes's ResourceId, find the indices of vertices of A that matches the 
-    // vertices of B.
   }
   
   // UI Views.
@@ -76,7 +74,7 @@ void Scene::update(float const dt, Camera const& camera) {
   // Import drag-n-dropped objects if any.
   for (auto &fn : eventData.dragFilenames) {
     auto const ext = fn.substr(fn.find_last_of(".") + 1);
-    if ("obj" == ext) {
+    if (MeshDataManager::CheckExtension(ext)) {
       scene_hierarchy_.import_model(fn);
     }
   }
