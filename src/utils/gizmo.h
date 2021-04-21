@@ -16,7 +16,7 @@ class Gizmo {
  public:
   static constexpr bool kbFlipGizmoWhenBehind = false;
   static constexpr bool kDefaultGlobal        = true;
-  static constexpr float kGizmoScale          = 0.95f;
+  static constexpr float kGizmoScaling        = 0.95f;
   static constexpr float kTranslationSnapUnit = 0.5f;
   static constexpr float kRotationSnapUnit    = glm::radians(15.0f);
   static constexpr float kScalingSnapUnit     = 0.5f;
