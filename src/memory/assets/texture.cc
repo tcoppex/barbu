@@ -7,7 +7,7 @@
 
 namespace {
 
-void UseLinearInternalFormat(std::string fn, int32_t &internalFormat) {
+void UseLinearInternalFormat(std::string fn, int32_t &internalFormat, bool bForce = false) {
   // Transform filename to lowercase to test matches.
   std::transform( fn.begin(), fn.end(), fn.begin(), ::tolower);
   
@@ -23,7 +23,15 @@ void UseLinearInternalFormat(std::string fn, int32_t &internalFormat) {
 
   // Test extension.
   auto const ext = fn.substr(fn.find_last_of(".") + 1);  
-  if (("jpg" == ext) || ("jpeg" == ext) || ("bmp" == ext) || ("png" == ext)) {
+  bool const is_internal = (ext == fn);
+  
+  if (bForce
+  || is_internal
+  || ("jpg" == ext) 
+  || ("jpeg" == ext) 
+  || ("bmp" == ext) 
+  || ("png" == ext)) 
+  {
     internalFormat = (internalFormat == GL_RGB8) ? GL_SRGB8 :
                      (internalFormat == GL_RGBA8) ? GL_SRGB8_ALPHA8 :
                      internalFormat
@@ -147,7 +155,7 @@ bool Texture::setup() {
   void *pixels = params.pixels; //
 
   // Detect potential gamma-corrected format and stored them to sRGB [linear space]
-  // (the pipeline should output gamma-corrected image).  
+  // (the pipeline should output gamma-corrected image).
   if (nresources > 0) {
     std::string const fn( resources[0].id );
     UseLinearInternalFormat( fn, params.internalFormat);
