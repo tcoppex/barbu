@@ -5,6 +5,8 @@
 #include "memory/assets/assets.h"
 #include "ui/imgui_wrapper.h"
 
+#define SHOW_UI 0
+
 // ----------------------------------------------------------------------------
 
 const int HBAO::kHBAOTileWidth = HBAO_TILE_WIDTH;
@@ -102,7 +104,7 @@ void HBAO::update_parameters(Camera const& camera) {
   P.blur_depth_threshold        = 2.0f * sqrt_ln_two * (scene_scale / ui_params_.blur_sharpness);
   P.blur_falloff                = inv_ln_two / (2.0f * blur_sigma * blur_sigma);
 
-  #if 1
+  #if SHOW_UI
   ImGui::Begin("HBAO", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::DragFloat("radius",         &ui_params_.radius,         0.0005f, 0.001f, 0.5f);
     ImGui::DragFloat("Blur radius",    &ui_params_.blur_radius,    0.05f, 0.01f, 16.0f);

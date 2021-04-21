@@ -38,13 +38,9 @@ void Main::render() {
 
   // (might change for an overlay dialog)
   if (ImGui::TreeNode("(more inputs)")) {
-    ImGui::BulletText("Keypad 0 to reset view.");
-    ImGui::BulletText("Keypad 1/3/7 to side view.");
-    ImGui::BulletText("Keypad 2/4/6/8 to quick orbit.");
-    ImGui::BulletText("Keypad 9 to invert view.");
     ImGui::BulletText("H to toggle the UI.");
     ImGui::BulletText("W to toggle wireframe.");
-    ImGui::BulletText("Drag-n-drop to import OBJ.");
+    ImGui::BulletText("Drag-n-drop to import OBJ / GLTF.");
     ImGui::Spacing();
     ImGui::Text("When entities are selected : ");
     ImGui::BulletText("R to rotate.");
@@ -52,6 +48,12 @@ void Main::render() {
     ImGui::BulletText("T to translate.");
     ImGui::BulletText("double R/T to switch space.");
     ImGui::BulletText("X to delete.");
+    ImGui::Spacing();
+    ImGui::Text("View control : ");
+    ImGui::BulletText("Keypad 0 to reset view.");
+    ImGui::BulletText("Keypad 1/3/7 to side view.");
+    ImGui::BulletText("Keypad 2/4/6/8 to quick orbit.");
+    ImGui::BulletText("Keypad 9 to invert view.");
     ImGui::TreePop();
   }
 
@@ -79,7 +81,7 @@ void Main::render() {
     ImGui::Checkbox("", &params_.regulate_fps);
   }
 
-  ImGui::Checkbox("Use postprocessing", &params_.postprocess);
+  //ImGui::Checkbox("Use postprocessing", &params_.postprocess);
 
   ImGui::End();
 }
