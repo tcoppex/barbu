@@ -38,8 +38,8 @@ git submodule update
 
 Other dependencies are shipped directly :
 * [im3d 1.16](https://github.com/john-chapman/im3d/)
-* stb_image 2.26
-** [cgltf 1.10](https://github.com/jkuhlmann/cgltf)
+* [stb_image 2.26](https://github.com/nothings/stb)
+* [cgltf 1.10](https://github.com/jkuhlmann/cgltf)
 
 ### Build
 
