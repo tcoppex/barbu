@@ -184,6 +184,10 @@ bool Texture::setup() {
     }
     bool const resolution_changed = (w != params.w) || (h != params.h);
     
+    // Fix incorect levels. [improve?]
+    int32_t const max_levels = static_cast<int32_t>(glm::log(glm::min(w, h)) * 1.4426950408889634);
+    params.levels = glm::min(params.levels, max_levels);  
+
     // [ somes cases might have been missed ]
     if (kImmutableResolution) {
       if (resources[0].version <= 0) {
@@ -194,6 +198,7 @@ bool Texture::setup() {
         release();
         allocate();
       }
+      
       glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
     }
 
@@ -276,7 +281,7 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, i
 }
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, ResourceId const& resource) {
-  int32_t const levels = 4;
+  int32_t const levels = 4; //
   int32_t const internalFormat = GL_RGB8;
   return create2d(id, levels, internalFormat, resource);
 }
