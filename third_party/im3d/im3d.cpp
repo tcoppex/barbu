@@ -83,7 +83,7 @@
 
 using namespace Im3d;
 
-constexpr Color Color_GizmoHighlight = Color_GoldHandle;//Im3d::Color_Gold;
+constexpr Color Color_GizmoHighlight = Im3d::Color_Gold;
 
 static const int VertsPerDrawPrimitive[DrawPrimitive_Count] =
 {
@@ -756,9 +756,9 @@ bool Im3d::GizmoTranslation(Id _id, float _translation_[3], bool _local)
 		ctx.pushMatrix(localMatrix);
 	}
 
-	float planeSize   = worldHeight * (0.5f * 0.5f) * 0.90; //
-	float planeOffset = worldHeight * 0.40f; //
-	float worldSize   = ctx.pixelsToWorldSize(drawAt, ctx.m_gizmoSizePixels);
+	float planeSize = worldHeight * (0.5f * 0.5f);
+	float planeOffset = worldHeight * 0.5f;
+	float worldSize = ctx.pixelsToWorldSize(drawAt, ctx.m_gizmoSizePixels);
 
 	struct AxisG { Id m_id; Vec3 m_axis; Color m_color; };
 	AxisG axes[] =
@@ -778,32 +778,18 @@ bool Im3d::GizmoTranslation(Id _id, float _translation_[3], bool _local)
 		};
 
  // invert axes if viewing from behind
-	if (appData.m_flipGizmoWhenBehind) {
-		
-		Vec3 pos = *outVec3;
-
-		//----------
-		// Use to keep the flipping on one side when dragged
-		// (could bug when multiselection is used)
-		// static Vec3 sGizmoPos;
-		// if (!ctx.isKeyDown(Action_Select)) {
-		// 	sGizmoPos = *outVec3;
-		// }
-		// pos = sGizmoPos;
-		//-------
-
+	if (appData.m_flipGizmoWhenBehind)
+	{
 		const Vec3 viewDir = appData.m_projOrtho
 			? -appData.m_viewDirection
-			: Normalize(appData.m_viewOrigin - pos)
+			: Normalize(appData.m_viewOrigin - *outVec3)
 			;
 		for (int i = 0; i < 3; ++i)
 		{
 			const Vec3 axis = _local ? Vec3(ctx.getMatrix().getCol(i)) : axes[i].m_axis;
 			if (Dot(axis, viewDir) < 0.0f)
 			{
-				// Disable axis flipping.
-				//axes[i].m_axis = -axes[i].m_axis;
-
+				axes[i].m_axis = -axes[i].m_axis;
 				for (int j = 0; j < 3; ++j)
 				{
 					planes[j].m_origin[i] = -planes[j].m_origin[i];
@@ -1077,7 +1063,7 @@ bool Im3d::GizmoScale(Id _id, float _scale_[3])
 		{
 			Sphere handle(origin, ctx.pixelsToWorldSize(origin, ctx.m_gizmoSizePixels * 4.0f));
 			float t0, t1;
-			/*bool intersects =*/ Intersect(ray, handle, t0, t1);
+			bool intersects = Intersect(ray, handle, t0, t1);
 			Vec3& storedScale = ctx.m_gizmoStateVec3;
 			Vec3& storedPosition = *((Vec3*)ctx.m_gizmoStateMat3.m);
 			if (uniformId == ctx.m_activeId)
@@ -2718,13 +2704,8 @@ void Context::gizmoAxisScale_Draw(Id _id, const Vec3& _origin, const Vec3& _axis
 
 bool Context::makeHot(Id _id, float _depth, bool _intersects)
 {
-	if ( (m_activeId == Id_Invalid) 
-		&& (_depth < m_hotDepth)
-		&& _intersects 
-		&& !isKeyDown(Action_Select)
-		// [bug for scale]
-		//&& (m_hotId == Id_Invalid) // to prevent grabbing translation axis behind flipped planes.
-	) {
+	if (m_activeId == Id_Invalid &&	_depth < m_hotDepth && _intersects && !isKeyDown(Action_Select))
+	{
 		m_hotId = _id;
 		m_appHotId = m_appId;
 		m_hotDepth = _depth;
@@ -2886,9 +2867,9 @@ Mat3 Im3d::FromEulerXYZ(Vec3& _euler)
 	float cx = cosf(_euler.x);
 	float sx = sinf(_euler.x);
 	float cy = cosf(_euler.y);
-	float sy = cosf(_euler.y);
+	float sy = sinf(_euler.y);
 	float cz = cosf(_euler.z);
-	float sz = cosf(_euler.z);
+	float sz = sinf(_euler.z);
 	return Mat3(
 		cy * cz, sz * sy * cz - cx * sz, cx * sy * cz + sx * sz,
 		cy * sz, sx * sy * sz + cx * cz, cx * sy * sz - sx * cz,
@@ -3306,8 +3287,3 @@ static void StaticAsserts()
 	IM3D_STATIC_ASSERT(sizeof (Mat4) == sizeof (float[16]));
 	IM3D_STATIC_ASSERT(alignof(Mat4) == alignof(float[16]));
 }
-
-
-#if defined(__GNUC__)
-	#pragma GCC diagnostic pop
-#endif
