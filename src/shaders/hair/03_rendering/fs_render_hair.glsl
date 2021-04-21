@@ -63,9 +63,9 @@ float marschner_reflectance(in vec3 light_dir, in vec3 look_dir, in vec3 tangent
   st = polarcoords_to_uv( vec2(coords.z, cosThetaD), textureRes );
   const vec3 N = texture( uAzimuthalLUT, st).rgb;
 
-  const float S = dot(M.xyz, N.xyz) / max(pow(cosThetaD, 2), Epsilon());
+  const float S = dot(M.xyz, N.xyz) / max(pow(cosThetaD, 2.0), Epsilon());
 
-  return S; ///
+  return S;
 }
 
 // ----------------------------------------------------------------------------
@@ -73,44 +73,33 @@ float marschner_reflectance(in vec3 light_dir, in vec3 look_dir, in vec3 tangent
 void main() {
   const vec3 albedo = uAlbedo;
   
-  // ----------------------
+  //-------
 
-  const vec3 ambient = 0.25 * albedo;
+  // Ambient.
+  const float ambient_factor = 0.1; //
 
-  //----
-
-  vec3 reflectance;
-
+  // Marschner Reflectance.
   const vec3 light_dir = normalize(vec3(0.0, 0.0, 1.0));
   const vec3 eye_dir   = normalize(inPosition.xyz);
   const vec3 tangent   = normalize(inTangent);
 
-  // [test] Marschner reflectance factor.
-  float rfactor = marschner_reflectance( light_dir, eye_dir, tangent);
+  const float rfactor = marschner_reflectance( light_dir, eye_dir, tangent);
+  const float reflectance = pow(rfactor, 0.125); //
 
-#if 1
-  //factor = smoothstep( -20.0, 40.0, rfactor*0.8) * 3.0;
-  reflectance = albedo * vec3(pow(0.185*rfactor, 0.125));
-#else
-  reflectance = albedo + vec3(rfactor);
-#endif
-
-  //---
-
-  // [wip] Diffuse light
+  // Diffuse light
   vec3 diffuse;
   {
     Light light;
     light.direction.xyz  = light_dir;
-    light.color          = vec4(1.0, 1.0, 0.98, 0.98);
+    light.color          = vec4(1.0, 1.0, 1.0, 1.0);
     diffuse = apply_directional_light( light, inNormal) * albedo;
   }
 
   //-------
 
-  vec3 lighting = ambient + 2.0*reflectance * diffuse;
+  const vec3 lighting = ambient_factor + reflectance * diffuse;
 
-  fragColor.rgb = lighting;
+  fragColor.rgb = lighting * albedo;
   fragColor.a = 1.0;
 }
 

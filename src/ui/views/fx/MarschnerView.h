@@ -25,8 +25,8 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
     ImGui::SetNextItemOpen(true, ImGuiCond_Once); 
     if (ImGui::TreeNode("M lookup")) 
     {
-      ImGui::DragFloat("Long. shift", &params_.shading.ar, 0.1f, -10.0f, -5.0f);
-      ImGui::DragFloat("Long. width", &params_.shading.br, 0.1f, 5.0f, 10.0f);
+      ImGui::DragFloat("Long. shift", &params_.shading.ar, 0.01f, -10.0f, -5.0f);
+      ImGui::DragFloat("Long. width", &params_.shading.br, 0.01f, 5.0f, 10.0f);
       
       if (params_.tex_ptr[0] != nullptr) {
         auto id = reinterpret_cast<ImTextureID>(*params_.tex_ptr[0]);
@@ -39,7 +39,7 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
     if (ImGui::TreeNode("N lookup")) 
     {
       ImGui::DragFloat("Refraction index", &params_.shading.eta, 0.001f, 1.001f, 4.0f);
-      ImGui::DragFloat("Absorption coeff", &params_.shading.absorption, 0.001f, 0.05f, +100.0f);
+      ImGui::DragFloat("Absorption coeff", &params_.shading.absorption, 0.01f, 0.05f, +100.0f);
 
       // ImGui::DragFloat("Eccentricity", &params_.shading.eccentricity, 0.001f, 0.85f, +1.0f);
       // ImGui::DragFloat("Glint scale", &params_.shading.glintScale, 0.01f, 0.5f, 5.0f);

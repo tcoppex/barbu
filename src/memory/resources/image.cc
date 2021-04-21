@@ -59,6 +59,21 @@ ImageManager::Handle ImageManager::_load(ResourceId const& id) {
   return h;
 }
 
+ImageManager::Handle ImageManager::_load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) {
+  ImageManager::Handle h(id);
+
+  auto img = h.data;
+  img->pixels = stbi_load_from_memory( (stbi_uc const *)data, size, &img->width, &img->height, &img->channels, 3); //
+
+  if (nullptr == img->pixels) {
+    LOG_WARNING( "Image Resource internal load failed for :", id.c_str());
+    h.data.reset();
+    h.data = nullptr;
+  }
+
+  return h;
+}
+
 void ImageManager::setup_crossed_hdr(Image &img) {
   assert(img.width / 3 == img.height / 4);
   assert(img.width % 3 == img.height % 4);

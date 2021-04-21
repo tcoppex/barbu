@@ -16,10 +16,30 @@
 //
 class Resources final {
  public:
-  static void UpdateAll() {
-    sImage.update();
-    sMeshData.update();
-    sShader.update();
+  static constexpr int32_t kUpdateMilliseconds = 950;
+
+  static void WatchUpdate(float deltatime, void (*callback)() ) {
+    // [ to put inside a thread, eventually ]
+    // It would be more interesting to have different watch time depending on the resources,
+    // (eg. a shader should be quicker to reload than a texture).
+    static float current_tick = 0.0f; //
+    
+    if (1000.0f * current_tick > Resources::kUpdateMilliseconds) {
+      // release internal memory from last frames.
+      Resources::ReleaseAll(); // 
+
+      // watch for resource modifications.
+      sImage.update();
+      sMeshData.update();
+      sShader.update();
+
+      // upload newly modified dependencies to their assets.
+      //Assets::UpdateAll();
+      callback();
+
+      current_tick = 0.0f;
+    }
+    current_tick += deltatime;
   }
 
   static void ReleaseAll() {
@@ -32,6 +52,9 @@ class Resources final {
   template<typename T>
   static bool Has( ResourceId const& id );
 
+  template<typename T>
+  static typename ResourceManager<T>::Handle LoadInternal( ResourceId const& id, int32_t size, void const* data, std::string_view mime_type = "");
+  
   template<typename T>
   static typename ResourceManager<T>::Handle Get( ResourceId const& id );
 

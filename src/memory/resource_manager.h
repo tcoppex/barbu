@@ -7,6 +7,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <thread>
 
 // filesystem, used for versioning.
 #if __has_include(<filesystem>)
@@ -21,7 +22,7 @@ namespace fs = std::experimental::filesystem;
 #endif
 
 #include "core/logger.h"
-#include "memory/resources/resource_info_list.h"
+#include "memory/resource_info_list.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -115,6 +116,9 @@ struct ResourceHandle {
 //
 template<typename TResource>
 class ResourceManager {
+ private:
+  static constexpr int32_t kLastWriteSpanMilliseconds = 250;
+
  public:
   using Handle = ResourceHandle<TResource>;
 
@@ -134,16 +138,33 @@ class ResourceManager {
     for (auto tuple : stats_) {
       auto const id   = tuple.first;
       auto const stat = tuple.second;
-      auto const sys_lw = sys_last_write(id);
+      auto sys_lw = sys_last_write(id);
+
+      // ----------------
+      auto has_time_elapsed = [](fs::file_time_type timemark, int32_t max_elapsed) -> bool {
+        auto const now = fs::file_time_type::clock::now();
+        auto const elapsed = now - timemark;
+        auto const t = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        return t > max_elapsed;
+      };
+      // ----------------
 
       if (sys_lw != stat.last_write) {
         if (sys_lw == kDeletedLastWrite) {
           // (the file is not accessible anymore)
           update_stat(id);
           LOG_WARNING( "[VERSIONING] \"", id.path, "\" : file not found.");
-        } else if (load(id).is_valid()) {
-          // (the file has been modified)
-          LOG_INFO( "[VERSIONING]", Resource::TrimFilename(id.path), ": v", version(id));
+        } else {
+
+          // Check the file is not currently being saved.
+          for (sys_lw = sys_last_write(id); !has_time_elapsed(sys_lw, kLastWriteSpanMilliseconds); sys_lw = sys_last_write(id)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(kLastWriteSpanMilliseconds));
+          }
+
+          if (load(id).is_valid()) {
+            // (the file has been modified)
+            LOG_INFO( "[VERSIONING]", Resource::TrimFilename(id.path), ": v", version(id));
+          }
         }
       }
     }
@@ -159,16 +180,27 @@ class ResourceManager {
   // Load a resource in memory and return an handle to it.
   inline Handle load(ResourceId const& id) {
     auto h = _load(id);
-
     if (h.is_valid()) {
       resources_[id] = h;
     
-      // (update internal version)
+      // Update internal version.
       if (has(id)) {
         update_stat(id);
       }
     }
+    return h;
+  }
 
+  Handle load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) {
+    auto h = _load_internal(id, size, data, mime_type);
+    if (h.is_valid()) {
+      resources_[id] = h;
+      
+      // [check if the internal version works as intended]
+      if (has(id)) {
+        update_stat(id);
+      }
+    }
     return h;
   }
 
@@ -192,7 +224,7 @@ class ResourceManager {
 
   // Add a resource with id "basename (#)", " (#)" being a numbered suffix
   // when the id is already used.
-  ResourceId add(std::string_view basename, TResource const& resource) {
+  inline ResourceId add(std::string_view basename, TResource const& resource) {
     // (find unique id)
     ResourceId id( ResourceId::FindUnique(basename, 
       [this](ResourceId const& _id) { 
@@ -299,6 +331,7 @@ class ResourceManager {
 
   // Specialized loader for the resource.
   virtual Handle _load(ResourceId const& id) = 0;
+  virtual Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) = 0;
 
   StatHashmap_t stats_;
   ResourceHashmap_t resources_;

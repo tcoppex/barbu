@@ -10,12 +10,13 @@ It is written in **C++ 17** and **OpenGL 4.6**.
 
 ## Some Features
 
-* Entity component based hierarchy with live scene edit.
-* Hot-reload of externals assets (*textures, models, shaders*).
 * Hair strand dynamics using the dynamic follow-the-leader (DFTL) algorithm.
 * Marschner's reflectance model implementation on Compute Shaders.
 * Tonemapping post-processing with HBAO.
 * Irradiance environment map based lighting.
+* Entity component based hierarchy with live scene edit.
+* Hot-reload of external assets (*textures, models, shaders*).
+* GLTF 2.0 & OBJ drag-n-drop model import.
 
 ## Quickstart
 
@@ -25,9 +26,9 @@ We will be using the command-line on Unix and [Git Bash](https://git-for-windows
 
 The following dependencies are pulled in as submodules.
 
-- [GLFW XX](https://github.com/glfw/glfw) for window management,
-- [GLM XX](https://github.com/g-truc/glm/releases/tag/0.9.8.1) for mathematics.
-- [imgui XX](https://github.com/ocornut/imgui) for UI.
+* [GLFW 3.4.0](https://github.com/glfw/glfw) for window management,
+* [GLM 0.9.9.9](https://github.com/g-truc/glm/releases/tag/0.9.8.1) for mathematics.
+* [imgui 1.83](https://github.com/ocornut/imgui) for UI.
 
 To retrieve them, type the following command line in the project directory :
 ```bash
@@ -36,8 +37,9 @@ git submodule update
 ```
 
 Other dependencies are shipped directly :
-* [im3d](https://github.com/john-chapman/im3d/)
-* stb_image
+* [im3d 1.16](https://github.com/john-chapman/im3d/)
+* [stb_image 2.26](https://github.com/nothings/stb)
+* [cgltf 1.10](https://github.com/jkuhlmann/cgltf)
 
 ### Build
 

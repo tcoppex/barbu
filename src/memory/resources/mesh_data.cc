@@ -9,6 +9,12 @@
 #include <map>
 
 #include "glm/glm.hpp"    // abs
+#include "glm/gtc/type_ptr.hpp"
+
+#define CGLTF_IMPLEMENTATION
+#include "cgltf/cgltf.h"
+
+#include "memory/assets/assets.h" // wip
 
 // ----------------------------------------------------------------------------
 
@@ -40,49 +46,7 @@ struct VecOrdering_t {
 
 } // namespace
 
-// ----------------------------------------------------------------------------
 
-void RawMeshData::recalculate_normals() {
-  int const numfaces = nfaces();
-  std::vector<glm::vec3> vnormals(nvertices(), glm::vec3(0.0f));
-  
-  for (int i = 0; i < numfaces; ++i) {
-    int const i1 = elementsAttribs[3*i + 0].x;
-    int const i2 = elementsAttribs[3*i + 1].x;
-    int const i3 = elementsAttribs[3*i + 2].x;
-
-    auto const& v1 = vertices[i1];
-    auto const& v2 = vertices[i2];
-    auto const& v3 = vertices[i3];
-
-    glm::vec3 const u{ v2.x - v1.x, v2.y - v1.y, v2.z - v1.z };
-    glm::vec3 const v{ v3.x - v2.x, v3.y - v2.y, v3.z - v2.z };
-    glm::vec3 const n{ glm::normalize(glm::cross(u, v)) };
-
-    vnormals[i1] += n;
-    vnormals[i2] += n;
-    vnormals[i3] += n;
-  }
-
-  for (auto &n : vnormals) {
-    n = glm::normalize(n);
-  }
-
-  normals.clear();
-  for (int i = 0; i < numfaces; ++i) {
-    for (int j = 0; j < 3; ++j) {
-      auto& face = elementsAttribs[3*i + j];
-      int const vertex_id = face.x;
-      auto const& vnormal = vnormals[vertex_id];
-
-      // TODO : use a hashmap to avoid reusing the same normals.
-      face.z = static_cast<uint32_t>(normals.size());
-      normals.push_back( glm::vec3(vnormal.x, vnormal.y, vnormal.z) );
-    }
-  }
-}
-
-// ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
 // Note : 
@@ -363,52 +327,52 @@ void MeshData::release() {
 
 // ----------------------------------------------------------------------------
 
-void MeshData::setup(PrimitiveType primtype, RawMeshData &raw) {
-  type = primtype;
-  std::swap(vgroups, raw.vgroups);
+bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
+  type = _type;
+  std::swap(vgroups, _raw.vgroups);
    
   if (type != MeshData::TRIANGLES)
   {
     // When MeshData is not made of triangles we just copy the structures.
 
     // Elements.
-    indices.reserve(raw.elementsAttribs.size());
-    for (auto const& vi : raw.elementsAttribs) {
+    indices.reserve(_raw.elementsAttribs.size());
+    for (auto const& vi : _raw.elementsAttribs) {
       indices.push_back(vi.x);
     }
     
     // Vertices.
-    int const nvertices = static_cast<int>(raw.vertices.size());
+    int const nvertices = static_cast<int>(_raw.vertices.size());
     vertices.resize( nvertices );
     for (int i = 0; i < nvertices; ++i) {
-      vertices[i].position = raw.vertices[i];
+      vertices[i].position = _raw.vertices[i];
     }
-    if (!raw.texcoords.empty()) {
+    if (!_raw.texcoords.empty()) {
       for (int i = 0; i < nvertices; ++i) {
-        vertices[i].texcoord = raw.texcoords[i];
+        vertices[i].texcoord = _raw.texcoords[i];
       }
     }
-    if (!raw.normals.empty()) {
+    if (!_raw.normals.empty()) {
       for (int i = 0; i < nvertices; ++i) {
-        vertices[i].normal = raw.normals[i];
+        vertices[i].normal = _raw.normals[i];
       }
     }
   }
   else 
   {
     // Recalculate normals when none exists.
-    if (raw.normals.empty() && !raw.elementsAttribs.empty()) {
-      raw.recalculate_normals();
+    if (_raw.normals.empty() && !_raw.elementsAttribs.empty()) {
+      _raw.recalculate_normals();
     }
 
     // Reindexing vertices from sparse input.
     std::vector<glm::ivec3> attribIndices;
-    attribIndices.reserve(raw.vertices.size());
-    indices.reserve(raw.elementsAttribs.size());
+    attribIndices.reserve(_raw.vertices.size());
+    indices.reserve(_raw.elementsAttribs.size());
     {
       std::map<glm::ivec3, size_t, VecOrdering_t<glm::ivec3>> mapVertices;
       
-      for (auto const& elem : raw.elementsAttribs) {
+      for (auto const& elem : _raw.elementsAttribs) {
         glm::vec3 key(elem.x, elem.y, elem.z);
         auto it = mapVertices.find(key);
 
@@ -430,17 +394,30 @@ void MeshData::setup(PrimitiveType primtype, RawMeshData &raw) {
       auto const& index = attribIndices[i];
 
       // (positions)
-      vertices[i].position = raw.vertices[index.x];
+      vertices[i].position = _raw.vertices[index.x];
       // (texcoords)
       if (index.y >= 0) {
-        vertices[i].texcoord = raw.texcoords[index.y];
+        vertices[i].texcoord = _raw.texcoords[index.y];
       }
       // (normals)
       if (index.z >= 0) {
-        vertices[i].normal = raw.normals[index.z];
+        vertices[i].normal = _raw.normals[index.z];
       }
     }
   }
+
+  return true;
+}
+
+bool MeshData::setup(RawMeshFile &meshfile) {
+  // DEVNOTE : for now we process only a single mesh, but in the future we will
+  //           handle all sub objects from a file.
+
+  auto &raw = meshfile.meshes[0]; //
+  MeshData::PrimitiveType primtype = raw.elementsAttribs.empty() ? MeshData::POINTS
+                                                                 : MeshData::TRIANGLES
+                                                                 ;
+  return setup( primtype, raw);
 }
 
 // ----------------------------------------------------------------------------
@@ -516,7 +493,7 @@ bool LoadFile(std::string_view filename, char **buffer, size_t *buffersize) {
   fclose(fd);
 
   if (!succeed) {
-    LOG_ERROR( "Fail to load file :", filename);
+    LOG_ERROR( "Failed to load file :", filename);
     delete [] *buffer;
     return false;
   }
@@ -604,6 +581,7 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
       {
         Vec2f v;
         sscanf(s+3, "%f %f", &v.x, &v.y);
+        v.y = 1.0f - v.y; // (reverse y)
         raw.texcoords.push_back(v);
       }
       else //if (s[1] == 'n')
@@ -772,6 +750,16 @@ void ParseMTL(char *input, MaterialFile &matfile) {
 } // namespace
 
 // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+bool MeshDataManager::CheckExtension(std::string_view ext) {
+  return ("obj" == ext)
+      || ("glb" == ext)
+      || ("gltf" == ext)
+      ;  
+}
+
+// ----------------------------------------------------------------------------
 
 MeshDataManager::Handle MeshDataManager::_load(ResourceId const& id) {
   MeshDataManager::Handle h(id);
@@ -779,10 +767,14 @@ MeshDataManager::Handle MeshDataManager::_load(ResourceId const& id) {
   auto const path = id.path;
   auto const ext  = path.substr(path.find_last_of(".") + 1);
 
+  auto &meshdata = *h.data;
+
   if ("obj" == ext) {
-    load_obj( path, *h.data);
+    load_obj( path, meshdata);
+  } else if (("glb" == ext) || ("gltf" == ext)) {
+    load_gltf( path, meshdata);
   } else {
-    LOG_WARNING( ext, "meshes are not supported." );
+    LOG_WARNING( ext, "models are not supported." );
   }
 
   return h;
@@ -830,16 +822,7 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
     if (LoadFile(fn, &buffer, &buffersize)) {
       ParseMTL( buffer, mtl);
     }
-
-    // Prefix VertexGroups's and materials names by the main material id to avoid collisions.
-    for (auto &mesh : meshfile.meshes) {
-      for (auto &vg : mesh.vgroups) {
-        vg.name = mtl.id + "::" + vg.name;
-      }
-    }
-    for (auto &mat : mtl.infos) {
-      mat.name = mtl.id + "::" + mat.name;
-    }
+    meshfile.prefix_material_vg_names(mtl);
 
     // Transform relative paths to absolute ones.
     for (auto &mat : mtl.infos) {
@@ -872,14 +855,274 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
   std::setlocale(LC_ALL, locale);
 #endif
 
-  // Determine the file type (point cloud or triangle mesh).
-  auto &raw = meshfile.meshes[0]; //
-  MeshData::PrimitiveType type = raw.elementsAttribs.empty() ? MeshData::POINTS
-                                                             : MeshData::TRIANGLES
-                                                             ;
-  meshdata.setup( type, raw); //
+  return meshdata.setup( meshfile ); //
+}
 
-  return true;
+// ----------------------------------------------------------------------------
+
+void DisplayStats_GLTF(cgltf_data* data) {
+  assert( data->scenes_count > 0 );
+  assert( data->nodes_count > 0 );
+
+  LOG_INFO( "Scenes :     ", data->scenes_count    );
+  LOG_INFO( "Nodes :      ", data->nodes_count     );
+  LOG_INFO( "Meshes :     ", data->meshes_count    );
+  LOG_INFO( "Skins :      ", data->skins_count     );
+  LOG_INFO( "Materials :  ", data->materials_count );
+  LOG_INFO( "Textures :   ", data->textures_count  );
+
+  //LOG_MESSAGE( "", "ia->offset", "ia->count", "ia->stride", "data_view->offset", "data_view->size");
+  for (cgltf_size i=0; i < data->nodes_count; ++i) {
+    auto node = data->nodes[i];
+    LOG_INFO( "* Node ", node.name );
+
+    auto *mesh = node.mesh;
+    if (!mesh) {
+      continue;
+    }
+
+    if (mesh->name) {
+      LOG_MESSAGE( "  ", "Mesh name : ", mesh->name );
+    }
+
+    // Primitive are actual submesh, with specific material.
+    LOG_MESSAGE( "  ", "Mesh primitives : ", mesh->primitives_count );
+    LOG_MESSAGE("");
+    for (cgltf_size j=0; j < mesh->primitives_count; ++j) {
+      auto prim = mesh->primitives[j];  
+      
+      // if (prim.material) {
+      //   LOG_MESSAGE( "  * material : ", prim.material->name);
+      // }
+      if (prim.indices) LOG_MESSAGE( "  * indices : ", prim.indices->component_type);
+
+
+      for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) { 
+        LOG_MESSAGE( "  * attribs : ", prim.attributes[attrib_index].name);
+      }
+      // auto ia = prim.indices;
+      // LOG_MESSAGE( "  ", prim.material->name, ia->offset, ia->count, ia->stride, ia->buffer_view->offset, ia->buffer_view->size);
+      
+      // auto buf = ia->buffer_view->buffer;
+      // LOG_MESSAGE( "  ", buf->size, buf->data );
+      
+      LOG_MESSAGE("");
+    }
+  }
+}
+
+bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
+  cgltf_options options{};
+  cgltf_data* data = nullptr;
+  cgltf_result result = cgltf_parse_file(&options, filename.data(), &data);
+  
+  if (result != cgltf_result_success) {
+    LOG_WARNING( filename, "failed to parse.");
+    return false;
+  }
+
+  // Load buffers data.
+  result = cgltf_load_buffers(&options, data, filename.data());
+
+  if (result != cgltf_result_success) {
+    LOG_WARNING( filename, "failed to load buffers.");
+    return false;
+  }
+
+  //---------------------------
+  // There is 3 type of GLTF files :
+  //  * gltf with external file
+  //  * gltf with internal buffer
+  //  * compressed glb file
+  // For now, to use live edit and external Image Resource loader, we focus only
+  // on the first kind.
+  //---------------------------
+
+  /* ------------ */
+  RawMeshFile meshfile;
+  {
+    //DisplayStats_GLTF(data);
+
+    // We will join all meshes as a single one.
+    if (meshfile.meshes.empty()) {
+      meshfile.meshes.resize(1);
+    }
+
+    // -- MESH ATTRIBUTES & INDICES.
+    int32_t default_material_id = 0;
+    cgltf_size last_vertex_index = 0;
+    for (cgltf_size i=0; i < data->nodes_count; ++i) {
+      auto node = data->nodes[i];
+      auto *mesh = node.mesh;
+
+      if (!mesh) {
+        continue;
+      }
+
+      //cgltf_float world_matrix[16];
+      glm::mat4 world_matrix;
+      cgltf_node_transform_world( &node, glm::value_ptr(world_matrix));
+
+      auto &raw = meshfile.meshes.back();
+
+      raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : "[unnamed]");
+
+      // When meshes are not joined, we should probably reset this to 0.
+      //last_vertex_index = 0;
+
+      // Primitive are actually submeshes, with specific material.
+      for (cgltf_size j=0; j < mesh->primitives_count; ++j) {
+        auto prim = mesh->primitives[j];
+
+        if (prim.has_draco_mesh_compression) {
+          LOG_WARNING("Draco mesh compression not implemented.");
+          continue;
+        }
+
+        // Attributes.
+        for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) {
+          auto attrib = prim.attributes[attrib_index];
+          
+          if (attrib.data->is_sparse) {
+            LOG_WARNING("sparse attribs not implemented.");
+            continue;
+          }
+
+          // Postions.
+          if (attrib.type == cgltf_attribute_type_position) {
+            glm::vec3 vertex;
+            for (auto index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(vertex), 3);
+              vertex = glm::vec3(world_matrix * glm::vec4(vertex, 1.0f));
+              raw.vertices.push_back( vertex );
+            }
+          }
+
+          // Normals.
+          if (attrib.type == cgltf_attribute_type_normal) {
+            glm::vec3 normal;
+            for (auto index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(normal), 3);
+              normal = glm::vec3(world_matrix * glm::vec4(normal, 0.0f));
+              raw.normals.push_back( normal );
+            }
+          }
+
+          // Texcoords.
+          if (attrib.type == cgltf_attribute_type_texcoord/* && (attrib.index = 0)*/) {
+            glm::vec2 texcoord;
+            for (auto index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(texcoord), 2);
+              raw.texcoords.push_back( texcoord );
+            }
+          }
+        }
+        
+        // Indices.
+        if (prim.indices) {
+          if (prim.indices->is_sparse) {
+            LOG_WARNING("sparse indexing not implemented");
+          } else {
+            for (auto index = prim.indices->offset; index < prim.indices->count; ++index) {
+              auto const vid = cgltf_accessor_read_index(prim.indices, index);
+              raw.elementsAttribs.push_back(glm::ivec3( last_vertex_index + vid ));
+            }
+          }
+
+          // Vertex Group.
+          if (auto mat = prim.material; mat) {
+            VertexGroup vg;
+        
+            // -------- FIXME
+            // (sometimes materials are unnamed, which made the system fails to resolve them)
+            char matname[32]{};
+            sprintf(matname, "[material %00d]", default_material_id++);
+            char *name = (mat->name != nullptr) ? mat->name : matname;
+            // --------
+
+            vg.name = std::string(name);
+            vg.start_index = raw.elementsAttribs.size() - prim.indices->count; // 
+            vg.end_index   = raw.elementsAttribs.size(); //
+            raw.vgroups.push_back(vg);
+          }
+        } else {
+          LOG_WARNING("No indices associated with GLTF :", filename);
+        }
+
+        last_vertex_index = raw.vertices.size(); //
+      }
+    }
+
+    default_material_id = 0;
+
+    // -- MATERIALS.
+    auto &mtl = meshdata.material;
+    std::string const fn( filename );
+    std::string const dirname = fn.substr(0, fn.find_last_of('/'));
+
+    for (cgltf_size i=0; i<data->materials_count; ++i) {
+      auto mat = data->materials[i];
+      
+      // -------- FIXME
+      char matname[32]{"[material 000]"};
+      char *name = (mat.name != nullptr) ? mat.name : matname;
+      // --------
+
+      MaterialInfo info;
+      info.name = std::string(name);
+      if (mat.has_pbr_metallic_roughness) {
+        auto const pmr = mat.pbr_metallic_roughness;
+
+        auto const rgba = pmr.base_color_factor;
+        info.diffuse_color = glm::vec4(rgba[0], rgba[1], rgba[2], rgba[3]);
+        
+        if (auto tex = pmr.base_color_texture.texture; tex) {
+          auto img = tex->image;
+          
+          if (img->uri) {
+            // GLTF file with external data.
+
+            info.diffuse_map = dirname + "/" + std::string(img->uri);
+          } else {
+            // GLB / GLTF file with internal data.
+
+            info.diffuse_map = img->name ? img->name : "unnamed_diffuse"; //
+
+            if (img->buffer_view) {
+              auto buffer_view = img->buffer_view;
+
+              // TODO : tag the image when it has already been gamma corrected.
+
+              // Create the resource internally.
+              Resources::LoadInternal<Image>( 
+                ResourceId(info.diffuse_map), 
+                buffer_view->size, 
+                ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
+                img->mime_type
+              ); 
+
+              //LOG_INFO( img->name, img->mime_type, buffer_view->offset, buffer_view->size );
+
+              // [optional] Create the texture directly.
+              //TEXTURE_ASSETS.create2d(AssetId(info.diffuse_map)); 
+            }
+          }
+        }
+      }
+      mtl.infos.push_back(info);
+    }
+
+    // Rename materials and vertex group ids.
+    meshfile.material_id = fn; 
+    mtl.id = fn.substr(fn.find_last_of('/') + 1);
+    mtl.id = mtl.id.substr(0, mtl.id.find_last_of('.'));
+    meshfile.prefix_material_vg_names(mtl);
+  }
+  /* ------------ */
+
+  cgltf_free(data);
+
+  return meshdata.setup( meshfile ); //
 }
 
 // ----------------------------------------------------------------------------

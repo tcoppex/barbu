@@ -20,13 +20,13 @@ class Marschner {
 
   struct ShadingParameters_t {
     // Fiber Properties.
-    float eta             = 1.55f;
-    float absorption      = 0.20f;   
+    float eta             = 1.04;//1.55f;
+    float absorption      = 0.05;//0.20f;   
     float eccentricity    = 0.85f;
 
     // Surface Properties.
-    float ar              = -10.0f;
-    float br              = +10.0f;//5.0f;
+    float ar              = -5.0f;
+    float br              = +8.3f;//5.0f;
 
     // Glints.
     float glintScale      = 0.5f;

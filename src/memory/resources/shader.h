@@ -1,7 +1,7 @@
 #ifndef BARBU_MEMORY_RESOURCES_SHADER_H_
 #define BARBU_MEMORY_RESOURCES_SHADER_H_
 
-#include "memory/resources/resource_manager.h"
+#include "memory/resource_manager.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -64,6 +64,7 @@ class ShaderManager : public ResourceManager<Shader> {
 
  private:
   Handle _load(ResourceId const& id) final;
+  Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) final { return Handle(); }
 
   char *buffer_ = nullptr;
 };

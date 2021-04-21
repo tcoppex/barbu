@@ -7,7 +7,7 @@
 
 namespace {
 
-void UseLinearInternalFormat(std::string fn, int32_t &internalFormat) {
+void UseLinearInternalFormat(std::string fn, int32_t &internalFormat, bool bForce = false) {
   // Transform filename to lowercase to test matches.
   std::transform( fn.begin(), fn.end(), fn.begin(), ::tolower);
   
@@ -23,7 +23,15 @@ void UseLinearInternalFormat(std::string fn, int32_t &internalFormat) {
 
   // Test extension.
   auto const ext = fn.substr(fn.find_last_of(".") + 1);  
-  if (("jpg" == ext) || ("jpeg" == ext) || ("bmp" == ext) || ("png" == ext)) {
+  bool const is_internal = (ext == fn);
+  
+  if (bForce
+  || is_internal
+  || ("jpg" == ext) 
+  || ("jpeg" == ext) 
+  || ("bmp" == ext) 
+  || ("png" == ext)) 
+  {
     internalFormat = (internalFormat == GL_RGB8) ? GL_SRGB8 :
                      (internalFormat == GL_RGBA8) ? GL_SRGB8_ALPHA8 :
                      internalFormat
@@ -144,10 +152,10 @@ bool Texture::setup() {
   int32_t w = params.w;
   int32_t h = params.h;
   int32_t z = params.depth;
-  void *pixels = nullptr; //
+  void *pixels = params.pixels; //
 
   // Detect potential gamma-corrected format and stored them to sRGB [linear space]
-  // (the pipeline should output gamma-corrected image).  
+  // (the pipeline should output gamma-corrected image).
   if (nresources > 0) {
     std::string const fn( resources[0].id );
     UseLinearInternalFormat( fn, params.internalFormat);
@@ -247,6 +255,9 @@ bool Texture::setup() {
   params.h = h;
   params.depth = z;
 
+  // Empty pixels ptr if any.
+  params.pixels = nullptr;
+
   CHECK_GX_ERROR();
 
   return true;
@@ -268,6 +279,17 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, ResourceId co
   int32_t const levels = 4;
   int32_t const internalFormat = GL_RGB8;
   return create2d(id, levels, internalFormat, resource);
+}
+
+TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels) {
+  Parameters_t params;
+  params.target         = GL_TEXTURE_2D;
+  params.levels         = levels;
+  params.internalFormat = internalFormat;
+  params.w              = w;
+  params.h              = h;
+  params.pixels         = pixels;
+  return create(id, params);
 }
 
 // ----------------------------------------------------------------------------
