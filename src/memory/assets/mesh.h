@@ -13,9 +13,11 @@ using MeshParameters = AssetParameters;
 class Mesh : public Asset<MeshParameters, MeshData> {
  public:
   enum AttributeBinding {
-    ATTRIB_POSITION = 0,
-    ATTRIB_TEXCOORD = 1,
-    ATTRIB_NORMAL   = 2,
+    ATTRIB_POSITION       = 0,
+    ATTRIB_TEXCOORD       = 1,
+    ATTRIB_NORMAL         = 2,
+    // ATTRIB_JOINT_INDICES  = 3,
+    // ATTRIB_JOINT_WEIGHTS  = 4,
     kNumVertexAttributeBinding
   };
 
@@ -36,7 +38,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   void draw(MeshData::PrimitiveType primitive = MeshData::kInternal) const;
   void draw_submesh(int32_t index, MeshData::PrimitiveType primitive = MeshData::kInternal) const;
 
-  inline int32_t nfaces() const noexcept { return nelems_ / 3; }
+  inline int32_t nfaces() const noexcept { return nfaces_; }
   inline int32_t nvertices() const noexcept { return nvertices_; }
 
   // Return the number of sub geometry contains in the mesh, which is always at least 1.
@@ -65,6 +67,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   MeshData::PrimitiveType type_;
   int32_t nelems_    = 0;
   int32_t nvertices_ = 0;
+  int32_t nfaces_    = 0;
 
   // Material specific submeshes.
   VertexGroups_t vgroups_;

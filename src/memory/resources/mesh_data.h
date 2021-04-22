@@ -40,6 +40,8 @@
 //   In the future scene as separated objects could be load either on SceneHierarchy
 //   or here, if we change MeshData to SceneData (for example).
 //
+//    * All submeshes are considered to use the same primitive type [fixme ?].
+//
 // ----------------------------------------------------------------------------
 
 //
@@ -116,8 +118,26 @@ struct MeshData : public Resource {
     return static_cast<int32_t>(vertices.size()); 
   }
   
+  /* Return the number of primitives for the whole mesh. */
   inline int32_t nfaces() const { 
-    return static_cast<int32_t>(indices.size() / 3); 
+    size_t nelems = indices.size();
+    switch (type) {
+      case TRIANGLES:
+        nelems /= 3;
+      break;
+      case TRIANGLE_STRIP:
+        nelems -= 2;
+      break;
+      case LINES:
+        nelems -= 1;
+      break;
+      case POINTS:
+      break;
+      default:
+        LOG_ERROR("missing case");
+      return 0;
+    };
+    return static_cast<int32_t>(nelems);
   }
 
   inline bool has_materials() const { 

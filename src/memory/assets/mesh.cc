@@ -98,6 +98,7 @@ bool Mesh::setup() {
   type_       = meshdata.type;
   nelems_     = static_cast<int32_t>(meshdata.indices.size());
   nvertices_  = static_cast<int32_t>(meshdata.vertices.size());
+  nfaces_     = meshdata.nfaces();
   vgroups_    = meshdata.vgroups;
 
   // Calculate the mesh AABB.
