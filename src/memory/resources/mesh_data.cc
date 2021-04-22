@@ -824,7 +824,7 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
 
   // Handle MTL file materials if any.
   if (!meshfile.material_id.empty()) {
-    constexpr bool debug_log = true;
+    constexpr bool debug_log = false;
 
     // Determine the material file full path.
     std::string fn( filename );
@@ -948,6 +948,10 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
     return false;
   }
 
+  std::string basename(filename);
+  basename = Resource::TrimFilename(basename);
+  basename = basename.substr(0, basename.find_last_of('.'));
+
   /* ------------ */
   RawMeshFile meshfile;
   {
@@ -960,8 +964,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
     std::unordered_map< cgltf_material const*, std::string > material_names( data->materials_count );
     for (cgltf_size i = 0; i < data->materials_count; ++i) {
       cgltf_material const& mat = data->materials[i];
-      char matname[32]{};
-      sprintf(matname, "[material %02d]", i);
+      char matname[64]{};
+      sprintf(matname, "%s_material_%02d", basename.c_str(), int(i));
       material_names[ &mat ] = std::string( mat.name ? mat.name : matname );
     }
 
@@ -1113,8 +1117,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           auto *joint = skin->joints[index];
 
           // Joint name.
-          char jointname[32]{};
-          sprintf(jointname, "[joint %02d]", index);
+          char jointname[64]{};
+          sprintf(jointname, "%s::joint_%02d]", basename.c_str(), int(index));
           skl->names.push_back( (joint->name) ? joint->name : jointname );
 
           // Joint parent index.
@@ -1149,7 +1153,11 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           if (img->uri) {
             // GLTF file with external data.
 
-            info.diffuse_map = dirname + "/" + std::string(img->uri);
+            if (img->uri[0] != '/') {
+              info.diffuse_map = dirname + "/" + std::string(img->uri);
+            } else {
+              info.diffuse_map = std::string(img->uri);
+            }
           } else {
             // GLB / GLTF file with internal data.
 
