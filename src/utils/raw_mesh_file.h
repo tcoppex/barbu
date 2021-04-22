@@ -126,16 +126,20 @@ struct RawMeshData {
 struct MaterialInfo {
   std::string name;
 
-  glm::vec4 diffuse_color{ 1.0f };      // RGB Albedo + Alpha
-  glm::vec4 specular_color{ 0.0f };     // XYZ specular + W Exponent
+  glm::vec4 diffuse_color{ 1.0f, 1.0f, 1.0f, 0.75f };      // RGB Albedo + Alpha
+  glm::vec4 specular_color{ 0.0f, 0.0f, 0.0f, 1.0f };     // XYZ specular + W Exponent
 
   std::string diffuse_map;
   std::string specular_map;
   std::string bump_map;
   std::string alpha_map;
 
+  float alpha_cutoff = 0.5f; //
+
+  bool bBlending    = false;
+  bool bAlphaTest   = false;
   bool bDoubleSided = false;
-  bool bUnlit = false;
+  bool bUnlit       = false;
 };
 
 // MaterialFile.

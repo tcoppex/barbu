@@ -512,6 +512,11 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
 
   char namebuffer[128]{'\0'};
 
+  // If no objects are specified, create a default raw geo.
+  if (meshfile.meshes.empty()) {
+    meshfile.meshes.resize(1);
+  } 
+
   char *s = input;
   for (char *end = strchr(s, '\n'); end != nullptr; s = end+1u, end = strchr(s, '\n'))
   {
@@ -520,7 +525,12 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
     // Handle Objects, Submesh & Material file.
     if (s[0] & 1) {
       // OBJECT
-      if (s[0] == 'o') {
+
+      if (s[0] == '#') {
+        continue;
+      }
+
+      if ((s[0] == 'o')) {//} || (s[0] == 'g')) {
 
         // [wip]
         if (bSeparateObjects) {
@@ -561,11 +571,6 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
       // [the other captured parameters has their first char last bit set to 0, so we can skip here]
       continue;
     }
-
-    // If no objects are specified, create a default raw geo.
-    if (meshfile.meshes.empty()) {
-      meshfile.meshes.resize(1);
-    } 
 
     // Update the last geometry in the buffer.
     auto &raw = meshfile.meshes.back();
@@ -664,7 +669,7 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
     // Update border groups indices.
     auto &vgroups = raw.vgroups;
     vgroups.front().start_index = 0;
-    vgroups.back().end_index = static_cast<int32_t>(raw.elementsAttribs.size()) - 1;
+    vgroups.back().end_index = static_cast<int32_t>(raw.elementsAttribs.size());
   }
 }
 
@@ -676,6 +681,12 @@ void ParseMTL(char *input, MaterialFile &matfile) {
 
   auto &materials = matfile.infos;
   char namebuffer[128]{'\0'};
+
+  // For MTL, as there is no way to determine alpha testing / blending, we
+  // decide that materials are :
+  //  * opaque by default, 
+  //  * alpha_tested if they've got a map_Kd (with a potential alpha value) or an map_d, 
+  //  * transparent if they've got an opacity value ('d').
 
   char *s = input;
   for (char *end = strchr(s, '\n'); end != nullptr; s=end+1u, end = strchr(s, '\n')) //
@@ -701,6 +712,7 @@ void ParseMTL(char *input, MaterialFile &matfile) {
       if (check_token(s, "map_Kd")) {
         sscanf( s+7, "%128s", namebuffer);
         mat.diffuse_map = std::string(namebuffer);
+        mat.bAlphaTest = true;
       } else if (check_token(s, "map_Ks")) {
         sscanf( s+7, "%128s", namebuffer);
         mat.specular_map = std::string(namebuffer);
@@ -716,6 +728,7 @@ void ParseMTL(char *input, MaterialFile &matfile) {
       } else if (check_token(s, "map_d")) {
         sscanf( s+6, "%128s", namebuffer);
         mat.alpha_map = std::string( namebuffer );
+        mat.bAlphaTest = true;
       }
     }
     // Colors.
@@ -740,6 +753,7 @@ void ParseMTL(char *input, MaterialFile &matfile) {
     // Alpha value.
     else if (s[0] == 'd') {
       sscanf(s+2, "%f", &mat.diffuse_color.w);
+      mat.bBlending = true;
     }
     // Specular exponent.
     else if ((s[0] == 'N') && (s[1] == 's')) {
@@ -753,7 +767,10 @@ void ParseMTL(char *input, MaterialFile &matfile) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-bool MeshDataManager::CheckExtension(std::string_view ext) {
+bool MeshDataManager::CheckExtension(std::string_view _ext) {
+  std::string ext(_ext);
+  std::transform( _ext.begin(), _ext.end(), ext.begin(), ::tolower);
+  
   return ("obj" == ext)
       || ("glb" == ext)
       || ("gltf" == ext)
@@ -766,7 +783,9 @@ MeshDataManager::Handle MeshDataManager::_load(ResourceId const& id) {
   MeshDataManager::Handle h(id);
 
   auto const path = id.path;
-  auto const ext  = path.substr(path.find_last_of(".") + 1);
+  
+  auto ext = path.substr(path.find_last_of(".") + 1);
+  std::transform( ext.begin(), ext.end(), ext.begin(), ::tolower);
 
   auto &meshdata = *h.data;
 
@@ -805,7 +824,7 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
 
   // Handle MTL file materials if any.
   if (!meshfile.material_id.empty()) {
-    constexpr bool debug_log = false;
+    constexpr bool debug_log = true;
 
     // Determine the material file full path.
     std::string fn( filename );
@@ -932,8 +951,6 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
   /* ------------ */
   RawMeshFile meshfile;
   {
-    //DisplayStats_GLTF(data);
-
     // We will join all meshes as a single one.
     if (meshfile.meshes.empty()) {
       meshfile.meshes.resize(1);
@@ -979,7 +996,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         }
 
         if (prim.type != cgltf_primitive_type_triangles) {
-          LOG_WARNING( "GLTF non TRIANGLES primitives not implemented : ", raw.name );
+          LOG_WARNING( "GLTF non TRIANGLES primitives are not implemented : ", raw.name );
         }
 
         // Attributes.
@@ -1141,8 +1158,6 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             if (img->buffer_view) {
               auto buffer_view = img->buffer_view;
 
-              // TODO : tag the image when it has already been gamma corrected.
-
               // Create the resource internally.
               Resources::LoadInternal<Image>( 
                 ResourceId(info.diffuse_map), 
@@ -1159,6 +1174,21 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           }
         }
       }
+
+      switch (mat.alpha_mode) {
+        case cgltf_alpha_mode_blend:
+          info.bBlending = true;
+        break;
+        case cgltf_alpha_mode_mask:
+          info.bAlphaTest = true;
+        break;
+        case cgltf_alpha_mode_opaque:
+        default:
+        break;
+      }
+
+      info.alpha_cutoff = mat.alpha_cutoff;
+      //LOG_MESSAGE(info.alpha_cutoff, info.bBlending, info.bAlphaTest);
 
       info.bDoubleSided = mat.double_sided;
       info.bUnlit       = mat.unlit;

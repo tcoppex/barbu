@@ -23,6 +23,7 @@ class GenericMaterial : public Material {
     , color_mode_(ColorMode::kDefault)
     , tex_albedo_(nullptr)
     , color_{1.0f, 1.0f, 1.0f, 0.75f}
+    , alpha_cutoff_(0.5f)
   {
     PROGRAM_ASSETS.create( program_id_, { 
       SHADERS_DIR "/generic/vs_generic.glsl",
@@ -34,16 +35,24 @@ class GenericMaterial : public Material {
     tex_albedo_ = (info.diffuse_map.empty()) ? nullptr 
                                              : TEXTURE_ASSETS.create2d( AssetId(info.diffuse_map) )
                                              ;
-    color_      = info.diffuse_color;
+    
+    color_        = info.diffuse_color;
+    alpha_cutoff_ = info.alpha_cutoff;
 
     if (info.bUnlit) {
       color_mode_ = ColorMode::Unlit;
     }
+
     bDoubleSided_ = info.bDoubleSided;
     
-    // if (!info.alpha_map.empty() || (color_.a < 1.0f)) {
-    //   set_render_mode(RenderMode::Transparent);
-    // }
+    // Switch mode depending on parameters.
+    if (render_mode_ == RenderMode::kDefault) {
+      if (info.bBlending) {
+        render_mode_ = RenderMode::Transparent;
+      } else if (info.bAlphaTest) {
+        render_mode_ = RenderMode::CutOff;
+      }
+    }
   }
 
   void update_internals() final {
@@ -62,6 +71,9 @@ class GenericMaterial : public Material {
       gx::SetUniform( pgm, "uAlbedoTex",  image_unit);
       ++image_unit;
     }
+
+    float const cutoff = (render_mode() == RenderMode::CutOff) ? alpha_cutoff_ : 0.0f;
+    gx::SetUniform( pgm, "uAlphaCutOff", cutoff);
   }
 
  private:
@@ -69,6 +81,7 @@ class GenericMaterial : public Material {
   
   TextureHandle tex_albedo_;
   glm::vec4     color_;
+  float         alpha_cutoff_;
 };
 
 // ----------------------------------------------------------------------------

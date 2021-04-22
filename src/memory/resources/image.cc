@@ -39,7 +39,7 @@ ImageManager::Handle ImageManager::_load(ResourceId const& id) {
       return h;
     }
     img->hdr = true;
-    img->pixels = stbi_loadf(filename, &img->width, &img->height, &img->channels, 0);
+    img->pixels = stbi_loadf(filename, &img->width, &img->height, &img->channels, kDefaultNumChannels); //
 
     // Reorganized cubemap data as an array of faces.
     if (img->pixels != nullptr) {
@@ -47,9 +47,12 @@ ImageManager::Handle ImageManager::_load(ResourceId const& id) {
     }
   } else {
     img->hdr = false;
-    img->pixels = stbi_load( filename, &img->width, &img->height, &img->channels, 3); //
+    img->pixels = stbi_load( filename, &img->width, &img->height, &img->channels, kDefaultNumChannels); //
     img->depth = 1;
   }
+
+  // Force the number of channels to what we've required.
+  img->channels = kDefaultNumChannels;
 
   if (nullptr == img->pixels) {
     h.data.reset();
@@ -63,7 +66,8 @@ ImageManager::Handle ImageManager::_load_internal(ResourceId const& id, int32_t 
   ImageManager::Handle h(id);
 
   auto img = h.data;
-  img->pixels = stbi_load_from_memory( (stbi_uc const *)data, size, &img->width, &img->height, &img->channels, 3); //
+  img->pixels = stbi_load_from_memory( (stbi_uc const *)data, size, &img->width, &img->height, &img->channels, kDefaultNumChannels); //
+  img->channels = kDefaultNumChannels;
 
   if (nullptr == img->pixels) {
     LOG_WARNING( "Image Resource internal load failed for :", id.c_str());

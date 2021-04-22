@@ -11,6 +11,7 @@
 enum class RenderMode {
   Opaque,
   Transparent,
+  CutOff,
   kCount,
   kDefault = RenderMode::Opaque
 };
@@ -74,7 +75,7 @@ class Material {
 
   inline bool double_sided() const {
     return bDoubleSided_;
-  }  
+  }
 
   inline UIView* ui_view() {
     return ui_view_;
@@ -84,10 +85,15 @@ class Material {
     render_mode_ = render_mode;
   }
 
+  inline void set_double_sided(bool status) {
+    bDoubleSided_ = status;
+  }
+
  protected:
   virtual void update_internals() = 0;
 
   AssetId    program_id_;
+
   RenderMode render_mode_;
   bool bDoubleSided_ = false;
 

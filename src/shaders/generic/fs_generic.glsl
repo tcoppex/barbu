@@ -24,9 +24,10 @@ layout(location = 0) out vec4 fragColor;
 
 // Uniforms.
 uniform sampler2D uAlbedoTex;
-uniform vec4 uColor     = vec4(1.0f);
-uniform bool uHasAlbedo = true;
-uniform int uColorMode  = CM_IRRADIANCE;
+uniform vec4 uColor        = vec4(1.0f);
+uniform bool uHasAlbedo    = true;
+uniform int uColorMode     = CM_IRRADIANCE;
+uniform float uAlphaCutOff = 0.5f;
 
 // ----------------------------------------------------------------------------
 
@@ -93,6 +94,10 @@ void main() {
     color = texture(uAlbedoTex, inTexcoord.xy);
   } else {
     color = uColor;
+  }
+
+  if (color.a < uAlphaCutOff) { 
+    discard;
   }
 
   fragColor.xyz = colorize( uColorMode, color.rgb);
