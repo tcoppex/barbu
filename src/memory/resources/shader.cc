@@ -6,6 +6,10 @@
 
 // ----------------------------------------------------------------------------
 
+constexpr bool kDebugOutput = false;
+
+// ----------------------------------------------------------------------------
+
 namespace {
 
 // Detect the type of shader file by comparing the file's basename to a
@@ -100,6 +104,10 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
   /* Check for include file an retrieve its name */
   last = out;
 
+  static char spaces[] = "                                          ";
+  static int kSpace = 41;
+  kSpace--;
+
   while (nullptr != (first = strstr(last, substr))) {
     /* pass commented include directives */
     if ((first != out) && (*(first-1) != '\n')) {
@@ -118,6 +126,8 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
     strncpy(include_fn, first, include_len);
     include_fn[include_len] = '\0';
 
+    if (kDebugOutput) LOG_MESSAGE( &spaces[kSpace], ">", include_fn );
+
     /* Set include global path */
     sprintf(include_path, "%s/%s", SHADERS_DIR, include_fn);
 
@@ -126,7 +136,8 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
 
     /* Retrieve the include file */
     if (!IsSpecialFile(include_path)) {
-      ReadShaderFile(include_path, maxsize, include_file, level);
+      ReadShaderFile(include_path, maxsize, include_file, level); // !!
+      LOG_INFO( "ReadShaderFile >>", include_path, maxsize, "include_file", *level, strlen(include_file));
     }
 
     /* Add the line directive to the included file */
@@ -136,12 +147,15 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
     last = strchr(last, '\n');
     sprintf(include_file, "%s\n%s", include_file, last);
 
+    //LOG_INFO("\n\n\n", include_file, last, "\n\n\n");
+
     /* Copy it back to the shader buffer */
     sprintf(first-len, "%s", include_file);
 
     /* Free include file data */
     free(include_file);
   }
+  kSpace++;
 
   return true;
 }
@@ -150,7 +164,9 @@ bool ReadShaderFile(std::string_view filename, int32_t const maxsize, char out[]
   /// Simple way to deal with include recursivity, without reading guards.
   /// Known limitations : do not handle loop well.
 
-  int max_level = 8;
+  if (kDebugOutput) LOG_INFO(filename);
+
+  int max_level = 32;
   bool const result = ReadShaderFile(filename.data(), maxsize, out, &max_level);
   if (max_level < 0) {
     LOG_ERROR( filename, ": too many nested includes found.");
