@@ -5,6 +5,14 @@
 const float kGamma    = 2.2;
 const float kInvGamma = 1.0 / kGamma;
 
+float gamma_correct(in float x) {
+  return pow( x, kInvGamma);
+}
+
+float gamma_uncorrect(in float x) {
+  return pow( x, kGamma);
+}
+
 vec3 gamma_correct(in vec3 rgb) {
   return pow( rgb, vec3(kInvGamma));
 }
