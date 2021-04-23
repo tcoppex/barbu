@@ -18,7 +18,7 @@ struct Skeleton {
   JointBuffer_t<glm::mat4>    inverse_bind_matrices;
 
   // [debug]
-  JointBuffer_t<glm::mat4>    global_bind_matrices;
+  JointBuffer_t<glm::mat4>    global_bind_matrices; //
 
   // Animation clips.
   std::vector<AnimationClip_t> clips;
