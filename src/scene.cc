@@ -89,8 +89,13 @@ void Scene::update(float const dt, Camera &camera) {
   }
   
   // Center.
-  if ('C' == eventData.lastChar) {
-    ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid());
+  switch (eventData.lastChar) {
+    case 'C':
+    case GLFW_KEY_1:
+    case GLFW_KEY_3:
+    case GLFW_KEY_7:
+      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid());
+    break;
   }
 
   // Import drag-n-dropped objects if any.

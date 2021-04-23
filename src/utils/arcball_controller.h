@@ -65,19 +65,19 @@ class ArcBallController : public Camera::ViewController {
       // Side axis views.
       case GLFW_KEY_1:
         set_view(0.0, 0.0);
-        reset_target();
+        //reset_target();
         bSideViewSet_ = true;
       break;
 
       case GLFW_KEY_3:
         set_view(0.0, -half_pi);
-        reset_target();
+        //reset_target();
         bSideViewSet_ = true;
       break;
 
       case GLFW_KEY_7:
         set_view(half_pi, 0.0);
-        reset_target();
+        //reset_target();
         bSideViewSet_ = true;
       break;
 
@@ -216,11 +216,12 @@ class ArcBallController : public Camera::ViewController {
   }
 
   inline void set_target(glm::vec3 const& target) {
-    target_ = glm::vec4( target, 0.0);
+    target2_ = target;
   }
 
   inline void reset_target() {
-    target_ = glm::vec4(0.0);
+    target_ = glm::vec3(0.0);
+    target2_ = glm::vec3(0.0);
   }
 
   inline void set_view(double const rx, double const ry, bool const bNoSmooth=kDefaultSmoothTransition, bool const bFastTarget=kDefaultFastestPitchAngle) {
@@ -261,13 +262,14 @@ class ArcBallController : public Camera::ViewController {
     }
 
     if (btnTranslate) {
-      auto const acc = dolly_ * kMouseTAcceleration; //
+      auto const acc = dolly2_ * kMouseTAcceleration; //
       
       #if ABC_USE_CUSTOM_TARGET
       target_ += glm::vec3(glm::vec4( float(acc * dv_x), float(-acc * dv_y), 0.0f, 0.0f) * Rmatrix_);
+      target2_ = target_;
       #else
-      target_.x += static_cast<float>(dv_x * acc);
-      target_.y -= static_cast<float>(dv_y * acc);
+      target2_.x += static_cast<float>(dv_x * acc);
+      target2_.y -= static_cast<float>(dv_y * acc);
       #endif
     }
   }
@@ -286,6 +288,7 @@ class ArcBallController : public Camera::ViewController {
     yaw_   = lerp(yaw_, yaw2_, k);
     pitch_ = lerp(pitch_, pitch2_, k);
     dolly_ = lerp(dolly_, dolly2_, k);
+    target_ = glm::mix(target_, target2_, k);
   }
 
 
@@ -313,7 +316,8 @@ class ArcBallController : public Camera::ViewController {
   double dolly_, dolly2_;
 
 // -------------
-  glm::vec3 target_ = glm::vec3(0.0f); //
+  glm::vec3 target_  = glm::vec3(0.0f); //
+  glm::vec3 target2_ = glm::vec3(0.0f); //
 
 #if ABC_USE_CUSTOM_TARGET
   // [we could avoid keeping the previous rotation matrix].
