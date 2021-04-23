@@ -50,7 +50,7 @@ class AppScene {
 
   virtual UIView* view() const = 0;
 
-  virtual void update(float const dt, Camera const& camera) = 0;
+  virtual void update(float const dt, Camera &camera) = 0;
   virtual void render(Camera const& camera, unsigned int bitmask = SceneFilterBit::SCENE_EVERYTHING) = 0;
 };
 

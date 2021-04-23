@@ -47,8 +47,10 @@ void Main::render() {
     ImGui::BulletText("[s] to scale.");
     ImGui::BulletText("[t] to translate.");
     ImGui::BulletText("double [r]/[t] to switch space.");
+    ImGui::BulletText("[LeftCtrl] to snap.");
     ImGui::BulletText("[x] to reset transform.");
     ImGui::BulletText("[X] to delete.");
+    ImGui::BulletText("[C] to center view / focus.");
     ImGui::Spacing();
     ImGui::Text("View control : ");
     ImGui::BulletText("Keypad 0 to reset view.");

@@ -215,6 +215,10 @@ class ArcBallController : public Camera::ViewController {
     dolly_ = dolly2_ = value; 
   }
 
+  inline void set_target(glm::vec3 const& target) {
+    target_ = glm::vec4( target, 0.0);
+  }
+
   inline void reset_target() {
     target_ = glm::vec4(0.0);
   }

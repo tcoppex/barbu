@@ -63,7 +63,7 @@ UIView* Scene::view() const {
   return ui_view_;
 }
 
-void Scene::update(float const dt, Camera const& camera) {
+void Scene::update(float const dt, Camera &camera) {
   auto const& eventData{ GetEventData() };
 
   // Display opaque materials wireframe.
@@ -88,6 +88,16 @@ void Scene::update(float const dt, Camera const& camera) {
     if (MeshDataManager::CheckExtension(ext)) {
       scene_hierarchy_.import_model(fn);
     }
+  }
+
+  // Center the camera to the selected object. [to improve]
+  if ('C' == eventData.lastChar) {
+    glm::vec3 center = glm::vec3(0.0f);
+    for (auto &e : scene_hierarchy_.selected()) {
+      center -= e->transform().position();
+      break;
+    }
+    ((ArcBallController*)camera.controller())->set_target(center);
   }
 
   // Update sub-systems.
