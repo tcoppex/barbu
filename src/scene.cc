@@ -9,8 +9,8 @@
 
 void Scene::init(Camera const& camera, views::Main &ui_mainview) {
   // OpenGL rendering parameters.
-  gx::ClearColor(0.0165f, 0.0165f, 0.0160f, 1.0f);
-  //gx::ClearColor(0.9f, 0.6f, 0.5f, 1.0f);
+  //gx::ClearColor(0.0165f, 0.0165f, 0.0160f, 1.0f);
+  gx::ClearColor(0.9f, 0.7f, 0.5f, 1.0f);
 
   scene_hierarchy_.init();
   //scene_hierarchy_.add_bounding_sphere();
@@ -38,7 +38,7 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
     hair_.init( scalpId ); //
     #else
     scene_hierarchy_.import_model( 
-      ASSETS_DIR "/models/gltf_samples/SimpleSkin.gltf" 
+      ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
     );
     params_.enable_hair = false;
     #endif
@@ -142,6 +142,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
   {
     if (!params_.show_wireframe) {
       render_entities( RenderMode::Opaque, camera );
+      render_entities( RenderMode::CutOff, camera );
     }
   }
   CHECK_GX_ERROR();
@@ -155,6 +156,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
 
     if (params_.show_wireframe) {
       render_entities( RenderMode::Opaque, camera );
+      render_entities( RenderMode::CutOff, camera );
 
       if (params_.enable_hair) {
         hair_.render(camera);
