@@ -55,9 +55,11 @@ ImageManager::Handle ImageManager::_load(ResourceId const& id) {
   img->channels = kDefaultNumChannels;
 
   if (nullptr == img->pixels) {
+    LOG_WARNING( "Image Resource load failed for :", id.c_str());
     h.data.reset();
     h.data = nullptr;
   }
+  LOG_DEBUG_INFO(__FUNCTION__, id.c_str());
 
   return h;
 }
@@ -74,6 +76,7 @@ ImageManager::Handle ImageManager::_load_internal(ResourceId const& id, int32_t 
     h.data.reset();
     h.data = nullptr;
   }
+  LOG_DEBUG_INFO(__FUNCTION__, id.c_str());
 
   return h;
 }

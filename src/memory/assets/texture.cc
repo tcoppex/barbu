@@ -7,23 +7,27 @@
 
 namespace {
 
-void UseLinearInternalFormat(std::string fn, int32_t &internalFormat, bool bForce = false) {
+void UseLinearInternalFormat(std::string const& filename, int32_t &internalFormat, bool bForce = false) {
+  std::string fn(filename);
+
   // Transform filename to lowercase to test matches.
   std::transform( fn.begin(), fn.end(), fn.begin(), ::tolower);
   
   // Find token for non linear texture.
   std::string const kLinearToken[]{
-    "bump", "normal"
+    "bump", "normal", "alpha", "mask",
   };
   for (auto const& s : kLinearToken) {
     if (fn.find(s) != fn.npos) {
+      LOG_DEBUG_INFO(__FUNCTION__, ": Token", s, "was found in", filename);
       return;
     }
   }
 
   // Test extension.
-  auto const ext = fn.substr(fn.find_last_of(".") + 1);  
+  std::string ext = fn.substr(fn.find_last_of(".") + 1);  
   bool const is_internal = (ext == fn);
+  std::transform( ext.begin(), ext.end(), ext.begin(), ::tolower);
   
   if (bForce
   || is_internal
