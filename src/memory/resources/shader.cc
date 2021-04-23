@@ -6,7 +6,11 @@
 
 // ----------------------------------------------------------------------------
 
-constexpr bool kDebugOutput = false;
+#ifdef BARBU_ENABLE_DEBUG_LOG
+static char spaces[] = "                                ";
+#endif
+
+static int s_debugSpacing = 31;
 
 // ----------------------------------------------------------------------------
 
@@ -104,9 +108,7 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
   /* Check for include file an retrieve its name */
   last = out;
 
-  static char spaces[] = "                                          ";
-  static int kSpace = 41;
-  kSpace--;
+  s_debugSpacing--;
 
   while (nullptr != (first = strstr(last, substr))) {
     /* pass commented include directives */
@@ -126,7 +128,7 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
     strncpy(include_fn, first, include_len);
     include_fn[include_len] = '\0';
 
-    if (kDebugOutput) LOG_MESSAGE( &spaces[kSpace], ">", include_fn );
+    LOG_DEBUG( &spaces[s_debugSpacing], ">", include_fn );
 
     /* Set include global path */
     sprintf(include_path, "%s/%s", SHADERS_DIR, include_fn);
@@ -152,7 +154,7 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
     /* Free include file data */
     free(include_file);
   }
-  kSpace++;
+  s_debugSpacing++;
 
   return true;
 }
@@ -161,7 +163,7 @@ bool ReadShaderFile(std::string_view filename, int32_t const maxsize, char out[]
   /// Simple way to deal with include recursivity, without reading guards.
   /// Known limitations : do not handle loop well.
 
-  if (kDebugOutput) LOG_INFO(filename);
+  LOG_DEBUG_INFO(filename);
 
   int max_level = 32;
   bool const result = ReadShaderFile(filename.data(), maxsize, out, &max_level);
