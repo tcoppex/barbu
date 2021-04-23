@@ -71,33 +71,34 @@ void Scene::update(float const dt, Camera &camera) {
     params_.show_wireframe ^= true;
   }
 
-  // Reset / Delete selection.
-  if ('x' == eventData.lastChar) {
-    for (auto &e : scene_hierarchy_.selected()) {
-      scene_hierarchy_.reset_entity(e);
-    }
-  } else if ('X' == eventData.lastChar) {
-    for (auto &e : scene_hierarchy_.selected()) {
-      scene_hierarchy_.remove_entity(e);
+  auto &selected = scene_hierarchy_.selected();
+  if (!selected.empty()) {
+
+    // Reset.
+    if ('x' == eventData.lastChar) {
+      for (auto &e : selected) {
+        scene_hierarchy_.reset_entity(e);
+      }
+    } 
+    // Delete.
+    else if ('X' == eventData.lastChar) {
+      for (auto &e : selected) {
+        scene_hierarchy_.remove_entity(e);
+      }
     }
   }
   
+  // Center.
+  if ('C' == eventData.lastChar) {
+    ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid());
+  }
+
   // Import drag-n-dropped objects if any.
   for (auto &fn : eventData.dragFilenames) {
     auto const ext = fn.substr(fn.find_last_of(".") + 1);
     if (MeshDataManager::CheckExtension(ext)) {
       scene_hierarchy_.import_model(fn);
     }
-  }
-
-  // Center the camera to the selected object. [to improve]
-  if ('C' == eventData.lastChar) {
-    glm::vec3 center = glm::vec3(0.0f);
-    for (auto &e : scene_hierarchy_.selected()) {
-      center -= e->transform().position();
-      break;
-    }
-    ((ArcBallController*)camera.controller())->set_target(center);
   }
 
   // Update sub-systems.

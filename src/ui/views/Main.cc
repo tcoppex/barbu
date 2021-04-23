@@ -50,9 +50,9 @@ void Main::render() {
     ImGui::BulletText("[LeftCtrl] to snap.");
     ImGui::BulletText("[x] to reset transform.");
     ImGui::BulletText("[X] to delete.");
-    ImGui::BulletText("[C] to center view / focus.");
     ImGui::Spacing();
     ImGui::Text("View control : ");
+    ImGui::BulletText("[C] to center view / focus.");
     ImGui::BulletText("Keypad 0 to reset view.");
     ImGui::BulletText("Keypad 1/3/7 to side view.");
     ImGui::BulletText("Keypad 2/4/6/8 to quick orbit.");

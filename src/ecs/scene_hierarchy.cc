@@ -156,6 +156,23 @@ void SceneHierarchy::update_selected_local_matrices() {
   }
 }
 
+glm::vec3 SceneHierarchy::centroid(bool selected) const {
+  glm::vec3 center{0.0f};
+
+  if (selected && !frame_.selected.empty()) {
+    for (auto const& e : frame_.selected) {
+      center -= e->transform().position();
+    }
+    center /= frame_.selected.size();
+  } else {
+    for (auto const& e : entities_) {
+      center -= e->transform().position();
+    }
+    center /= entities_.size();
+  }
+  return center;
+}
+
 EntityHandle SceneHierarchy::add_bounding_sphere() {
   constexpr int32_t kDefaultRes = 16;
   if (auto mesh = MESH_ASSETS.createSphere(kDefaultRes, kDefaultRes); mesh) {
