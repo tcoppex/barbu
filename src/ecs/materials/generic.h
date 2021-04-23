@@ -4,16 +4,18 @@
 #include "ecs/material.h"
 #include "memory/assets/texture.h"
 
+#include "shaders/generic/interop.h"
+
 // ----------------------------------------------------------------------------
 
 class GenericMaterial : public Material {
  public:
   enum class ColorMode {
-    Unlit,
-    Normal,
-    KeyLights,
-    Irradiance,
-    TexCoords,
+    Unlit         = COLORMODE_MATERIAL_UNLIT,
+    Normal        = COLORMODE_MATERIAL_NORMAL,
+    TexCoord      = COLORMODE_MATERIAL_TEXCOORD,
+    KeyLights     = COLORMODE_MATERIAL_KEY_LIGHTS,
+    Irradiance    = COLORMODE_MATERIAL_IRRADIANCE,
     kCount,
     kDefault = ColorMode::Irradiance
   };
