@@ -91,10 +91,12 @@ void Scene::update(float const dt, Camera &camera) {
   // Center.
   switch (eventData.lastChar) {
     case 'C':
+      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid());
+    break;
     case GLFW_KEY_1:
     case GLFW_KEY_3:
     case GLFW_KEY_7:
-      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid());
+      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid(), true);
     break;
   }
 

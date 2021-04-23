@@ -159,6 +159,7 @@ void SceneHierarchy::update_selected_local_matrices() {
 glm::vec3 SceneHierarchy::centroid(bool selected) const {
   glm::vec3 center{0.0f};
 
+  // [improve to detect centroid of object, not just their roots]
   if (selected && !frame_.selected.empty()) {
     for (auto const& e : frame_.selected) {
       center -= e->transform().position();
