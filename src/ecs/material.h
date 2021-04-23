@@ -55,11 +55,14 @@ class Material {
 
       auto const pgm = pgm_handle->id;
       gx::UseProgram( pgm );
-
-      gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
+      
+      // (vertex)
       gx::SetUniform( pgm, "uModelMatrix",        attributes.world_matrix);
       gx::SetUniform( pgm, "uMVP",                attributes.mvp_matrix);
+      gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
+      // (fragment)
       gx::SetUniform( pgm, "uEyePosWS",           attributes.eye_position);
+      //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
     }
 
     update_internals();

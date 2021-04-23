@@ -1,5 +1,5 @@
-#ifndef SHADERS_POSTPROCESS_TONEMAPPING_GLSL_
-#define SHADERS_POSTPROCESS_TONEMAPPING_GLSL_
+#ifndef SHADERS_SHARED_INC_TONEMAPPING_GLSL_
+#define SHADERS_SHARED_INC_TONEMAPPING_GLSL_
 
 // ----------------------------------------------------------------------------
 /*
@@ -19,11 +19,11 @@
 */
 // ----------------------------------------------------------------------------
 
-const float gamma = 2.2; // [should be user defined]
-const vec3 inv_gamma = vec3( 1.0 / gamma );
+#include "shared/inc_gamma.glsl"
 
 // ----------------------------------------------------------------------------
 
+#define TONEMAPPING_NONE              -1
 #define TONEMAPPING_LINEAR            0
 #define TONEMAPPING_SIMPLE_REINHARD   1
 #define TONEMAPPING_LUMA_REINHARD     2
@@ -37,14 +37,14 @@ const vec3 inv_gamma = vec3( 1.0 / gamma );
 vec3 linearToneMapping(vec3 color) {
   const float exposure = 1.0;
   color = clamp(exposure * color, 0.0, 1.0);
-  color = pow(color, inv_gamma);
+  color = gamma_correct(color);
   return color;
 }
 
 vec3 simpleReinhardToneMapping(vec3 color) {
   const float exposure = 1.0;
   color *= exposure / (1.0 + color / exposure);
-  color = pow(color, inv_gamma);
+  color = gamma_correct(color);
   return color;
 }
 
@@ -52,22 +52,22 @@ vec3 lumaBasedReinhardToneMapping(vec3 color) {
   float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
   float toneMappedLuma = luma / (1.0 + luma);
   color *= toneMappedLuma / luma;
-  color = pow(color, inv_gamma);
+  color = gamma_correct(color);
   return color;
 }
 
 vec3 whitePreservingLumaBasedReinhardToneMapping(vec3 color) {
   const float white = 2.0;
-  float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
-  float toneMappedLuma = luma * (1.0 + luma / (white*white)) / (1.0 + luma);
+  const float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+  const float toneMappedLuma = luma * (1.0 + luma / (white*white)) / (1.0 + luma);
   color *= toneMappedLuma / luma;
-  color = pow(color, inv_gamma);
+  color = gamma_correct(color);
   return color;
 }
 
 vec3 RomBinDaHouseToneMapping(vec3 color) {
   color = exp( -1.0 / ( 2.72*color + 0.15 ) );
-  color = pow(color, inv_gamma);
+  color = gamma_correct(color);
   return color;
 }
 
@@ -89,38 +89,38 @@ vec3 Uncharted2ToneMapping(vec3 color) {
   
   color *= exposure;
   color = ((color * (A * color + C * B) + D * E) / (color * (A * color + B) + D * F)) - E / F;
-  float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
+  const float white = ((W * (A * W + C * B) + D * E) / (W * (A * W + B) + D * F)) - E / F;
   color /= white;
-  color = pow(color, vec3(1.0 / gamma));
+  color = gamma_correct(color);
   return color;
 }
 
 // ----------------------------------------------------------------------------
 
-vec3 testingToneMapping(vec3 color, float x) {
+vec3 testingToneMapping(vec3 color, float dx) {
   const float dn = 1.0 / 7.0;
 
-  if (x < 1.0f * dn) {
+  if (dx < 1.0f * dn) {
     return linearToneMapping(color);
   } 
 
-  if (x < 2.0f * dn) {
+  if (dx < 2.0f * dn) {
     return simpleReinhardToneMapping(color);
   } 
 
-  if (x < 3.0f * dn) {
+  if (dx < 3.0f * dn) {
     return lumaBasedReinhardToneMapping(color);
   } 
 
-  if (x < 4.0f * dn) {
+  if (dx < 4.0f * dn) {
     return whitePreservingLumaBasedReinhardToneMapping(color);
   } 
 
-  if (x < 5.0f * dn) {
+  if (dx < 5.0f * dn) {
     return RomBinDaHouseToneMapping(color);
   } 
 
-  if (x < 6.0f * dn) {
+  if (dx < 6.0f * dn) {
     return filmicToneMapping(color);
   } 
 
@@ -129,34 +129,37 @@ vec3 testingToneMapping(vec3 color, float x) {
 
 // ----------------------------------------------------------------------------
 
-vec3 toneMapping(vec3 color, int mode) {
-  if (mode == TONEMAPPING_LINEAR) {
-    return linearToneMapping(color);
-  } 
+vec3 toneMapping(int mode, in vec3 color) {
+  switch (mode) {
+    case TONEMAPPING_LINEAR:
+      return linearToneMapping(color); 
 
-  if (mode == TONEMAPPING_SIMPLE_REINHARD) {
-    return simpleReinhardToneMapping(color);
-  } 
+    case TONEMAPPING_SIMPLE_REINHARD:
+      return simpleReinhardToneMapping(color);
+     
+    case TONEMAPPING_LUMA_REINHARD:
+      return lumaBasedReinhardToneMapping(color);
 
-  if (mode == TONEMAPPING_LUMA_REINHARD) {
-    return lumaBasedReinhardToneMapping(color);
-  } 
+    case TONEMAPPING_LUMA_REINHARD_2:
+      return whitePreservingLumaBasedReinhardToneMapping(color);
 
-  if (mode == TONEMAPPING_LUMA_REINHARD_2) {
-    return whitePreservingLumaBasedReinhardToneMapping(color);
-  } 
+    case TONEMAPPING_ROMBINDAHOUSE:
+      return RomBinDaHouseToneMapping(color);
 
-  if (mode == TONEMAPPING_ROMBINDAHOUSE) {
-    return RomBinDaHouseToneMapping(color);
-  } 
+    case TONEMAPPING_FILMIC:
+      return filmicToneMapping(color);
 
-  if (mode == TONEMAPPING_FILMIC) {
-    return filmicToneMapping(color);
-  } 
+    case TONEMAPPING_UNCHARTED:
+      return Uncharted2ToneMapping(color);
+     
+    default:
+    case TONEMAPPING_NONE:
+      return color;
+  }
 
-  return Uncharted2ToneMapping(color);
+  return color;
 }
 
 // ----------------------------------------------------------------------------
 
-#endif // SHADERS_POSTPROCESS_TONEMAPPING_GLSL_
+#endif // SHADERS_SHARED_INC_TONEMAPPING_GLSL_

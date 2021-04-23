@@ -3,11 +3,11 @@
 
 // ----------------------------------------------------------------------------
 
-#define COLORMODE_MATERIAL_UNLIT        0
-#define COLORMODE_MATERIAL_NORMAL       1
-#define COLORMODE_MATERIAL_TEXCOORD     2
-#define COLORMODE_MATERIAL_KEY_LIGHTS   3
-#define COLORMODE_MATERIAL_IRRADIANCE   4
+#define MATERIAL_GENERIC_COLOR_MODE_UNLIT        0
+#define MATERIAL_GENERIC_COLOR_MODE_NORMAL       1
+#define MATERIAL_GENERIC_COLOR_MODE_TEXCOORD     2
+#define MATERIAL_GENERIC_COLOR_MODE_IRRADIANCE   3
+#define MATERIAL_GENERIC_COLOR_MODE_LIGHT_PBR    4
 
 // ----------------------------------------------------------------------------
 

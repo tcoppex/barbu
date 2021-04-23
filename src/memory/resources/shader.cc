@@ -136,8 +136,7 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
 
     /* Retrieve the include file */
     if (!IsSpecialFile(include_path)) {
-      ReadShaderFile(include_path, maxsize, include_file, level); // !!
-      LOG_INFO( "ReadShaderFile >>", include_path, maxsize, "include_file", *level, strlen(include_file));
+      ReadShaderFile(include_path, maxsize, include_file, level);
     }
 
     /* Add the line directive to the included file */
@@ -146,8 +145,6 @@ bool ReadShaderFile(char const* filename, unsigned int const maxsize, char out[]
     /* Add the second part of the shader */
     last = strchr(last, '\n');
     sprintf(include_file, "%s\n%s", include_file, last);
-
-    //LOG_INFO("\n\n\n", include_file, last, "\n\n\n");
 
     /* Copy it back to the shader buffer */
     sprintf(first-len, "%s", include_file);
