@@ -49,8 +49,8 @@ FragLight_t get_fraglight_params(in LightInfo_t light_info, in FragInfo_t frag_i
   light.H = normalize( light.L + frag_info.V );
   
   // Saturated dot products.
-  light.n_dot_l = clamp(dot(frag_info.N, light.L), 0, 1);
-  light.n_dot_h = clamp(dot(frag_info.N, light.H), 0, 1);
+  light.n_dot_l = max(dot(frag_info.N, light.L), 0);
+  light.n_dot_h = max(dot(frag_info.N, light.H), 0);
 
   return light;
 }

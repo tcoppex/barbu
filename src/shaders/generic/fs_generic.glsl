@@ -27,7 +27,7 @@ uniform int uColorMode;
 uniform vec4 uColor;
 uniform float uAlphaCutOff;
 uniform float uMetallic;
-uniform float uRoughness; //
+uniform float uRoughness;
 
 uniform sampler2D uAlbedoTex;
 uniform sampler2D uMetalRoughTex;
@@ -74,9 +74,15 @@ FragInfo_t get_worldspace_fraginfo() {
   FragInfo_t frag;
   frag.P        = inPositionWS;
   frag.N        = normalize( inNormalWS );
-  frag.V        = normalize( frag.P - (-uEyePosWS) );               // XXXXXX
+  frag.V        = normalize( uEyePosWS - frag.P );
   frag.uv       = inTexcoord.xy;
-  frag.n_dot_v  = max( dot(frag.N, frag.V), 0 );
+  frag.n_dot_v  = dot(frag.N, frag.V);
+
+  // Deal with double sided plane.
+  const float s = sign(frag.n_dot_v);
+  frag.N       *= s;
+  frag.n_dot_v *= s;
+
   return frag;
 }
 
@@ -126,7 +132,7 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
   }
 
   // Tonemapping is generally done in the postprocess stage, however for forward
-  // passes - like blending - it should be used directly. 
+  // passes - like blending - it should be applied directly. 
   rgb = toneMapping( uToneMapMode, rgb);
 
   return vec4(rgb, mat.color.a);
@@ -134,11 +140,13 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
 
 // ----------------------------------------------------------------------------
 
-void main() {
-  // float res = 16.;
-  const int cm = //(int((gl_FragCoord.x/1080.)*res) ^ int((gl_FragCoord.y/900.)*res)) % 8;
-                int((gl_FragCoord.x/1535.0)*8);
+int uColorMode_dbg() {
+  float res = 16.;
+  //return (int((gl_FragCoord.x/1080.)*res) ^ int((gl_FragCoord.y/900.)*res)) % 8;
+  return int((gl_FragCoord.x/1535.0)*8);
+}
 
+void main() {
   const Material_t material = get_material();
   const FragInfo_t fraginfo = get_worldspace_fraginfo();
   fragColor = colorize( uColorMode, fraginfo, material);
