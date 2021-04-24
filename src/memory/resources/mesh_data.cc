@@ -1206,6 +1206,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         break;
       }
 
+      info.ao_map       = setup_gltf_texture( mat.occlusion_texture.texture, dirname, info.name + "_occlusion");
       info.alpha_cutoff = mat.alpha_cutoff;
 
       info.bDoubleSided = mat.double_sided;

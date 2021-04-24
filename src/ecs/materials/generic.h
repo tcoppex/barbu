@@ -11,16 +11,19 @@
 class GenericMaterial : public Material {
  public:
   enum class ColorMode {
+    PBR           = MATERIAL_GENERIC_COLOR_MODE_PBR,
     Unlit         = MATERIAL_GENERIC_COLOR_MODE_UNLIT,
     Normal        = MATERIAL_GENERIC_COLOR_MODE_NORMAL,
     TexCoord      = MATERIAL_GENERIC_COLOR_MODE_TEXCOORD,
     Irradiance    = MATERIAL_GENERIC_COLOR_MODE_IRRADIANCE,
-    LightPBR      = MATERIAL_GENERIC_COLOR_MODE_LIGHT_PBR,
+    AO            = MATERIAL_GENERIC_COLOR_MODE_AO,
+    Metallic      = MATERIAL_GENERIC_COLOR_MODE_METALLIC,
+    Roughness     = MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS,
     kCount,
     kInternal,
   };
 
-  static constexpr ColorMode kDefaultColorMode{ ColorMode::LightPBR };
+  static constexpr ColorMode kDefaultColorMode{ ColorMode::PBR };
   static constexpr glm::vec4 kDefaultColor{ 1.0f, 1.0f, 1.0f, 0.75f };
   static constexpr float kDefaultAlphaCutOff{ 0.5f };
 
@@ -33,6 +36,7 @@ class GenericMaterial : public Material {
     , roughness_(0.4f)
     , tex_albedo_(nullptr)
     , tex_metal_rough_(nullptr)
+    , tex_ao_(nullptr)
   {
     PROGRAM_ASSETS.create( program_id_, { 
       SHADERS_DIR "/generic/vs_generic.glsl",
@@ -51,12 +55,16 @@ class GenericMaterial : public Material {
     metallic_     = info.metallic;
     roughness_    = info.roughness;
 
-    auto get_texture = [](auto const& str) { 
+    auto get_texture = [](auto const& str) {
       return (!str.empty()) ? TEXTURE_ASSETS.create2d( AssetId(str) ) : nullptr;
     };  
 
     tex_albedo_      = get_texture(info.diffuse_map);
     tex_metal_rough_ = get_texture(info.metallic_rough_map);
+    tex_ao_          = get_texture(info.ao_map);
+
+
+    LOG_INFO( info.name, (bool)tex_albedo_, (bool)tex_metal_rough_, (bool)tex_ao_);
 
     // Switch mode depending on parameters.
     if (render_mode_ == RenderMode::kDefault) {
@@ -74,8 +82,9 @@ class GenericMaterial : public Material {
 
     float const cutoff = (render_mode() == RenderMode::CutOff) ? alpha_cutoff_ : 0.0f;
     //auto const cm = (color_mode == ColorMode::kInternal) ? color_mode_ : color_mode;
-    bool const hasAlbedo     = static_cast<bool>(tex_albedo_);
-    bool const hasMetalRough = static_cast<bool>(tex_metal_rough_);
+    bool const hasAlbedo      = static_cast<bool>(tex_albedo_);
+    bool const hasMetalRough  = static_cast<bool>(tex_metal_rough_);
+    bool const hasAO          = static_cast<bool>(tex_ao_);
     
     gx::SetUniform( pgm, "uColorMode",      static_cast<int32_t>(color_mode_));
     gx::SetUniform( pgm, "uColor",          color_);
@@ -85,6 +94,10 @@ class GenericMaterial : public Material {
 
     gx::SetUniform( pgm, "uHasAlbedo",      hasAlbedo);
     gx::SetUniform( pgm, "uHasMetalRough",  hasMetalRough);
+    gx::SetUniform( pgm, "uHasAO",          hasAO);
+
+    // Note :
+    // Check how to retrieve attribs from share texture, eg. (AO + Metal Rough) in RGB.
 
     int32_t image_unit = 0;
     if (hasAlbedo) {
@@ -95,6 +108,11 @@ class GenericMaterial : public Material {
     if (hasMetalRough) {
       gx::BindTexture( tex_metal_rough_->id,  image_unit);
       gx::SetUniform( pgm, "uMetalRoughTex",  image_unit);
+      ++image_unit;
+    }
+    if (hasAO) {
+      gx::BindTexture( tex_ao_->id,   image_unit);
+      gx::SetUniform( pgm, "uAOTex",  image_unit);
       ++image_unit;
     }
   }
@@ -109,6 +127,7 @@ class GenericMaterial : public Material {
   
   TextureHandle tex_albedo_;
   TextureHandle tex_metal_rough_;
+  TextureHandle tex_ao_;
 };
 
 // ----------------------------------------------------------------------------

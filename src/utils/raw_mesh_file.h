@@ -132,6 +132,7 @@ struct MaterialInfo {
   std::string diffuse_map;
   std::string metallic_rough_map;
   std::string bump_map;
+  std::string ao_map;
   std::string alpha_map;
   std::string specular_map;
 

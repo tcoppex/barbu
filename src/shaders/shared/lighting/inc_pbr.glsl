@@ -95,7 +95,7 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   int uNumLights = 1;
 
   LightInfo_t dirlight;
-  dirlight.position      = vec4(-100.0, 10.0, 100.0, LIGHT_TYPE_DIRECTIONAL);
+  dirlight.position      = vec4(-50.0, 100.0, 100.0, LIGHT_TYPE_DIRECTIONAL);
   dirlight.direction     = vec4(-normalize(dirlight.position.xyz), 1.0);
   dirlight.color         = vec4(1.0, 1.0, 1.0, 5.0);
 
@@ -131,8 +131,11 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
     // Retrieve fragment specific light parameters.
     const FragLight_t light = get_fraglight_params( uLightInfos[i], frag_info );
     
+    // Choose between on of them.
+    const float cosTheta = max(dot( light.H, frag_info.V), 0); // light.n_dot_l
+
     // Fresnel term.
-    const vec3 F = f_Schlick( light.n_dot_l, brdf_mat.F0);
+    const vec3 F = f_Schlick( cosTheta, brdf_mat.F0);
 
     // Deduct the diffuse term from it.
     const vec3 kD = (1.0 - F) * brdf_mat.albedo;
@@ -147,7 +150,7 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   }
 
   // Final light color.
-  vec3 color = L0 + (0.25 * mat.ambient);
+  vec3 color = (L0 + mat.ambient) * mat.ao;
 
   return color;
 }

@@ -26,14 +26,16 @@ uniform vec3 uEyePosWS;
 uniform int uColorMode;
 uniform vec4 uColor;
 uniform float uAlphaCutOff;
-uniform float uMetallic  = 0.70f;
-uniform float uRoughness = 0.15f; //
+uniform float uMetallic;
+uniform float uRoughness; //
 
 uniform sampler2D uAlbedoTex;
 uniform sampler2D uMetalRoughTex;
+uniform sampler2D uAOTex;
 
 uniform bool uHasAlbedo;
-uniform bool uHasMetalRough = false;
+uniform bool uHasMetalRough;
+uniform bool uHasAO;
 
 // ----------------------------------------------------------------------------
 
@@ -51,14 +53,18 @@ Material_t get_material() {
     discard; 
   }
   
+  // Ambient Occlusion.
+  const float ao = (uHasAO) ? texture( uAOTex, uv).r : 1.0f;
+
   // Metallic + Roughness.
-  const vec2 metallic_roughness = (uHasMetalRough) ? texture( uMetalRoughTex, uv).rg 
-                                                   : vec2(uMetallic, uRoughness); 
-  mat.metallic  = metallic_roughness.x;
-  mat.roughness = metallic_roughness.y;
+  const vec2 metal_rough = (uHasMetalRough) ? texture( uMetalRoughTex, uv).yz 
+                                            : vec2( uMetallic, uRoughness );
+  mat.metallic  = metal_rough.x;
+  mat.roughness = metal_rough.y;
 
   // Ambient using environment map Irradiance from the Vertex Shader.
   mat.ambient = mat.color.rgb * inIrradiance;
+  mat.ao = pow(ao, 1.0);
 
   return mat;
 }
@@ -80,9 +86,13 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
   vec3 rgb;
 
   switch (color_mode) {
-
-    case MATERIAL_GENERIC_COLOR_MODE_LIGHT_PBR:
+    default:
+    case MATERIAL_GENERIC_COLOR_MODE_PBR:
       rgb = colorize_pbr( frag, mat); 
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_UNLIT:
+      rgb = mat.color.rgb;
     break;
 
     case MATERIAL_GENERIC_COLOR_MODE_NORMAL:
@@ -99,10 +109,20 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
       rgb = mat.ambient;
     break;
     
-    default:
-    case MATERIAL_GENERIC_COLOR_MODE_UNLIT:
-      rgb = mat.color.rgb;
+    case MATERIAL_GENERIC_COLOR_MODE_AO:
+      rgb = vec3(mat.ao);
     break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_METALLIC:
+      rgb = vec3(mat.metallic);
+      rgb = gamma_uncorrect(rgb);
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS:
+      rgb = vec3(mat.roughness);
+      rgb = gamma_uncorrect(rgb);
+    break;
+
   }
 
   // Tonemapping is generally done in the postprocess stage, however for forward
@@ -115,6 +135,10 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
 // ----------------------------------------------------------------------------
 
 void main() {
+  // float res = 16.;
+  const int cm = //(int((gl_FragCoord.x/1080.)*res) ^ int((gl_FragCoord.y/900.)*res)) % 8;
+                int((gl_FragCoord.x/1535.0)*8);
+
   const Material_t material = get_material();
   const FragInfo_t fraginfo = get_worldspace_fraginfo();
   fragColor = colorize( uColorMode, fraginfo, material);
