@@ -87,11 +87,13 @@ void Scene::update(float const dt, Camera &camera) {
     }
   }
   
-  // Center.
   switch (eventData.lastChar) {
+    // Select  / Unselect all.
     case 'a':
       scene_hierarchy_.select_all(selected.empty());
     break;
+    
+    // Focus on entities.
     case 'C':
       ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.pivot());
     break;
@@ -101,23 +103,21 @@ void Scene::update(float const dt, Camera &camera) {
     case GLFW_KEY_1:
     case GLFW_KEY_3:
     case GLFW_KEY_7:
-      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.pivot(), true);
+      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid(), true);
     break;
   }
 
-  // Import drag-n-dropped objects if any.
+  // Import drag-n-dropped objects & center them to camera target.
   for (auto &fn : eventData.dragFilenames) {
     auto const ext = fn.substr(fn.find_last_of(".") + 1);
     if (MeshDataManager::CheckExtension(ext)) {
-      auto e = scene_hierarchy_.import_model(fn);
-      if (e) {
+      if (auto e = scene_hierarchy_.import_model(fn); e) {
         e->set_position( camera.target() );
       }
     }
   }
 
   // Update sub-systems.
-
   scene_hierarchy_.update(dt, camera);
   grid_.update(dt, camera);
 
