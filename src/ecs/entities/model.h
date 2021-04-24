@@ -18,6 +18,10 @@ class ModelEntity : public Entity {
   MeshHandle mesh() {
     return get<VisualComponent>().mesh();
   }
+
+  glm::vec3 centroid() const override { 
+    return get<VisualComponent>().mesh()->centroid(); //
+  }
 };
 
 // ----------------------------------------------------------------------------

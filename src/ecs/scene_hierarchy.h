@@ -55,8 +55,9 @@ class SceneHierarchy {
   EntityList_t const& selected() const { return frame_.selected; }
   EntityList_t const& drawables() const { return frame_.drawables; }
   
-  // Return the centroid of the scene from the entities root.
+  // Return the pivot / centroid of the scene from the entities root.
   // If selected is true, limit to the selection.
+  glm::vec3 pivot(bool selected=true) const;
   glm::vec3 centroid(bool selected=true) const;
 
   // [wip] Add a bounding model entity for physic collision.

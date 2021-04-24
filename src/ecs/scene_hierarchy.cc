@@ -156,18 +156,34 @@ void SceneHierarchy::update_selected_local_matrices() {
   }
 }
 
+glm::vec3 SceneHierarchy::pivot(bool selected) const {
+  glm::vec3 pivot{0.0f};
+
+  if (selected && !frame_.selected.empty()) {
+    for (auto const& e : frame_.selected) {
+      pivot -= e->pivot();
+    }
+    pivot /= frame_.selected.size();
+  } else {
+    for (auto const& e : entities_) {
+      pivot -= e->pivot();
+    }
+    pivot /= entities_.size();
+  }
+  return pivot;
+}
+
 glm::vec3 SceneHierarchy::centroid(bool selected) const {
   glm::vec3 center{0.0f};
 
-  // [improve to detect centroid of object, not just their roots]
   if (selected && !frame_.selected.empty()) {
     for (auto const& e : frame_.selected) {
-      center -= e->transform().position();
+      center -= e->centroid();
     }
     center /= frame_.selected.size();
   } else {
     for (auto const& e : entities_) {
-      center -= e->transform().position();
+      center -= e->centroid();
     }
     center /= entities_.size();
   }
@@ -233,11 +249,11 @@ void SceneHierarchy::sort_drawables(Camera const& camera) {
 
   // Calculate the dot product of an entity to the camera direction.
   auto calculate_entity_dp = [eye_pos, eye_dir](EntityHandle const& e) {
-    glm::vec3 pivot = glm::vec3(0.0f);
+    glm::vec3 centroid = glm::vec3(0.0f);
     if (auto visual = e->get<VisualComponent>(); e->has<VisualComponent>()) {
-      pivot = visual.mesh()->pivot();
+      centroid = visual.mesh()->centroid();
     }
-    auto const& pos = e->transform().position() - pivot;
+    auto const& pos = e->transform().position() - centroid;
     auto const dir = pos - eye_pos; 
     return glm::dot(eye_dir, dir);
   };

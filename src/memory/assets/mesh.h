@@ -48,7 +48,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   inline VertexGroups_t const& vertex_groups() const noexcept { return vgroups_; }
   inline VertexGroup const& vertex_group(int32_t index) const { return vgroups_.at(index); }
 
-  inline glm::vec3 const& pivot() const noexcept { return pivot_; }
+  inline glm::vec3 const& centroid() const noexcept { return centroid_; }
   inline glm::vec3 const& bounds() const noexcept { return bounds_; }
 
  private:
@@ -73,7 +73,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   VertexGroups_t vgroups_;
 
   // Axis-Aligned Bounding box.
-  glm::vec3 pivot_;
+  glm::vec3 centroid_;
   glm::vec3 bounds_;
 
  private:

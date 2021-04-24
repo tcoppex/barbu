@@ -3,11 +3,9 @@
 #include "generic/interop.h"
 
 #include "shared/lighting/inc_pbr.glsl"
-
+#include "shared/structs/inc_fraginfo.glsl"
+#include "shared/structs/inc_material.glsl"
 #include "shared/inc_tonemapping.glsl"
-
-// #include "shared/structs/inc_fraginfo.glsl"
-// #include "shared/structs/inc_material.glsl"
 
 // ----------------------------------------------------------------------------
 
@@ -28,8 +26,8 @@ uniform vec3 uEyePosWS;
 uniform int uColorMode;
 uniform vec4 uColor;
 uniform float uAlphaCutOff;
-uniform float uMetallic  = 0.0f;
-uniform float uRoughness = 0.5f;
+uniform float uMetallic  = 0.70f;
+uniform float uRoughness = 0.15f; //
 
 uniform sampler2D uAlbedoTex;
 uniform sampler2D uMetalRoughTex;
@@ -49,17 +47,18 @@ Material_t get_material() {
   mat.color = (uHasAlbedo) ? texture( uAlbedoTex, uv) : uColor;
 
   // Early Alpha fails.
-  if (mat.color.a < uAlphaCutOff) { discard; }
+  if (mat.color.a < uAlphaCutOff) { 
+    discard; 
+  }
   
-  // Metallic / Roughness
+  // Metallic + Roughness.
   const vec2 metallic_roughness = (uHasMetalRough) ? texture( uMetalRoughTex, uv).rg 
-                                                   : vec2(uMetallic, uRoughness)
-                                                   ; 
-  mat.metallic = metallic_roughness.x;
+                                                   : vec2(uMetallic, uRoughness); 
+  mat.metallic  = metallic_roughness.x;
   mat.roughness = metallic_roughness.y;
 
-  // Environment map Irradiance (from the Vertex Shader).
-  mat.irradiance = inIrradiance;
+  // Ambient using environment map Irradiance from the Vertex Shader.
+  mat.ambient = mat.color.rgb * inIrradiance;
 
   return mat;
 }
@@ -69,42 +68,11 @@ FragInfo_t get_worldspace_fraginfo() {
   FragInfo_t frag;
   frag.P        = inPositionWS;
   frag.N        = normalize( inNormalWS );
-  frag.V        = normalize( frag.P - uEyePosWS );
+  frag.V        = normalize( frag.P - (-uEyePosWS) );               // XXXXXX
   frag.uv       = inTexcoord.xy;
   frag.n_dot_v  = max( dot(frag.N, frag.V), 0 );
   return frag;
 }
-
-// ----------------------------------------------------------------------------
-
-#if 0
-
-vec3 test_pbr(in FragInfo_t frag, in Material_t mat) {
-  // Create a Key / Fill / Back lighting setup.
-  LightInfo_t keylight;
-  keylight.position.xyz   = vec3(0.0, 0.0, 0.0);
-  keylight.color          = vec4(1.0, 0.0, 0.0, 1.0);
-
-  LightInfo_t filllight;
-  filllight.position.xyz  = vec3(+4.0, -5.0, +8.0);
-  filllight.color         = vec4(0.0, 1.0, 0.0, 1.0);
-
-  LightInfo_t backlight;
-  backlight.position.xyz  = vec3(-10.0, 15.0, -6.0);
-  backlight.color         = vec4(0.1, 0.1, 1.0, 1.0);
-
-  const float kLightRadius = 50.0f;
-
-  vec3 light = 
-   + apply_point_light( keylight, frag.P, frag.N, frag.V, kLightRadius)
-   + apply_point_light( filllight, frag.P, frag.N, frag.V, kLightRadius)
-   + apply_point_light( backlight, frag.P, frag.N, frag.V, kLightRadius)
-  ;
-
-  return mat.color.rgb * mix(inIrradiance, light, 0.98);
-}
-
-#endif
 
 // ----------------------------------------------------------------------------
 
@@ -114,7 +82,7 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
   switch (color_mode) {
 
     case MATERIAL_GENERIC_COLOR_MODE_LIGHT_PBR:
-      // todo
+      rgb = colorize_pbr( frag, mat); 
     break;
 
     case MATERIAL_GENERIC_COLOR_MODE_NORMAL:
@@ -128,7 +96,7 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
     break;
 
     case MATERIAL_GENERIC_COLOR_MODE_IRRADIANCE:
-      rgb = mat.color.rgb * inIrradiance;
+      rgb = mat.ambient;
     break;
     
     default:
@@ -150,8 +118,6 @@ void main() {
   const Material_t material = get_material();
   const FragInfo_t fraginfo = get_worldspace_fraginfo();
   fragColor = colorize( uColorMode, fraginfo, material);
-
-  // fragColor.rgb = test_pbr( fraginfo, material);
 }
 
 // ----------------------------------------------------------------------------

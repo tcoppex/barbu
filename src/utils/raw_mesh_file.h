@@ -130,11 +130,15 @@ struct MaterialInfo {
   glm::vec4 specular_color{ 0.0f, 0.0f, 0.0f, 1.0f };      // XYZ specular + W Exponent
 
   std::string diffuse_map;
-  std::string specular_map;
+  std::string metallic_rough_map;
   std::string bump_map;
   std::string alpha_map;
+  std::string specular_map;
 
   float alpha_cutoff = 0.5f;
+
+  float metallic  = 0.0f;
+  float roughness = 0.4f;
 
   bool bAlphaTest   = false;
   bool bBlending    = false;  // (Blending always preempt alpha test)

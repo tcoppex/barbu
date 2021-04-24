@@ -102,7 +102,7 @@ bool Mesh::setup() {
   vgroups_    = meshdata.vgroups;
 
   // Calculate the mesh AABB.
-  meshdata.calculate_bounds( pivot_, bounds_);
+  meshdata.calculate_bounds( centroid_, bounds_);
 
   // Recenter the mesh to its pivot.
   // [todo ?]

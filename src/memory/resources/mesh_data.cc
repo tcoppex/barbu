@@ -930,6 +930,46 @@ void DisplayStats_GLTF(cgltf_data* data) {
   }
 }
 
+std::string setup_gltf_texture(cgltf_texture *tex, std::string const& dirname) {
+  std::string texname;
+
+  if (!tex) {
+    return texname;
+  }
+
+  auto img = tex->image;
+ 
+  if (img->uri) {
+    // GLTF file with external data.
+    
+    if (img->uri[0] != '/') {
+      texname = dirname + "/" + std::string(img->uri);
+    } else {
+      texname = std::string(img->uri);
+    }
+  } else {
+    // GLB / GLTF file with internal data.
+
+    texname = img->name ? img->name : "[unnamed_texture]"; //
+    if (img->buffer_view) {
+      auto buffer_view = img->buffer_view;
+
+      // Create the resource internally.
+      Resources::LoadInternal<Image>( 
+        ResourceId(texname), 
+        buffer_view->size, 
+        ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
+        img->mime_type
+      ); 
+      // [optional] Create the texture directly.
+      //TEXTURE_ASSETS.create2d(AssetId(texname)); 
+    }
+  }
+
+  return texname;
+}
+
+
 bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
   cgltf_options options{};
   cgltf_data* data = nullptr;
@@ -1145,42 +1185,12 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         auto const pmr = mat.pbr_metallic_roughness;
 
         auto const rgba = pmr.base_color_factor;
-        info.diffuse_color = glm::vec4(rgba[0], rgba[1], rgba[2], rgba[3]);
-        
-        if (auto tex = pmr.base_color_texture.texture; tex) {
-          auto img = tex->image;
-          
-          if (img->uri) {
-            // GLTF file with external data.
+        info.diffuse_color = glm::vec4(rgba[0], rgba[1], rgba[2], rgba[3]);        
+        info.metallic  = pmr.metallic_factor;
+        info.roughness = pmr.roughness_factor;
 
-            if (img->uri[0] != '/') {
-              info.diffuse_map = dirname + "/" + std::string(img->uri);
-            } else {
-              info.diffuse_map = std::string(img->uri);
-            }
-          } else {
-            // GLB / GLTF file with internal data.
-
-            info.diffuse_map = img->name ? img->name : "unnamed_diffuse"; //
-
-            if (img->buffer_view) {
-              auto buffer_view = img->buffer_view;
-
-              // Create the resource internally.
-              Resources::LoadInternal<Image>( 
-                ResourceId(info.diffuse_map), 
-                buffer_view->size, 
-                ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
-                img->mime_type
-              ); 
-
-              //LOG_INFO( img->name, img->mime_type, buffer_view->offset, buffer_view->size );
-
-              // [optional] Create the texture directly.
-              //TEXTURE_ASSETS.create2d(AssetId(info.diffuse_map)); 
-            }
-          }
-        }
+        info.diffuse_map        = setup_gltf_texture( pmr.base_color_texture.texture, dirname);
+        info.metallic_rough_map = setup_gltf_texture( pmr.metallic_roughness_texture.texture, dirname);
       }
 
       switch (mat.alpha_mode) {
@@ -1196,7 +1206,6 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
       }
 
       info.alpha_cutoff = mat.alpha_cutoff;
-      //LOG_MESSAGE(info.alpha_cutoff, info.bBlending, info.bAlphaTest);
 
       info.bDoubleSided = mat.double_sided;
       info.bUnlit       = mat.unlit;

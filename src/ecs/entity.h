@@ -82,9 +82,12 @@ class Entity {
   inline TransformComponent & transform() { return get<TransformComponent>(); }
   inline TransformComponent const& transform() const { return get<TransformComponent>(); }
 
-  glm::mat4 & local_matrix() { return transform().matrix(); }
-  glm::mat4 const& local_matrix() const { return transform().matrix(); }
+  inline glm::mat4 & local_matrix() { return transform().matrix(); }
+  inline glm::mat4 const& local_matrix() const { return transform().matrix(); }
   
+  inline glm::vec3 pivot() const { return transform().position(); }
+  virtual glm::vec3 centroid() const { return pivot(); }
+
  protected:
   EntityHandle parent_ = nullptr;
   EntityChildren_t children_;

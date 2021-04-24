@@ -9,8 +9,8 @@
 
 const int kMaxNumLights = 4;
 
-uniform LightInfo_t uLightInfos[kMaxNumLights];
-uniform int uNumLights = 0;
+// uniform LightInfo_t uLightInfos[kMaxNumLights];
+// uniform int uNumLights = 0;
 
 // ----------------------------------------------------------------------------
 

@@ -91,6 +91,10 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     return mesh_; 
   }
 
+  inline MeshHandle mesh() const { 
+    return mesh_; 
+  }
+
  private:
   MeshHandle mesh_; 
   //std::map< std::string, MaterialAssetHandle > materials_;

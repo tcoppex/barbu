@@ -71,11 +71,13 @@ BRDFMaterial_t get_brdf_material(in Material_t mat) {
   const vec3 kF0 = vec3(0.04);
 
   BRDFMaterial_t brdf_mat;
+  
+  const vec3 color = mat.color.rgb;// + 0.05 * mat.ambient;
 
   // Corrected albedo component of the reflectance equation.
-  brdf_mat.albedo = (1.0 - mat.metallic) * (mat.color.rgb / Pi());
+  brdf_mat.albedo = (1.0 - mat.metallic) * (color / Pi());
   // Fresnel parameter.
-  brdf_mat.F0 = mix( kF0, mat.color.rgb, mat.metallic);
+  brdf_mat.F0 = mix( kF0, color, mat.metallic);
   // Squared roughness.
   brdf_mat.roughness_sqr = pow(mat.roughness, 2);
 
@@ -86,6 +88,39 @@ BRDFMaterial_t get_brdf_material(in Material_t mat) {
 
 vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   vec3 L0 = vec3(0.0);
+
+  //-----------
+
+  LightInfo_t uLightInfos[4];
+  int uNumLights = 1;
+
+  LightInfo_t dirlight;
+  dirlight.position      = vec4(-100.0, 10.0, 100.0, LIGHT_TYPE_DIRECTIONAL);
+  dirlight.direction     = vec4(-normalize(dirlight.position.xyz), 1.0);
+  dirlight.color         = vec4(1.0, 1.0, 1.0, 1.0);
+
+  LightInfo_t keylight;
+  keylight.position       = vec4(0.0, 0.0, 0.0, LIGHT_TYPE_POINT);
+  keylight.direction      = vec4(-normalize(keylight.position.xyz), 1.0);
+  keylight.color          = vec4(1.0, 0.0, 0.0, 10.0);
+
+  LightInfo_t filllight;
+  filllight.position      = vec4(+4.0, -5.0, +8.0, LIGHT_TYPE_POINT);
+  filllight.direction     = vec4(-normalize(filllight.position.xyz), 1.0);
+  filllight.color         = vec4(0.0, 1.0, 0.0, 10.0);
+
+  LightInfo_t backlight;
+  backlight.position      = vec4(-10.0, 15.0, -6.0, LIGHT_TYPE_POINT);
+  backlight.direction     = vec4(-normalize(backlight.position.xyz), 1.0);
+  backlight.color         = vec4(0.1, 0.1, 1.0, 50.0);
+
+
+  uLightInfos[0] = dirlight;
+  uLightInfos[1] = keylight;
+  uLightInfos[2] = filllight;
+  uLightInfos[3] = backlight;
+
+  //-----------
 
   // Derived the BRDF specific materials from global ones.
   const BRDFMaterial_t brdf_mat = get_brdf_material(mat);
@@ -107,10 +142,12 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
 
     // Add contribution.
     L0 += (kD + kS) * light.radiance.rgb * light.n_dot_l;
+
+    //L0 = 0.5*light.H + 0.5;
   }
 
   // Final light color.
-  vec3 color = L0 + (0.05 * mat.irradiance);
+  vec3 color = L0 + (0.0 * mat.ambient);
 
   return color;
 }
