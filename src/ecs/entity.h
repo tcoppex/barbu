@@ -85,8 +85,10 @@ class Entity {
   inline glm::mat4 & local_matrix() { return transform().matrix(); }
   inline glm::mat4 const& local_matrix() const { return transform().matrix(); }
   
-  inline glm::vec3 pivot() const { return transform().position(); }
-  virtual glm::vec3 centroid() const { return pivot(); }
+  inline glm::vec3 position() const { return transform().position(); }
+  inline void set_position(glm::vec3 const& pos) { transform().set_position(pos); }
+
+  virtual glm::vec3 centroid() const { return position(); }
 
  protected:
   EntityHandle parent_ = nullptr;

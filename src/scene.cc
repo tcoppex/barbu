@@ -9,8 +9,8 @@
 
 void Scene::init(Camera const& camera, views::Main &ui_mainview) {
   // OpenGL rendering parameters.
-  //gx::ClearColor(0.0165f, 0.0165f, 0.0160f, 1.0f);
-  gx::ClearColor(0.9f, 0.7f, 0.5f, 1.0f);
+  gx::ClearColor(0.0165f, 0.0165f, 0.0160f, 1.0f);
+  //gx::ClearColor(0.9f, 0.7f, 0.5f, 1.0f);
 
   scene_hierarchy_.init();
   //scene_hierarchy_.add_bounding_sphere();
@@ -109,7 +109,10 @@ void Scene::update(float const dt, Camera &camera) {
   for (auto &fn : eventData.dragFilenames) {
     auto const ext = fn.substr(fn.find_last_of(".") + 1);
     if (MeshDataManager::CheckExtension(ext)) {
-      scene_hierarchy_.import_model(fn);
+      auto e = scene_hierarchy_.import_model(fn);
+      if (e) {
+        e->set_position( camera.target() );
+      }
     }
   }
 

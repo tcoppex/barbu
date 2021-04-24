@@ -117,7 +117,7 @@ void SceneHierarchy::reset_entity(EntityHandle entity, bool bRecursively) {
   entity->transform().reset();
 }
 
-bool SceneHierarchy::import_model(std::string_view filename) {
+EntityHandle SceneHierarchy::import_model(std::string_view filename) {
   /// This load the whole geometry of the file as a single mesh.
   /// TODO : create an importer for scene structure.
 
@@ -132,9 +132,12 @@ bool SceneHierarchy::import_model(std::string_view filename) {
     // Create a new mesh entity node.
     auto entity = create_model_entity(basename, mesh);
 
-    return entity != nullptr;
+    // [todo : hold the camera internally ?]
+    //entity->transform().set_position(camera.target());
+
+    return entity;
   }
-  return false;
+  return nullptr;
 }
 
 void SceneHierarchy::update_selected_local_matrices() {
@@ -166,12 +169,12 @@ glm::vec3 SceneHierarchy::pivot(bool selected) const {
 
   if (selected && !frame_.selected.empty()) {
     for (auto const& e : frame_.selected) {
-      pivot -= e->pivot();
+      pivot -= e->position();
     }
     pivot /= frame_.selected.size();
   } else {
     for (auto const& e : entities_) {
-      pivot -= e->pivot();
+      pivot -= e->position();
     }
     pivot /= entities_.size();
   }
@@ -179,7 +182,7 @@ glm::vec3 SceneHierarchy::pivot(bool selected) const {
 }
 
 glm::vec3 SceneHierarchy::centroid(bool selected) const {
-  glm::vec3 center{0.0f};
+  glm::vec3 center = pivot(selected);
 
   if (selected && !frame_.selected.empty()) {
     for (auto const& e : frame_.selected) {
@@ -192,6 +195,7 @@ glm::vec3 SceneHierarchy::centroid(bool selected) const {
     }
     center /= entities_.size();
   }
+
   return center;
 }
 

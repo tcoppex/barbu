@@ -188,7 +188,7 @@ class ArcBallController : public Camera::ViewController {
   inline double pitch() const { return pitch_; }
   inline double dolly() const { return dolly_; }
 
-  inline glm::vec3 const& target() const { return target_; } //
+  inline glm::vec3 const& target() const final { return target_; } //
 
   inline float yawf() const { return static_cast<float>(yaw()); }
   inline float pitchf() const { return static_cast<float>(pitch()); }

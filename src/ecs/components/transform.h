@@ -28,6 +28,10 @@ class TransformComponent final : public ComponentParams<Component::Transform> {
   inline glm::vec3 position() const { return matrix_[3]; }
   inline glm::vec3 front() const { return -matrix_[2]; }
 
+  inline void set_position(glm::vec3 const& pos) { 
+    matrix_[3] = glm::vec4( pos, matrix_[3][3]); 
+  }
+
  private:
   glm::mat4 matrix_;
 };

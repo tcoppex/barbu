@@ -44,7 +44,7 @@ class SceneHierarchy {
   void reset_entity(EntityHandle entity, bool bRecursively = false);
 
   // Create a model entity by importing an external model file.
-  bool import_model(std::string_view filename);
+  EntityHandle import_model(std::string_view filename);
 
   // Update locals matrices based on their modified globals.
   void update_selected_local_matrices();
