@@ -930,7 +930,7 @@ void DisplayStats_GLTF(cgltf_data* data) {
   }
 }
 
-std::string setup_gltf_texture(cgltf_texture *tex, std::string const& dirname) {
+std::string setup_gltf_texture(cgltf_texture *tex, std::string const& dirname, std::string const &default_name) {
   std::string texname;
 
   if (!tex) {
@@ -950,7 +950,7 @@ std::string setup_gltf_texture(cgltf_texture *tex, std::string const& dirname) {
   } else {
     // GLB / GLTF file with internal data.
 
-    texname = img->name ? img->name : "[unnamed_texture]"; //
+    texname = img->name ? img->name : default_name; //
     if (img->buffer_view) {
       auto buffer_view = img->buffer_view;
 
@@ -1000,13 +1000,14 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
       meshfile.meshes.resize(1);
     }
 
+    char tmpname[256]{};
+
     // Map to solve name for unknown materials.
     std::unordered_map< cgltf_material const*, std::string > material_names( data->materials_count );
     for (cgltf_size i = 0; i < data->materials_count; ++i) {
       cgltf_material const& mat = data->materials[i];
-      char matname[64]{};
-      sprintf(matname, "%s_material_%02d", basename.c_str(), int(i));
-      material_names[ &mat ] = std::string( mat.name ? mat.name : matname );
+      sprintf(tmpname, "%s::material_%02d", basename.c_str(), int(i));
+      material_names[ &mat ] = std::string( mat.name ? mat.name : tmpname );
     }
 
     // -- MESH ATTRIBUTES & INDICES.
@@ -1025,7 +1026,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
       // RawMeshData to update.
       auto &raw = meshfile.meshes.back();
-      raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : "[unnamed]"); //
+      sprintf(tmpname, "%s::mesh_%02d", basename.c_str(), int(i));
+      raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : tmpname); //
 
       // When meshes are not joined, we should probably reset this to 0.
       //last_vertex_index = 0;
@@ -1157,9 +1159,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           auto *joint = skin->joints[index];
 
           // Joint name.
-          char jointname[64]{};
-          sprintf(jointname, "%s::joint_%02d]", basename.c_str(), int(index));
-          skl->names.push_back( (joint->name) ? joint->name : jointname );
+          sprintf(tmpname, "%s::joint_%02d", basename.c_str(), int(index)); //
+          skl->names.push_back( (joint->name) ? joint->name : tmpname );
 
           // Joint parent index.
           auto const& it = joint_indices.find( joint->parent );
@@ -1189,8 +1190,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         info.metallic  = pmr.metallic_factor;
         info.roughness = pmr.roughness_factor;
 
-        info.diffuse_map        = setup_gltf_texture( pmr.base_color_texture.texture, dirname);
-        info.metallic_rough_map = setup_gltf_texture( pmr.metallic_roughness_texture.texture, dirname);
+        info.diffuse_map        = setup_gltf_texture( pmr.base_color_texture.texture, dirname, info.name + "_diffuse");
+        info.metallic_rough_map = setup_gltf_texture( pmr.metallic_roughness_texture.texture, dirname, info.name + "_metallic_rough");
       }
 
       switch (mat.alpha_mode) {
