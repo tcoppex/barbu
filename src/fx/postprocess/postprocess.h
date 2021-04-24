@@ -16,14 +16,13 @@ class Camera;
 //  Finally rendering it as a screen-aligned quad.
 //  It is double buffered to use its current buffers on the next frame.
 //
-//  Right now it automatically linearize depth afterward, but would probably
-//  be put inside a separate post-effect afterwards.
+//  Right now it automatically linearized depth afterwards.
 //
 //  In a future version it will probably be internal to a camera / projector,
-//  with post effects but no mandatory screen rendering but linked composition
+//  with post effects but no mandatory screen rendering but with linked composition
 //  passes.
 //
-//  TODO : the final composition should be put after all pass, not only the post process
+//  TODO : the final composition should be put after all passes, not only the post process
 //          on solid objects.
 //
 class Postprocess {
@@ -36,7 +35,7 @@ class Postprocess {
 
   // Internal format of buffer textures.
   static constexpr std::array<GLenum, kNumBufferTextureName> kBufferTextureFormats{
-    GL_RGBA8,
+    GL_RGBA8, //
     GL_DEPTH_COMPONENT24,
   };
 

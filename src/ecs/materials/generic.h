@@ -63,9 +63,6 @@ class GenericMaterial : public Material {
     tex_metal_rough_ = get_texture(info.metallic_rough_map);
     tex_ao_          = get_texture(info.ao_map);
 
-
-    LOG_INFO( info.name, (bool)tex_albedo_, (bool)tex_metal_rough_, (bool)tex_ao_);
-
     // Switch mode depending on parameters.
     if (render_mode_ == RenderMode::kDefault) {
       if (info.bBlending) {
