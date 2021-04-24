@@ -73,7 +73,6 @@ void Scene::update(float const dt, Camera &camera) {
 
   auto &selected = scene_hierarchy_.selected();
   if (!selected.empty()) {
-
     // Reset.
     if ('x' == eventData.lastChar) {
       for (auto &e : selected) {
@@ -90,6 +89,9 @@ void Scene::update(float const dt, Camera &camera) {
   
   // Center.
   switch (eventData.lastChar) {
+    case 'a':
+      scene_hierarchy_.select_all(selected.empty());
+    break;
     case 'C':
       ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.pivot());
     break;

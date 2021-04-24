@@ -55,6 +55,8 @@ class SceneHierarchy {
   EntityList_t const& selected() const { return frame_.selected; }
   EntityList_t const& drawables() const { return frame_.drawables; }
   
+  void select_all(bool status);
+
   // Return the pivot / centroid of the scene from the entities root.
   // If selected is true, limit to the selection.
   glm::vec3 pivot(bool selected=true) const;

@@ -38,7 +38,8 @@ void Main::render() {
 
   // (might change for an overlay dialog)
   if (ImGui::TreeNode("(more inputs)")) {
-    ImGui::BulletText("[h] to toggle the UI.");
+    ImGui::BulletText("[a] select / unselect all.");
+    ImGui::BulletText("[h] to toggle UI.");
     ImGui::BulletText("[w] to toggle wireframe.");
     ImGui::BulletText("Drag-n-drop to import OBJ / GLTF.");
     ImGui::Spacing();
@@ -52,7 +53,8 @@ void Main::render() {
     ImGui::BulletText("[X] to delete.");
     ImGui::Spacing();
     ImGui::Text("View control : ");
-    ImGui::BulletText("[C] to center view / focus.");
+    ImGui::BulletText("[c] to focus on centroid.");
+    ImGui::BulletText("[C] to focus on pivot.");
     ImGui::BulletText("Keypad 0 to reset view.");
     ImGui::BulletText("Keypad 1/3/7 to side view.");
     ImGui::BulletText("Keypad 2/4/6/8 to quick orbit.");

@@ -1,6 +1,7 @@
 #ifndef BARBU_UI_VIEWS_SCENE_HIERARCHY_H_
 #define BARBU_UI_VIEWS_SCENE_HIERARCHY_H_
 
+#include <algorithm>
 #include <vector>
 #include "ui/ui_view.h"
 #include "ui/imgui_wrapper.h"
@@ -54,6 +55,10 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
 
   inline bool is_selected(int32_t index) const {
     return (index < static_cast<int32_t>(selected_.size())) ? selected_[index] : false;
+  }
+
+  inline void select_all(bool status) {
+    std::fill(selected_.begin(), selected_.end(), status);
   }
 
  private:

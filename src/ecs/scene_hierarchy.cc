@@ -156,6 +156,11 @@ void SceneHierarchy::update_selected_local_matrices() {
   }
 }
 
+void SceneHierarchy::select_all(bool status) {
+  // [fixme] technically, using the UI as state holder is not great.
+  ((views::SceneHierarchyView*)ui_view)->select_all(status);
+}
+
 glm::vec3 SceneHierarchy::pivot(bool selected) const {
   glm::vec3 pivot{0.0f};
 
