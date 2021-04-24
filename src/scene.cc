@@ -41,11 +41,8 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
     //   ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
     // );
 
-    auto e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/helmet/SciFiHelmet.gltf" );
-    if (e) { e->set_position(glm::vec3(-1.5, 0., 0.)); }
-
-    e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb" );
-    if (e) { e->set_position(glm::vec3(1.5, 0., 0.)); }
+    auto e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf" );
+    // if (e) { e->set_position(glm::vec3(-1.5, 0., 0.)); }
 
     params_.enable_hair = false;
     #endif
@@ -88,6 +85,7 @@ void Scene::update(float const dt, Camera &camera) {
     } 
     // Delete.
     else if ('X' == eventData.lastChar) {
+      scene_hierarchy_.select_all(false);
       for (auto &e : selected) {
         scene_hierarchy_.remove_entity(e);
       }
