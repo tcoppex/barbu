@@ -80,8 +80,7 @@ FragInfo_t get_worldspace_fraginfo() {
 
   // Deal with double sided plane.
   const float s = sign(frag.n_dot_v);
-  frag.N       *= s;
-  frag.n_dot_v *= s;
+  frag.N *= s;
 
   return frag;
 }

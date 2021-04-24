@@ -97,7 +97,7 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   LightInfo_t dirlight;
   dirlight.position      = vec4(-5.0, 10.0, 10.0, LIGHT_TYPE_DIRECTIONAL);
   dirlight.direction     = vec4(-normalize(dirlight.position.xyz), 1.0);
-  dirlight.color         = vec4(1.0, 1.0, 1.0, 3.0);
+  dirlight.color         = vec4(1.0, 1.0, 1.0, 1.0);
 
   LightInfo_t keylight;
   keylight.position       = vec4(0.0, 0.0, 0.0, LIGHT_TYPE_POINT);
@@ -150,7 +150,7 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   }
 
   // Final light color.
-  const vec3 color = (L0 + mat.ambient) * mat.ao;
+  const vec3 color = (L0 + 0.25*mat.ambient) * mat.ao;
 
   return color;
 }
