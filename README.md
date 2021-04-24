@@ -10,11 +10,11 @@ It is written in **C++ 17** and **OpenGL 4.6**.
 
 ## Some Features
 
-* Entity component based hierarchy with live scene edit.
-* PBR pipeline with Irradiance Environment map based lighting.
+* Entity-Components based system with live scene edit.
 * Hot-reload of external assets (*textures, models, shaders*).
-* Marschner's reflectance model implementation on Compute Shaders.
-* GPU Hair & Particles simulation.
+* PBR pipeline with Irradiance Environment map based lighting.
+* Marschner's reflectance model GPU implementation.
+* Dynamic GPU Hair & Particles simulation.
 * GLTF 2.0 & OBJ drag-n-drop model import.
 * Features rich camera controls.
 * Colourful console logger with context tracking !
