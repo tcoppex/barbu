@@ -35,10 +35,10 @@ class Scene : public AppScene {
   Scene() = default;
   ~Scene() {}
 
-  void init(Camera const& camera, views::Main &ui_mainview) final;
+  void init(Camera &camera, views::Main &ui_mainview) final;
   void deinit() final;
 
-  void update(float const dt, Camera const& camera) final;
+  void update(float const dt, Camera &camera) final;
   void render(Camera const& camera, uint32_t filter) final;
 
   UIView* view() const final;

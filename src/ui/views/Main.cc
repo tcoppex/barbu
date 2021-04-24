@@ -38,20 +38,27 @@ void Main::render() {
 
   // (might change for an overlay dialog)
   if (ImGui::TreeNode("(more inputs)")) {
+    ImGui::BulletText("[a] select / unselect all.");
+    ImGui::BulletText("[h] to toggle UI.");
+    ImGui::BulletText("[w] to toggle wireframe.");
+    ImGui::BulletText("Drag-n-drop to import OBJ / GLTF.");
+    ImGui::Spacing();
+    ImGui::Text("When entities are selected : ");
+    ImGui::BulletText("[r] to rotate.");
+    ImGui::BulletText("[s] to scale.");
+    ImGui::BulletText("[t] to translate.");
+    ImGui::BulletText("double [r]/[t] to switch space.");
+    ImGui::BulletText("[LeftCtrl] to snap.");
+    ImGui::BulletText("[x] to reset transform.");
+    ImGui::BulletText("[X] to delete.");
+    ImGui::Spacing();
+    ImGui::Text("View control : ");
+    ImGui::BulletText("[c] to focus on centroid.");
+    ImGui::BulletText("[C] to focus on pivot.");
     ImGui::BulletText("Keypad 0 to reset view.");
     ImGui::BulletText("Keypad 1/3/7 to side view.");
     ImGui::BulletText("Keypad 2/4/6/8 to quick orbit.");
     ImGui::BulletText("Keypad 9 to invert view.");
-    ImGui::BulletText("H to toggle the UI.");
-    ImGui::BulletText("W to toggle wireframe.");
-    ImGui::BulletText("Drag-n-drop to import OBJ.");
-    ImGui::Spacing();
-    ImGui::Text("When entities are selected : ");
-    ImGui::BulletText("R to rotate.");
-    ImGui::BulletText("S to scale.");
-    ImGui::BulletText("T to translate.");
-    ImGui::BulletText("double R/T to switch space.");
-    ImGui::BulletText("X to delete.");
     ImGui::TreePop();
   }
 
@@ -79,7 +86,7 @@ void Main::render() {
     ImGui::Checkbox("", &params_.regulate_fps);
   }
 
-  ImGui::Checkbox("Use postprocessing", &params_.postprocess);
+  //ImGui::Checkbox("Use postprocessing", &params_.postprocess);
 
   ImGui::End();
 }

@@ -2,7 +2,7 @@
 # Sources.
 # -----------------------------------------------------------------------------
 
-set(TARGET_NAME "${CMAKE_PROJECT_NAME}_demo")
+set(TARGET_NAME "${CMAKE_PROJECT_NAME}")
 
 list(APPEND Sources
   main.cc

@@ -73,6 +73,7 @@ bool App::init(char const* title, AppScene *scene) {
   // -----------------
 
   // Camera setup.
+  // [ move to the scene hierarchy ?]
   arcball_controller_.set_view(glm::pi<float>() / 16.0f, glm::pi<float>() / 8.0f, true);
   arcball_controller_.set_dolly(4.75f);
   camera_.set_perspective(glm::radians(60.0f), w, h, 0.01f, 500.0f);
@@ -172,7 +173,7 @@ void App::frame() {
   }
   gizmo_.end_frame(camera_);
   //------------------------------------------
-  
+
   // Render UI.
   ui_controller_.render(params_.show_ui);
 }

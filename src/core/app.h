@@ -45,12 +45,12 @@ class AppScene {
   AppScene() = default;
   virtual ~AppScene() {}
 
-  virtual void init(Camera const& camera, views::Main &ui_mainview) = 0;
+  virtual void init(Camera &camera, views::Main &ui_mainview) = 0;
   virtual void deinit() = 0;
 
   virtual UIView* view() const = 0;
 
-  virtual void update(float const dt, Camera const& camera) = 0;
+  virtual void update(float const dt, Camera &camera) = 0;
   virtual void render(Camera const& camera, unsigned int bitmask = SceneFilterBit::SCENE_EVERYTHING) = 0;
 };
 

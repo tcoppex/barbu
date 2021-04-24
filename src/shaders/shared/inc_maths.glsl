@@ -1,13 +1,13 @@
-#ifndef SHADER_INC_MATHS_GLSL_
-#define SHADER_INC_MATHS_GLSL_
+#ifndef SHADERS_SHARED_INC_MATHS_GLSL_
+#define SHADERS_SHARED_INC_MATHS_GLSL_
+
+#include "shared/inc_constants.glsl"
 
 // ----------------------------------------------------------------------------
 
-float Epsilon()         { return 1e-6f; }
-float Pi()              { return 3.141564; }
-float TwoPi()           { return 6.283185; }
-float GoldenAngle()     { return 2.399963; }
-float cbrt(float x)     { return pow(x, 0.33333); }
+float cbrt(float x) { 
+  return pow(x, 0.33333);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -192,4 +192,4 @@ vec3 gaussian(vec3 sigma, vec3 x_mu) {
 
 // ----------------------------------------------------------------------------
 
-#endif // SHADER_INC_MATHS_GLSL_
+#endif // SHADERS_SHARED_INC_MATHS_GLSL_

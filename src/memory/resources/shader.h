@@ -49,8 +49,8 @@ struct Shader : public Resource {
 
 class ShaderManager : public ResourceManager<Shader> {
  public:
-  // Maximum size per shader file with includes (32 Kb).
-  static constexpr int32_t kMaxShaderBufferSize = 32 * 1024;
+  // Maximum size per shader file with includes (64 Kb).
+  static constexpr int32_t kMaxShaderBufferSize = 64 * 1024;
 
  public:
   ShaderManager() {

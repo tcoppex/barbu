@@ -34,6 +34,8 @@ option(OPT_USE_GLEW                 "Use GLEW for OpenGL extension ?"       OFF)
 
 option(OPT_ENABLE_CLANG_TIDY        "Use clang-tidy ?"                      OFF)
 
+option(OPT_ENABLE_DEBUG_LOG         "Display complementary debug log ?"     ON)
+
 # -----------------------------------------------------------------------------
 # Project paths.
 # -----------------------------------------------------------------------------
@@ -419,6 +421,12 @@ list(APPEND CustomDefinitions
   -DSHADERS_DIR="${BARBU_SHADERS_DIR}"
   -DASSETS_DIR="${BARBU_ASSETS_DIR}"
 )
+
+if(OPT_ENABLE_DEBUG_LOG)
+list(APPEND CustomDefinitions 
+  -DBARBU_ENABLE_DEBUG_LOG
+)
+endif()
 
 # -----------------------------------------------------------------------------
 # Frameworks library.

@@ -7,13 +7,12 @@
 
 // ----------------------------------------------------------------------------
 
-void Scene::init(Camera const& camera, views::Main &ui_mainview) {
+void Scene::init(Camera &camera, views::Main &ui_mainview) {
   // OpenGL rendering parameters.
   gx::ClearColor(0.0165f, 0.0165f, 0.0160f, 1.0f);
-  //gx::ClearColor(0.9f, 0.6f, 0.5f, 1.0f);
+  //gx::ClearColor(0.9f, 0.7f, 0.5f, 1.0f);
 
   scene_hierarchy_.init();
-  //scene_hierarchy_.add_bounding_sphere();
 
   // Special Rendering.
   skybox_.init();
@@ -24,6 +23,7 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
+    #if 1
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -35,7 +35,20 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
       ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" 
     );
     hair_.init( scalpId ); //
+    #else
+    // scene_hierarchy_.import_model( 
+    //   ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
+    // );
+
+    auto e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf" );
+    // if (e) { e->set_position(glm::vec3(-1.5, 0., 0.)); }
+
+    params_.enable_hair = false;
+    #endif
   }
+
+  // Recenter view on scene's centroid.
+  ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid(), true);
   
   // UI Views.
   setup_ui_views(ui_mainview);
@@ -56,7 +69,7 @@ UIView* Scene::view() const {
   return ui_view_;
 }
 
-void Scene::update(float const dt, Camera const& camera) {
+void Scene::update(float const dt, Camera &camera) {
   auto const& eventData{ GetEventData() };
 
   // Display opaque materials wireframe.
@@ -64,23 +77,54 @@ void Scene::update(float const dt, Camera const& camera) {
     params_.show_wireframe ^= true;
   }
 
-  // Delete selection.
-  if ('x' == eventData.lastChar) {
-    for (auto &e : scene_hierarchy_.selected()) {
-      scene_hierarchy_.remove_entity(e);
+  auto &selected = scene_hierarchy_.selected();
+  if (!selected.empty()) {
+    // Reset.
+    if ('x' == eventData.lastChar) {
+      for (auto &e : selected) {
+        scene_hierarchy_.reset_entity(e);
+      }
+    } 
+    // Delete.
+    else if ('X' == eventData.lastChar) {
+      scene_hierarchy_.select_all(false);
+      for (auto &e : selected) {
+        scene_hierarchy_.remove_entity(e);
+      }
     }
   }
   
-  // Import drag-n-dropped objects if any.
+  switch (eventData.lastChar) {
+    // Select  / Unselect all.
+    case 'a':
+      scene_hierarchy_.select_all(selected.empty());
+    break;
+    
+    // Focus on entities.
+    case 'C':
+      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.pivot());
+    break;
+    case 'c':
+      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid());
+    break;
+    case GLFW_KEY_1:
+    case GLFW_KEY_3:
+    case GLFW_KEY_7:
+      ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid(), true);
+    break;
+  }
+
+  // Import drag-n-dropped objects & center them to camera target.
   for (auto &fn : eventData.dragFilenames) {
     auto const ext = fn.substr(fn.find_last_of(".") + 1);
     if (MeshDataManager::CheckExtension(ext)) {
-      scene_hierarchy_.import_model(fn);
+      if (auto e = scene_hierarchy_.import_model(fn); e) {
+        e->set_position( camera.target() );
+      }
     }
   }
 
   // Update sub-systems.
-
   scene_hierarchy_.update(dt, camera);
   grid_.update(dt, camera);
 
@@ -131,6 +175,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
   {
     if (!params_.show_wireframe) {
       render_entities( RenderMode::Opaque, camera );
+      render_entities( RenderMode::CutOff, camera );
     }
   }
   CHECK_GX_ERROR();
@@ -144,6 +189,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
 
     if (params_.show_wireframe) {
       render_entities( RenderMode::Opaque, camera );
+      render_entities( RenderMode::CutOff, camera );
 
       if (params_.enable_hair) {
         hair_.render(camera);
@@ -282,7 +328,7 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
     attributes.irradiance_matrices = skybox_.irradiance_matrices();
     attributes.world_matrix        = world;
     attributes.mvp_matrix          = camera.viewproj() * world;
-    attributes.eye_position        = camera.position();
+    attributes.eye_position        = camera.position(); // !!
 
     // visual parameters.
     auto &visual = drawable->get<VisualComponent>();

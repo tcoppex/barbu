@@ -7,23 +7,27 @@
 
 namespace {
 
-void UseLinearInternalFormat(std::string fn, int32_t &internalFormat, bool bForce = false) {
+void UseLinearInternalFormat(std::string const& filename, int32_t &internalFormat, bool bForce = false) {
+  std::string fn(filename);
+
   // Transform filename to lowercase to test matches.
   std::transform( fn.begin(), fn.end(), fn.begin(), ::tolower);
   
   // Find token for non linear texture.
   std::string const kLinearToken[]{
-    "bump", "normal"
+    "bump", "normal", "alpha", "mask",
   };
   for (auto const& s : kLinearToken) {
     if (fn.find(s) != fn.npos) {
+      LOG_DEBUG_INFO(__FUNCTION__, ": Token", s, "was found in", filename);
       return;
     }
   }
 
   // Test extension.
-  auto const ext = fn.substr(fn.find_last_of(".") + 1);  
+  std::string ext = fn.substr(fn.find_last_of(".") + 1);  
   bool const is_internal = (ext == fn);
+  std::transform( ext.begin(), ext.end(), ext.begin(), ::tolower);
   
   if (bForce
   || is_internal
@@ -181,9 +185,16 @@ bool Texture::setup() {
       h = img->height;
       z = img->depth;
       pixels = img->pixels;
+
+      // Force format consistency..
+      format = (img->channels == 4) ? GL_RGBA : (img->channels == 3) ? GL_RGBA : (img->channels == 2) ? GL_RG : GL_R;
     }
     bool const resolution_changed = (w != params.w) || (h != params.h);
     
+    // Fix incorect levels. [improve?]
+    int32_t const max_levels = static_cast<int32_t>(glm::log(glm::min(w, h)) * 1.4426950408889634);
+    params.levels = glm::min(params.levels, max_levels);  
+
     // [ somes cases might have been missed ]
     if (kImmutableResolution) {
       if (resources[0].version <= 0) {
@@ -194,6 +205,7 @@ bool Texture::setup() {
         release();
         allocate();
       }
+      
       glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
     }
 
@@ -276,8 +288,8 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, i
 }
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, ResourceId const& resource) {
-  int32_t const levels = 4;
-  int32_t const internalFormat = GL_RGB8;
+  int32_t const levels = 4; //
+  int32_t const internalFormat = GL_RGBA8; //
   return create2d(id, levels, internalFormat, resource);
 }
 
@@ -305,7 +317,7 @@ TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, int leve
 
 TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, ResourceInfoList const& dependencies) {
   int32_t const levels = 1;
-  int32_t const internalFormat = GL_RGB8;
+  int32_t const internalFormat = GL_RGBA8;
   return createCubemap(id, levels, internalFormat, dependencies);  
 }
 
@@ -313,7 +325,7 @@ TextureFactory::Handle TextureFactory::createCubemapHDR(AssetId const& id, Resou
   Parameters_t params;
   params.target         = GL_TEXTURE_CUBE_MAP;
   params.levels         = 1;
-  params.internalFormat = GL_RGB16F;
+  params.internalFormat = GL_RGBA16F;
   params.dependencies.add_resource( (resource.h == 0) ? id : resource );
   return create(id, params);
 }

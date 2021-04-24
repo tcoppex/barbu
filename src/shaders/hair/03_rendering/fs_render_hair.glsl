@@ -1,7 +1,7 @@
 #version 430 core
 
 #include "shared/inc_maths.glsl"
-#include "shared/inc_lighting.glsl"
+#include "shared/lighting/inc_classical.glsl"
 
 // ----------------------------------------------------------------------------
 
@@ -80,7 +80,7 @@ void main() {
 
   // Marschner Reflectance.
   const vec3 light_dir = normalize(vec3(0.0, 0.0, 1.0));
-  const vec3 eye_dir   = normalize(inPosition.xyz);
+  const vec3 eye_dir   = normalize(inPosition.xyz); //
   const vec3 tangent   = normalize(inTangent);
 
   const float rfactor = marschner_reflectance( light_dir, eye_dir, tangent);
@@ -89,10 +89,10 @@ void main() {
   // Diffuse light
   vec3 diffuse;
   {
-    Light light;
+    LightInfo_t light;
     light.direction.xyz  = light_dir;
     light.color          = vec4(1.0, 1.0, 1.0, 1.0);
-    diffuse = apply_directional_light( light, inNormal) * albedo;
+    diffuse = apply_light( inNormal, -light_dir, albedo); // XXX
   }
 
   //-------

@@ -40,8 +40,11 @@ class SceneHierarchy {
   // Remove an entity to the list of entity and update its relationship links.
   void remove_entity(EntityHandle entity, bool bRecursively = false);
 
+  // Reset the entity local transform.
+  void reset_entity(EntityHandle entity, bool bRecursively = false);
+
   // Create a model entity by importing an external model file.
-  bool import_model(std::string_view filename);
+  EntityHandle import_model(std::string_view filename);
 
   // Update locals matrices based on their modified globals.
   void update_selected_local_matrices();
@@ -52,6 +55,13 @@ class SceneHierarchy {
   EntityList_t const& selected() const { return frame_.selected; }
   EntityList_t const& drawables() const { return frame_.drawables; }
   
+  void select_all(bool status);
+
+  // Return the pivot / centroid of the scene from the entities root.
+  // If selected is true, limit to the selection.
+  glm::vec3 pivot(bool selected=true) const;
+  glm::vec3 centroid(bool selected=true) const;
+
   // [wip] Add a bounding model entity for physic collision.
   EntityHandle add_bounding_sphere();
 

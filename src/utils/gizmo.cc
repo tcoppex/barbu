@@ -88,7 +88,7 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
     ? 2.0f / H
     : tanf(camera.fov() * 0.5f) * 2.0f
     ;  
-  ad.m_projScaleY *= kGizmoScale;
+  ad.m_projScaleY *= kGizmoScaling;
 
   Vec2 cursorPos(event.mouseX, event.mouseY);
   cursorPos = (cursorPos / ad.m_viewportSize) * 2.0f - Vec2(1.0f);

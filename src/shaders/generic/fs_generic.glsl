@@ -1,14 +1,11 @@
 #version 430 core
 
-#include "shared/inc_lighting.glsl"
+#include "generic/interop.h"
 
-// ----------------------------------------------------------------------------
-
-#define CM_UNLIT        0
-#define CM_NORMALS      1
-#define CM_KEY_LIGHTS   2
-#define CM_IRRADIANCE   3
-#define CM_TEXCOORDS    4
+#include "shared/lighting/inc_pbr.glsl"
+#include "shared/structs/inc_fraginfo.glsl"
+#include "shared/structs/inc_material.glsl"
+#include "shared/inc_tonemapping.glsl"
 
 // ----------------------------------------------------------------------------
 
@@ -16,87 +13,142 @@
 layout(location = 0) in vec3 inPositionWS;
 layout(location = 1) in vec2 inTexcoord;
 layout(location = 2) in vec3 inNormalWS;
-layout(location = 3) in vec3 inViewDirWS;
-layout(location = 4) in vec3 inIrradiance;
+layout(location = 3) in vec3 inIrradiance;
 
 // Outputs.
 layout(location = 0) out vec4 fragColor;
 
-// Uniforms.
+// Uniforms : Generic.
+uniform int uToneMapMode = TONEMAPPING_NONE;
+uniform vec3 uEyePosWS;
+
+// Uniforms : Material.
+uniform int uColorMode;
+uniform vec4 uColor;
+uniform float uAlphaCutOff;
+uniform float uMetallic;
+uniform float uRoughness;
+
 uniform sampler2D uAlbedoTex;
-uniform vec4 uColor     = vec4(1.0f);
-uniform bool uHasAlbedo = true;
-uniform int uColorMode  = CM_IRRADIANCE;
+uniform sampler2D uMetalRoughTex;
+uniform sampler2D uAOTex;
+
+uniform bool uHasAlbedo;
+uniform bool uHasMetalRough;
+uniform bool uHasAO;
 
 // ----------------------------------------------------------------------------
 
-vec3 color_keylights(in vec3 rgb) {
-  // Create a Key / Fill / Back lighting setup.
-  Light keylight;
-  keylight.direction.xyz  = vec3(-1.0, -1.0, -1.0);
-  keylight.color          = vec4(1.0, 1.0, 0.95, 0.5);
+// Extract material infos, also test for alpha coverage.
+Material_t get_material() {
+  Material_t mat;
 
-  Light filllight;
-  filllight.direction.xyz = vec3(+4.0, -1.0, +4.0);
-  filllight.color         = vec4(0.5, 0.75, 0.2, 0.95);
+  const vec2 uv = inTexcoord.xy;
 
-  Light backlight;
-  backlight.position.xyz  = vec3(-10.0, 15.0, -12.0);
-  backlight.color         = vec4(0.4, 0.4, 1.0, 0.8);
+  // Diffuse / Albedo.
+  mat.color = (uHasAlbedo) ? texture( uAlbedoTex, uv) : uColor;
 
-  vec3 diffuse = apply_directional_light(keylight, inNormalWS)
-               + apply_directional_light(filllight, inNormalWS)
-               + apply_point_light(backlight, inPositionWS, inNormalWS)
-               ;
+  // Early Alpha fails.
+  if (mat.color.a < uAlphaCutOff) { 
+    discard; 
+  }
+  
+  // Ambient Occlusion.
+  const float ao = (uHasAO) ? texture( uAOTex, uv).r : 1.0f;
 
-  const vec3 ambient = vec3(0.1); //
-  diffuse = clamp(diffuse, vec3(0), vec3(1));
+  // Metallic + Roughness.
+  const vec2 metal_rough = (uHasMetalRough) ? texture( uMetalRoughTex, uv).yz 
+                                            : vec2( uMetallic, uRoughness );
+  mat.metallic  = metal_rough.x;
+  mat.roughness = metal_rough.y;
 
-  return rgb * (ambient + diffuse);
+  // Ambient using environment map Irradiance from the Vertex Shader.
+  mat.ambient = mat.color.rgb * inIrradiance;
+  mat.ao = pow(ao, 1.0);
+
+  return mat;
 }
 
-vec3 color_normal(in vec3 rgb) {
-  rgb = 0.5 * (inNormalWS + 1.0);
-  // (compensate for gamma correction)
-  return pow(rgb, vec3(2.2)); //
+// Extract fragment geometry infos.
+FragInfo_t get_worldspace_fraginfo() {
+  FragInfo_t frag;
+  frag.P        = inPositionWS;
+  frag.N        = normalize( inNormalWS );
+  frag.V        = normalize( uEyePosWS - frag.P );
+  frag.uv       = inTexcoord.xy;
+  frag.n_dot_v  = dot(frag.N, frag.V);
+
+  // Deal with double sided plane.
+  const float s = sign(frag.n_dot_v);
+  frag.N *= s;
+
+  return frag;
 }
 
-vec3 color_irradiance(in vec3 rgb) {
-  return rgb * inIrradiance;
-}
+// ----------------------------------------------------------------------------
 
-vec3 color_texcoords(in vec3 rgb) {
-  return vec3( 0.5 + 0.5*inTexcoord, 0.5);
-}
+vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
+  vec3 rgb;
 
-vec3 colorize(in int color_mode, in vec3 rgb) {
-  // (might use a subroutine instead)
-  if (color_mode == CM_KEY_LIGHTS) {
-    rgb = color_keylights(rgb);
-  } else if (color_mode == CM_NORMALS) {
-    rgb = color_normal(rgb);
-  } else if (color_mode == CM_IRRADIANCE) {
-    rgb = color_irradiance(rgb);
-  } else if (color_mode == CM_TEXCOORDS) {
-    rgb = color_texcoords(rgb);
+  switch (color_mode) {
+    default:
+    case MATERIAL_GENERIC_COLOR_MODE_PBR:
+      rgb = colorize_pbr( frag, mat); 
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_UNLIT:
+      rgb = mat.color.rgb;
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_NORMAL:
+      rgb = vec3( 0.5 * (frag.N + 1.0) );
+      rgb = gamma_uncorrect(rgb);
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_TEXCOORD:
+      rgb = vec3( frag.uv, 1.0);
+      rgb = gamma_uncorrect(rgb);
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_IRRADIANCE:
+      rgb = mat.ambient;
+    break;
+    
+    case MATERIAL_GENERIC_COLOR_MODE_AO:
+      rgb = vec3(mat.ao);
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_METALLIC:
+      rgb = vec3(mat.metallic);
+      rgb = gamma_uncorrect(rgb);
+    break;
+
+    case MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS:
+      rgb = vec3(mat.roughness);
+      rgb = gamma_uncorrect(rgb);
+    break;
+
   }
 
-  return rgb;
+  // Tonemapping is generally done in the postprocess stage, however for forward
+  // passes - like blending - it should be applied directly. 
+  rgb = toneMapping( uToneMapMode, rgb);
+
+  return vec4(rgb, mat.color.a);
 }
 
 // ----------------------------------------------------------------------------
+
+int uColorMode_dbg() {
+  float res = 16.;
+  //return (int((gl_FragCoord.x/1080.)*res) ^ int((gl_FragCoord.y/900.)*res)) % 8;
+  return int((gl_FragCoord.x/1535.0)*8);
+}
 
 void main() {
-  vec4 color = vec4(1.0);
-
-  if (uHasAlbedo) {
-    color = texture(uAlbedoTex, inTexcoord.xy);
-  } else {
-    color = uColor;
-  }
-
-  fragColor.xyz = colorize( uColorMode, color.rgb);
-  fragColor.a   = color.a;
+  const Material_t material = get_material();
+  const FragInfo_t fraginfo = get_worldspace_fraginfo();
+  fragColor = colorize( uColorMode, fraginfo, material);
 }
 
 // ----------------------------------------------------------------------------

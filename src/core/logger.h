@@ -178,6 +178,14 @@ class Logger : public Singleton<Logger> {
 #define LOG_ERROR( ... )        Logger::Get().error( __FILE__, __LINE__, ##__VA_ARGS__)
 #define LOG_FATAL_ERROR( ... )  Logger::Get().fatal_error( __FILE__, __LINE__, ##__VA_ARGS__)
 
+#ifdef BARBU_ENABLE_DEBUG_LOG
+#define LOG_DEBUG( ... )        Logger::Get().message( __FILE__, __LINE__, ##__VA_ARGS__)
+#define LOG_DEBUG_INFO( ... )   Logger::Get().info( __FILE__, __LINE__, ##__VA_ARGS__)
+#else
+#define LOG_DEBUG( ... )        
+#define LOG_DEBUG_INFO( ... )   
+#endif
+
 // ----------------------------------------------------------------------------
 
 #endif  // BARBU_CORE_LOGGER_H_

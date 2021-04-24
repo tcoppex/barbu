@@ -99,8 +99,26 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
   entity->children_.clear();
 }
 
-bool SceneHierarchy::import_model(std::string_view filename) {
-  /// This whole load the whole geometry of the file as a single mesh.
+void SceneHierarchy::reset_entity(EntityHandle entity, bool bRecursively) {
+  if (nullptr == entity) {
+    LOG_WARNING(__FUNCTION__, ": invalid parameters.");
+    return;
+  }
+
+  // Children.
+  if (bRecursively) {
+    // Remove them recursively.
+    for (auto &child : entity->children_) {
+      reset_entity(child, bRecursively);
+    }
+  }
+
+  // Reset transform.
+  entity->transform().reset();
+}
+
+EntityHandle SceneHierarchy::import_model(std::string_view filename) {
+  /// This load the whole geometry of the file as a single mesh.
   /// TODO : create an importer for scene structure.
 
   // When successful, add a new model entity to the scene.
@@ -114,9 +132,12 @@ bool SceneHierarchy::import_model(std::string_view filename) {
     // Create a new mesh entity node.
     auto entity = create_model_entity(basename, mesh);
 
-    return entity != nullptr;
+    // [todo : hold the camera internally ?]
+    //entity->transform().set_position(camera.target());
+
+    return entity;
   }
-  return false;
+  return nullptr;
 }
 
 void SceneHierarchy::update_selected_local_matrices() {
@@ -138,6 +159,54 @@ void SceneHierarchy::update_selected_local_matrices() {
   }
 }
 
+void SceneHierarchy::select_all(bool status) {
+  // [fixme] technically, using the UI as state holder is not great.
+  ((views::SceneHierarchyView*)ui_view)->select_all(status);
+}
+
+glm::vec3 SceneHierarchy::pivot(bool selected) const {
+  auto const& entities = (selected && !frame_.selected.empty()) ? frame_.selected : entities_;
+
+  // [ should transform with global matrices ]
+
+  glm::vec3 pivot{0.0f};
+  if (!entities.empty()) {
+    for (auto const& e : entities) {
+      auto p = glm::vec4(e->position(), 1);
+      
+      // Transform wrt parent entity.
+      auto const parent_index = e->parent()->index();
+      auto const& gpm = (parent_index > -1) ? frame_.globals[ parent_index ] : glm::mat4(1.0f); 
+      p = gpm * p;
+      
+      pivot += glm::vec3(p);
+    }
+    pivot /= entities.size();
+  }
+
+  return pivot;
+}
+
+glm::vec3 SceneHierarchy::centroid(bool selected) const {
+  auto const& entities = (selected && !frame_.selected.empty()) ? frame_.selected : entities_;
+
+  glm::vec3 center{ pivot(selected) };
+  if (!entities.empty()) {
+    for (auto const& e : entities) {
+      auto p = glm::vec4(e->centroid(), 1);
+      
+      // compensate for local scaling.
+      auto const& lm = e->local_matrix(); 
+      p = glm::scale(glm::mat4(1.0), glm::vec3(lm[0][0], lm[1][1], lm[2][2])) * p;
+      
+      center += glm::vec3(p);
+    }
+    center /= entities.size();
+  }
+
+  return center;
+}
+
 EntityHandle SceneHierarchy::add_bounding_sphere() {
   constexpr int32_t kDefaultRes = 16;
   if (auto mesh = MESH_ASSETS.createSphere(kDefaultRes, kDefaultRes); mesh) {
@@ -156,7 +225,6 @@ EntityHandle SceneHierarchy::create_model_entity(std::string const& basename, Me
   if (entity != nullptr) {
     add_entity(entity);
   }
-
   return entity;
 }
 
@@ -198,11 +266,11 @@ void SceneHierarchy::sort_drawables(Camera const& camera) {
 
   // Calculate the dot product of an entity to the camera direction.
   auto calculate_entity_dp = [eye_pos, eye_dir](EntityHandle const& e) {
-    glm::vec3 pivot = glm::vec3(0.0f);
+    glm::vec3 centroid = glm::vec3(0.0f);
     if (auto visual = e->get<VisualComponent>(); e->has<VisualComponent>()) {
-      pivot = visual.mesh()->pivot();
+      centroid = visual.mesh()->centroid();
     }
-    auto const& pos = e->transform().position() - pivot;
+    auto const& pos = e->transform().position() - centroid;
     auto const dir = pos - eye_pos; 
     return glm::dot(eye_dir, dir);
   };

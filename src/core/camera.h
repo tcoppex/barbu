@@ -26,7 +26,7 @@ class Camera {
     virtual ~ViewController() {}
     virtual void update(float dt) = 0; 
     virtual void get_view_matrix(float *m) = 0; 
-    //virtual glm::vec3 const& target() const = 0;
+    virtual glm::vec3 target() const = 0;
   };
 
  public:
@@ -80,8 +80,12 @@ class Camera {
   inline glm::mat4 const& proj() const noexcept { return proj_; }
   inline glm::mat4 const& viewproj() const noexcept { return viewproj_; }
 
-  inline glm::vec3 position() const noexcept  { return glm::vec3(world_[3]); }
+  inline glm::vec3 position() const noexcept  { return glm::vec3(world_[3]); } //
   inline glm::vec3 direction() const noexcept { return glm::normalize(-glm::vec3(world_[2])); }
+
+  inline glm::vec3 target() const noexcept { return controller_->target(); }
+
+  inline glm::vec3 pos_ws() const noexcept  { return glm::vec3(view_[3]); } // xxx
 
   inline bool is_ortho() const noexcept { return bUseOrtho_; }
 

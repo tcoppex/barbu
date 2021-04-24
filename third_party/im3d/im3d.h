@@ -400,7 +400,6 @@ struct IM3D_API Color
 	}
 };
 
-#if 1
 constexpr Color Color_Black   = Color(0x000000ff);
 constexpr Color Color_White   = Color(0xffffffff);
 constexpr Color Color_Gray    = Color(0x808080ff);
@@ -418,27 +417,6 @@ constexpr Color Color_Brown   = Color(0x8b4513ff);
 constexpr Color Color_Purple  = Color(0x800080ff);
 constexpr Color Color_Teal    = Color(0x008080ff);
 constexpr Color Color_Navy    = Color(0x000080ff);
-#else
-constexpr Color Color_Black   = Color(0x282828ff);
-constexpr Color Color_White   = Color(0xebdbb2ff);
-constexpr Color Color_Gray    = Color(0x808080ff);
-constexpr Color Color_Red     = Color(0xfb4934ff);
-constexpr Color Color_Green   = Color(0xb8bb26ff);
-constexpr Color Color_Blue    = Color(0x83a598ff);
-constexpr Color Color_Magenta = Color(0xd3869bff);
-constexpr Color Color_Yellow  = Color(0xfabd2fff);
-constexpr Color Color_Cyan    = Color(0x8ec07cff);
-
-constexpr Color Color_Pink    = Color(0xffc0cbff);
-constexpr Color Color_Orange  = Color(0xfe8019ff);
-constexpr Color Color_Gold    = Color(0xffd700ff);
-constexpr Color Color_Brown   = Color(0x8b4513ff);
-constexpr Color Color_Purple  = Color(0x800080ff);
-constexpr Color Color_Teal    = Color(0x008080ff);
-constexpr Color Color_Navy    = Color(0x000080ff);
-#endif
-
-constexpr Color Color_GoldHandle    = Color(0xffd700ff);
 
 struct alignas(IM3D_VERTEX_ALIGNMENT) VertexData
 {

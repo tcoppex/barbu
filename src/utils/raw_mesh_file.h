@@ -3,8 +3,8 @@
 
 #include <string>
 #include <vector>
-#include "glm/glm.hpp" // glm::normalize
 
+#include "glm/glm.hpp" // glm::normalize
 // #include "glm/vec2.hpp"
 // #include "glm/vec3.hpp"
 // #include "glm/vec4.hpp"
@@ -38,10 +38,12 @@ struct RawMeshData {
   // Mesh name, could be empty.
   std::string name;
 
-  // List of unique vertex attributes (they do not necesserally have the same size).
+  // List of unique sparse vertex attributes.
   std::vector<glm::vec3> vertices;
   std::vector<glm::vec2> texcoords;
   std::vector<glm::vec3> normals;
+  std::vector<glm::uvec4> joints;
+  std::vector<glm::vec4> weights;
 
   // List of triangle faces, each elements is a vertex containing indices to its attribute.
   // (respectively position, texcoord, normals). Contains 3 * nfaces elements.
@@ -50,8 +52,7 @@ struct RawMeshData {
   // Sub-geometry description.
   VertexGroups_t vgroups;
 
-
-  static constexpr size_t kDefaultTriangleCapacity = 2048;
+  static constexpr size_t kDefaultTriangleCapacity = 256;
   static constexpr size_t kDefaultCapacity = 3 * kDefaultTriangleCapacity;
   RawMeshData(size_t capacity = kDefaultCapacity) {
     vertices.reserve(capacity);
@@ -112,25 +113,43 @@ struct RawMeshData {
   bool has_vertex_groups() const { 
     return !vgroups.empty();
   }
+
+  void reserve_skinning() {
+    joints.reserve(vertices.capacity());
+    weights.reserve(vertices.capacity());
+  }
 };
 
 // ----------------------------------------------------------------------------
 
-// Material Info.
+// Raw material info used to construct a MaterialAsset.
 struct MaterialInfo {
   std::string name;
 
-  glm::vec4 diffuse_color{ 1.0f };      // RGB Albedo + Alpha
-  glm::vec4 specular_color{ 0.0f };     // XYZ specular + W Exponent
+  glm::vec4 diffuse_color{ 1.0f, 1.0f, 1.0f, 0.75f };      // RGB Albedo + Alpha
+  glm::vec4 specular_color{ 0.0f, 0.0f, 0.0f, 1.0f };      // XYZ specular + W Exponent
 
   std::string diffuse_map;
-  std::string specular_map;
+  std::string metallic_rough_map;
   std::string bump_map;
+  std::string ao_map;
   std::string alpha_map;
+  std::string specular_map;
+
+  float alpha_cutoff = 0.5f;
+
+  float metallic  = 0.0f;
+  float roughness = 0.4f;
+
+  bool bAlphaTest   = false;
+  bool bBlending    = false;  // (Blending always preempt alpha test)
+
+  bool bDoubleSided = false;
+  bool bUnlit       = false;
 };
 
 // MaterialFile.
-// Defines a set of material objects info.
+// Defines a set of material infos from a file.
 struct MaterialFile {
   std::string id;
   std::vector<MaterialInfo> infos;
@@ -143,8 +162,7 @@ struct MaterialFile {
 // ----------------------------------------------------------------------------
 
 // RawMeshFile.
-// Represents a list of mesh objects within a single file possibly
-// sharing a common material file.
+// Represents a list of meshes within a single file possibly sharing a common material file.
 struct RawMeshFile {
   std::string material_id;            // Material file id / relative path name.
   std::vector<RawMeshData> meshes;    // Buffer of meshes.

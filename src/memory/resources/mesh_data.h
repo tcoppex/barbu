@@ -7,6 +7,7 @@
 #include "memory/resource_manager.h"
 
 #include "utils/raw_mesh_file.h" // VertexGroups_t, RawMeshFile, MaterialFile
+#include "animation/skeleton.h"
 
 // ----------------------------------------------------------------------------
 //
@@ -39,12 +40,13 @@
 //   In the future scene as separated objects could be load either on SceneHierarchy
 //   or here, if we change MeshData to SceneData (for example).
 //
+//    * All submeshes are considered to use the same primitive type [fixme ?].
+//
 // ----------------------------------------------------------------------------
 
-
-// [rename (eg. SceneData) ?]
-// Interleaved vertex attributes (AoS-layout) on the host used to represent
-// various mesh data : pincipally vertices mesh, but possibly materials, skeleton, etc..).
+//
+// Static & animated Mesh representation on the Host, using interleaved data.
+//
 struct MeshData : public Resource {
   // Compatible primitive type.
   enum PrimitiveType {
@@ -63,8 +65,15 @@ struct MeshData : public Resource {
     glm::vec3 normal;
   };
 
-  using VertexBuffer_t = std::vector<Vertex_t>;
-  using IndexBuffer_t  = std::vector<uint32_t>;
+  // WIP
+  struct Skinning_t {
+    glm::uvec4 joint_indices;
+    glm::vec4 joint_weights;
+  };
+
+  using VertexBuffer_t    = std::vector<Vertex_t>;
+  using SkinningBuffer_t  = std::vector<Skinning_t>;
+  using IndexBuffer_t     = std::vector<uint32_t>;
 
   // Default vertex group identifier when there is none.
   static constexpr char const* kDefaultGroupName{ 
@@ -73,15 +82,22 @@ struct MeshData : public Resource {
 
   // -------------------
 
-  PrimitiveType  type;
-  VertexBuffer_t vertices;
-  IndexBuffer_t  indices;
+  PrimitiveType     type;
+
+  // Attributes.
+  VertexBuffer_t    vertices;
+  SkinningBuffer_t  skinnings; //
+
+  // Elements.
+  IndexBuffer_t     indices;
 
   // Range of vertex indices representing sub-part of the mesh, used for materials.
-  VertexGroups_t vgroups;
+  VertexGroups_t    vgroups;
 
   // Material data associated to the mesh.
-  MaterialFile material; //
+  MaterialFile      material; //
+
+  SkeletonHandle    skeleton = nullptr; //
 
   // -------------------
 
@@ -102,8 +118,26 @@ struct MeshData : public Resource {
     return static_cast<int32_t>(vertices.size()); 
   }
   
+  /* Return the number of primitives for the whole mesh. */
   inline int32_t nfaces() const { 
-    return static_cast<int32_t>(indices.size() / 3); 
+    size_t nelems = indices.size();
+    switch (type) {
+      case TRIANGLES:
+        nelems /= 3;
+      break;
+      case TRIANGLE_STRIP:
+        nelems -= 2;
+      break;
+      case LINES:
+        nelems -= 1;
+      break;
+      case POINTS:
+      break;
+      default:
+        LOG_ERROR("missing case");
+      return 0;
+    };
+    return static_cast<int32_t>(nelems);
   }
 
   inline bool has_materials() const { 
@@ -127,13 +161,14 @@ struct MeshData : public Resource {
 
 class MeshDataManager : public ResourceManager<MeshData> {
  public:
+  /* Return true if the extension is supported by the manager. */
   static bool CheckExtension(std::string_view ext);
 
  private:
   Handle _load(ResourceId const& id) final;
   Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) final { return Handle(); }
 
-  // Load file as single mesh.
+  /* Load file as single mesh. */
   bool load_obj(std::string_view filename, MeshData &mesh);
   bool load_gltf(std::string_view filename, MeshData &mesh);
 };

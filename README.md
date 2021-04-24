@@ -4,19 +4,20 @@
 
 ![screenshot](https://i.imgur.com/qOxWtyo.png)
 
-Barbü is a *work in progress*, fairly GPU-based, prototyping playground for real-time hair simulation & fun.
+Barbü is a *work in progress*, fairly GPU-based, prototyping framework for real-time 3D graphics, especially aimed at simulating  hair & stuffs.
 
 It is written in **C++ 17** and **OpenGL 4.6**.
 
 ## Some Features
 
-* Hair strand dynamics using the dynamic follow-the-leader (DFTL) algorithm.
-* Marschner's reflectance model implementation on Compute Shaders.
-* Tonemapping post-processing with HBAO.
-* Irradiance environment map based lighting.
 * Entity component based hierarchy with live scene edit.
+* PBR pipeline with Irradiance Environment map based lighting.
 * Hot-reload of external assets (*textures, models, shaders*).
+* Marschner's reflectance model implementation on Compute Shaders.
+* GPU Hair & Particles simulation.
 * GLTF 2.0 & OBJ drag-n-drop model import.
+* Features rich camera controls.
+* Colourful console logger with context tracking !
 
 ## Quickstart
 
@@ -24,22 +25,20 @@ We will be using the command-line on Unix and [Git Bash](https://git-for-windows
 
 ### Dependencies
 
-The following dependencies are pulled in as submodules.
+The following third parties are used :
 
-* [GLFW 3.4.0](https://github.com/glfw/glfw) for window management,
-* [GLM 0.9.9.9](https://github.com/g-truc/glm/releases/tag/0.9.8.1) for mathematics.
-* [imgui 1.83](https://github.com/ocornut/imgui) for UI.
+* [GLFW 3.4.0](https://github.com/glfw/glfw) : window management,
+* [GLM 0.9.9.8](https://github.com/g-truc/glm/releases/tag/0.9.9.8) : linear algebra.
+* [imgui 1.83](https://github.com/ocornut/imgui) : user interface.
+* [im3d 1.16](https://github.com/john-chapman/im3d/) : gizmo controller.
+* [stb_image 2.26](https://github.com/nothings/stb) : image loader.
+* [cgltf 1.10](https://github.com/jkuhlmann/cgltf) : gltf 2.0 loader.
 
-To retrieve them, type the following command line in the project directory :
+Some of them are shipped directly, others must be retrieve as submodule :
 ```bash
 git submodule init
 git submodule update
 ```
-
-Other dependencies are shipped directly :
-* [im3d 1.16](https://github.com/john-chapman/im3d/)
-* [stb_image 2.26](https://github.com/nothings/stb)
-* [cgltf 1.10](https://github.com/jkuhlmann/cgltf)
 
 ### Build
 
@@ -65,13 +64,13 @@ cmake --build . --target ALL_BUILD --config Release
 
  1. *Using CMake, the build configuration type (ie. Debug, Release) is set at Build Time with MSVC and at Cache Generation Time with Makefile.*
 
- 2. *OpenGL extensions are generated automatically by a custom [Python](https://www.python.org/downloads/) script.  Alternatively [GLEW](http://glew.sourceforge.net/) can be used by specifying the option `-DOPT_USE_GLEW=ON` to CMake. __If something does not compile due to OpenGL functions, try to use GLEW.__*
+ 2. *OpenGL extensions are generated automatically by a custom [Python](https://www.python.org/downloads/) script.  Alternatively [GLEW](http://glew.sourceforge.net/) can be used by specifying the option `-DOPT_USE_GLEW=ON` to CMake. __If something does not compile due to OpenGL functions, try to use GLEW instead.__*
 
 ### Run
 
 The binary can be found in the project `./bin/` directory:
 ```bash
-../bin/barbu_demo
+../bin/barbu
 ```
 
 ## References

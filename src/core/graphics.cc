@@ -244,6 +244,10 @@ void Disable(State cap) {
   glDisable( gl_capability[cap] );
 }
 
+bool IsEnabled(State cap) {
+  return glIsEnabled( gl_capability[cap] );
+}
+
 void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor) {
   glBlendFunc( gl_blendfactor[src_factor], gl_blendfactor[dst_factor] );
 }

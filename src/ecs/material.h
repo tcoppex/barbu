@@ -11,6 +11,7 @@
 enum class RenderMode {
   Opaque,
   Transparent,
+  CutOff,
   kCount,
   kDefault = RenderMode::Opaque
 };
@@ -54,29 +55,50 @@ class Material {
 
       auto const pgm = pgm_handle->id;
       gx::UseProgram( pgm );
-
-      gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
+      
+      // (vertex)
       gx::SetUniform( pgm, "uModelMatrix",        attributes.world_matrix);
       gx::SetUniform( pgm, "uMVP",                attributes.mvp_matrix);
+      gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
+      // (fragment)
       gx::SetUniform( pgm, "uEyePosWS",           attributes.eye_position);
+      //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
     }
 
     update_internals();
   }
 
-  inline ProgramHandle program() { return PROGRAM_ASSETS.get(program_id_); }
-  inline RenderMode render_mode() const { return render_mode_; }
-  inline UIView* ui_view() { return ui_view_; }
+  inline ProgramHandle program() {
+    return PROGRAM_ASSETS.get(program_id_);
+  }
+
+  inline RenderMode render_mode() const {
+    return render_mode_;
+  }
+
+  inline bool double_sided() const {
+    return bDoubleSided_;
+  }
+
+  inline UIView* ui_view() {
+    return ui_view_;
+  }
 
   inline void set_render_mode(RenderMode const& render_mode) {
     render_mode_ = render_mode;
+  }
+
+  inline void set_double_sided(bool status) {
+    bDoubleSided_ = status;
   }
 
  protected:
   virtual void update_internals() = 0;
 
   AssetId    program_id_;
+
   RenderMode render_mode_;
+  bool bDoubleSided_ = false;
 
  public:
   UIView *ui_view_ = nullptr; // [not used yet]

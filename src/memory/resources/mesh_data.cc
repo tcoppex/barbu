@@ -7,6 +7,7 @@
 #include <array>
 #include <sstream>
 #include <map>
+#include <unordered_map>
 
 #include "glm/glm.hpp"    // abs
 #include "glm/gtc/type_ptr.hpp"
@@ -511,6 +512,11 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
 
   char namebuffer[128]{'\0'};
 
+  // If no objects are specified, create a default raw geo.
+  if (meshfile.meshes.empty()) {
+    meshfile.meshes.resize(1);
+  } 
+
   char *s = input;
   for (char *end = strchr(s, '\n'); end != nullptr; s = end+1u, end = strchr(s, '\n'))
   {
@@ -519,7 +525,12 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
     // Handle Objects, Submesh & Material file.
     if (s[0] & 1) {
       // OBJECT
-      if (s[0] == 'o') {
+
+      if (s[0] == '#') {
+        continue;
+      }
+
+      if ((s[0] == 'o')) {//} || (s[0] == 'g')) {
 
         // [wip]
         if (bSeparateObjects) {
@@ -560,11 +571,6 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
       // [the other captured parameters has their first char last bit set to 0, so we can skip here]
       continue;
     }
-
-    // If no objects are specified, create a default raw geo.
-    if (meshfile.meshes.empty()) {
-      meshfile.meshes.resize(1);
-    } 
 
     // Update the last geometry in the buffer.
     auto &raw = meshfile.meshes.back();
@@ -663,7 +669,7 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
     // Update border groups indices.
     auto &vgroups = raw.vgroups;
     vgroups.front().start_index = 0;
-    vgroups.back().end_index = static_cast<int32_t>(raw.elementsAttribs.size()) - 1;
+    vgroups.back().end_index = static_cast<int32_t>(raw.elementsAttribs.size());
   }
 }
 
@@ -675,6 +681,12 @@ void ParseMTL(char *input, MaterialFile &matfile) {
 
   auto &materials = matfile.infos;
   char namebuffer[128]{'\0'};
+
+  // For MTL, as there is no way to determine alpha testing / blending, we
+  // decide that materials are :
+  //  * opaque by default, 
+  //  * alpha_tested if they've got a map_Kd (with a potential alpha value) or an map_d, 
+  //  * transparent if they've got an opacity value ('d').
 
   char *s = input;
   for (char *end = strchr(s, '\n'); end != nullptr; s=end+1u, end = strchr(s, '\n')) //
@@ -700,6 +712,7 @@ void ParseMTL(char *input, MaterialFile &matfile) {
       if (check_token(s, "map_Kd")) {
         sscanf( s+7, "%128s", namebuffer);
         mat.diffuse_map = std::string(namebuffer);
+        mat.bAlphaTest = true;
       } else if (check_token(s, "map_Ks")) {
         sscanf( s+7, "%128s", namebuffer);
         mat.specular_map = std::string(namebuffer);
@@ -715,6 +728,7 @@ void ParseMTL(char *input, MaterialFile &matfile) {
       } else if (check_token(s, "map_d")) {
         sscanf( s+6, "%128s", namebuffer);
         mat.alpha_map = std::string( namebuffer );
+        mat.bAlphaTest = true;
       }
     }
     // Colors.
@@ -739,6 +753,7 @@ void ParseMTL(char *input, MaterialFile &matfile) {
     // Alpha value.
     else if (s[0] == 'd') {
       sscanf(s+2, "%f", &mat.diffuse_color.w);
+      mat.bBlending = true;
     }
     // Specular exponent.
     else if ((s[0] == 'N') && (s[1] == 's')) {
@@ -752,7 +767,10 @@ void ParseMTL(char *input, MaterialFile &matfile) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-bool MeshDataManager::CheckExtension(std::string_view ext) {
+bool MeshDataManager::CheckExtension(std::string_view _ext) {
+  std::string ext(_ext);
+  std::transform( _ext.begin(), _ext.end(), ext.begin(), ::tolower);
+  
   return ("obj" == ext)
       || ("glb" == ext)
       || ("gltf" == ext)
@@ -765,7 +783,9 @@ MeshDataManager::Handle MeshDataManager::_load(ResourceId const& id) {
   MeshDataManager::Handle h(id);
 
   auto const path = id.path;
-  auto const ext  = path.substr(path.find_last_of(".") + 1);
+  
+  auto ext = path.substr(path.find_last_of(".") + 1);
+  std::transform( ext.begin(), ext.end(), ext.begin(), ::tolower);
 
   auto &meshdata = *h.data;
 
@@ -896,7 +916,6 @@ void DisplayStats_GLTF(cgltf_data* data) {
       // }
       if (prim.indices) LOG_MESSAGE( "  * indices : ", prim.indices->component_type);
 
-
       for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) { 
         LOG_MESSAGE( "  * attribs : ", prim.attributes[attrib_index].name);
       }
@@ -910,6 +929,46 @@ void DisplayStats_GLTF(cgltf_data* data) {
     }
   }
 }
+
+std::string setup_gltf_texture(cgltf_texture *tex, std::string const& dirname, std::string const &default_name) {
+  std::string texname;
+
+  if (!tex) {
+    return texname;
+  }
+
+  auto img = tex->image;
+ 
+  if (img->uri) {
+    // GLTF file with external data.
+    
+    if (img->uri[0] != '/') {
+      texname = dirname + "/" + std::string(img->uri);
+    } else {
+      texname = std::string(img->uri);
+    }
+  } else {
+    // GLB / GLTF file with internal data.
+
+    texname = img->name ? img->name : default_name; //
+    if (img->buffer_view) {
+      auto buffer_view = img->buffer_view;
+
+      // Create the resource internally.
+      Resources::LoadInternal<Image>( 
+        ResourceId(texname), 
+        buffer_view->size, 
+        ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
+        img->mime_type
+      ); 
+      // [optional] Create the texture directly.
+      //TEXTURE_ASSETS.create2d(AssetId(texname)); 
+    }
+  }
+
+  return texname;
+}
+
 
 bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
   cgltf_options options{};
@@ -929,27 +988,29 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
     return false;
   }
 
-  //---------------------------
-  // There is 3 type of GLTF files :
-  //  * gltf with external file
-  //  * gltf with internal buffer
-  //  * compressed glb file
-  // For now, to use live edit and external Image Resource loader, we focus only
-  // on the first kind.
-  //---------------------------
+  std::string basename(filename);
+  basename = Resource::TrimFilename(basename);
+  basename = basename.substr(0, basename.find_last_of('.'));
 
   /* ------------ */
   RawMeshFile meshfile;
   {
-    //DisplayStats_GLTF(data);
-
     // We will join all meshes as a single one.
     if (meshfile.meshes.empty()) {
       meshfile.meshes.resize(1);
     }
 
+    char tmpname[256]{};
+
+    // Map to solve name for unknown materials.
+    std::unordered_map< cgltf_material const*, std::string > material_names( data->materials_count );
+    for (cgltf_size i = 0; i < data->materials_count; ++i) {
+      cgltf_material const& mat = data->materials[i];
+      sprintf(tmpname, "%s::material_%02d", basename.c_str(), int(i));
+      material_names[ &mat ] = std::string( mat.name ? mat.name : tmpname );
+    }
+
     // -- MESH ATTRIBUTES & INDICES.
-    int32_t default_material_id = 0;
     cgltf_size last_vertex_index = 0;
     for (cgltf_size i=0; i < data->nodes_count; ++i) {
       auto node = data->nodes[i];
@@ -959,61 +1020,95 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         continue;
       }
 
-      //cgltf_float world_matrix[16];
+      // Node's transform.
       glm::mat4 world_matrix;
       cgltf_node_transform_world( &node, glm::value_ptr(world_matrix));
 
+      // RawMeshData to update.
       auto &raw = meshfile.meshes.back();
-
-      raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : "[unnamed]");
+      sprintf(tmpname, "%s::mesh_%02d", basename.c_str(), int(i));
+      raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : tmpname); //
 
       // When meshes are not joined, we should probably reset this to 0.
       //last_vertex_index = 0;
 
-      // Primitive are actually submeshes, with specific material.
-      for (cgltf_size j=0; j < mesh->primitives_count; ++j) {
-        auto prim = mesh->primitives[j];
+      // Primitives / submeshes.
+      for (cgltf_size j = 0; j < mesh->primitives_count; ++j) {
+        auto const& prim = mesh->primitives[j];
 
         if (prim.has_draco_mesh_compression) {
-          LOG_WARNING("Draco mesh compression not implemented.");
+          LOG_WARNING( "GLTF Draco mesh compression is not supported." );
           continue;
+        }
+
+        if (prim.type != cgltf_primitive_type_triangles) {
+          LOG_WARNING( "GLTF non TRIANGLES primitives are not implemented : ", raw.name );
         }
 
         // Attributes.
         for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) {
-          auto attrib = prim.attributes[attrib_index];
-          
+          auto const& attrib = prim.attributes[attrib_index];
+
+          // Check accessors layout.
           if (attrib.data->is_sparse) {
-            LOG_WARNING("sparse attribs not implemented.");
+            LOG_WARNING( "GLTF sparse attributes are not supported." );
             continue;
           }
+          //LOG_MESSAGE("Accessor type :", attrib.data->component_type);
+
+          // Used to reserve memory.
+          auto const attribsize = attrib.data->count;
 
           // Postions.
           if (attrib.type == cgltf_attribute_type_position) {
+            raw.vertices.reserve(attribsize);
+            
             glm::vec3 vertex;
-            for (auto index = 0; index < attrib.data->count; ++index) {
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
               cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(vertex), 3);
               vertex = glm::vec3(world_matrix * glm::vec4(vertex, 1.0f));
               raw.vertices.push_back( vertex );
             }
           }
-
           // Normals.
-          if (attrib.type == cgltf_attribute_type_normal) {
+          else if (attrib.type == cgltf_attribute_type_normal) {
+            raw.normals.reserve(attribsize);
+            
             glm::vec3 normal;
-            for (auto index = 0; index < attrib.data->count; ++index) {
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
               cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(normal), 3);
               normal = glm::vec3(world_matrix * glm::vec4(normal, 0.0f));
               raw.normals.push_back( normal );
             }
           }
-
           // Texcoords.
-          if (attrib.type == cgltf_attribute_type_texcoord/* && (attrib.index = 0)*/) {
+          else if (attrib.type == cgltf_attribute_type_texcoord) {
+            raw.texcoords.reserve(attribsize);
+            
             glm::vec2 texcoord;
-            for (auto index = 0; index < attrib.data->count; ++index) {
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
               cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(texcoord), 2);
               raw.texcoords.push_back( texcoord );
+            }
+          }
+          // Joints.
+          else if (attrib.type == cgltf_attribute_type_joints) {
+            raw.joints.reserve(attribsize);
+            
+            glm::uvec4 joints;
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_uint( attrib.data, index, glm::value_ptr(joints), 4);
+              raw.joints.push_back( joints );
+            }
+          }
+          // Weights.
+          else if (attrib.type == cgltf_attribute_type_weights) {
+            raw.weights.reserve(attribsize);
+
+            glm::vec4 weights;
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(weights), 4);
+              raw.weights.push_back( weights );
             }
           }
         }
@@ -1021,9 +1116,9 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         // Indices.
         if (prim.indices) {
           if (prim.indices->is_sparse) {
-            LOG_WARNING("sparse indexing not implemented");
+            LOG_WARNING( "GLTF sparse indexing is not implemented." );
           } else {
-            for (auto index = prim.indices->offset; index < prim.indices->count; ++index) {
+            for (cgltf_size index = 0; index < prim.indices->count; ++index) {
               auto const vid = cgltf_accessor_read_index(prim.indices, index);
               raw.elementsAttribs.push_back(glm::ivec3( last_vertex_index + vid ));
             }
@@ -1032,83 +1127,91 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           // Vertex Group.
           if (auto mat = prim.material; mat) {
             VertexGroup vg;
-        
-            // -------- FIXME
-            // (sometimes materials are unnamed, which made the system fails to resolve them)
-            char matname[32]{};
-            sprintf(matname, "[material %00d]", default_material_id++);
-            char *name = (mat->name != nullptr) ? mat->name : matname;
-            // --------
 
-            vg.name = std::string(name);
+            vg.name = material_names[mat];
             vg.start_index = raw.elementsAttribs.size() - prim.indices->count; // 
             vg.end_index   = raw.elementsAttribs.size(); //
             raw.vgroups.push_back(vg);
           }
         } else {
-          LOG_WARNING("No indices associated with GLTF :", filename);
+          LOG_WARNING( "No indices are associated with GLTF file :", filename );
         }
 
         last_vertex_index = raw.vertices.size(); //
       }
-    }
 
-    default_material_id = 0;
+      // Skeleton datas.
+      if (auto *skin = node.skin; skin) {
+        auto const njoints = skin->joints_count;
+
+        meshdata.skeleton = std::make_shared<Skeleton>( njoints );
+        auto &skl = meshdata.skeleton;
+
+        // Map to find (parent) nodes index.
+        std::unordered_map< cgltf_node*, int32_t> joint_indices( njoints );
+        for (cgltf_size index = 0; index < njoints; ++index) {
+          auto *joint = skin->joints[index];
+          joint_indices[ joint ] = index;
+        }
+        
+        // Fill skeleton data.
+        for (cgltf_size index = 0; index < njoints; ++index) {
+          auto *joint = skin->joints[index];
+
+          // Joint name.
+          sprintf(tmpname, "%s::joint_%02d", basename.c_str(), int(index)); //
+          skl->names.push_back( (joint->name) ? joint->name : tmpname );
+
+          // Joint parent index.
+          auto const& it = joint_indices.find( joint->parent );
+          skl->parents.push_back( (it != joint_indices.end()) ? it->second : -1 );
+        }
+
+        // Fill the inverse bind matrix buffer.
+        cgltf_accessor_unpack_floats( skin->inverse_bind_matrices, glm::value_ptr(*skl->inverse_bind_matrices.data()), 16 * njoints); //
+      }
+    }
 
     // -- MATERIALS.
     auto &mtl = meshdata.material;
     std::string const fn( filename );
     std::string const dirname = fn.substr(0, fn.find_last_of('/'));
 
-    for (cgltf_size i=0; i<data->materials_count; ++i) {
-      auto mat = data->materials[i];
+    for (cgltf_size i = 0; i < data->materials_count; ++i) {
+      auto const& mat = data->materials[i];
       
-      // -------- FIXME
-      char matname[32]{"[material 000]"};
-      char *name = (mat.name != nullptr) ? mat.name : matname;
-      // --------
-
       MaterialInfo info;
-      info.name = std::string(name);
+      info.name = material_names[ &mat ];
       if (mat.has_pbr_metallic_roughness) {
         auto const pmr = mat.pbr_metallic_roughness;
 
         auto const rgba = pmr.base_color_factor;
-        info.diffuse_color = glm::vec4(rgba[0], rgba[1], rgba[2], rgba[3]);
-        
-        if (auto tex = pmr.base_color_texture.texture; tex) {
-          auto img = tex->image;
-          
-          if (img->uri) {
-            // GLTF file with external data.
+        info.diffuse_color = glm::vec4(rgba[0], rgba[1], rgba[2], rgba[3]);        
+        info.metallic  = pmr.metallic_factor;
+        info.roughness = pmr.roughness_factor;
 
-            info.diffuse_map = dirname + "/" + std::string(img->uri);
-          } else {
-            // GLB / GLTF file with internal data.
-
-            info.diffuse_map = img->name ? img->name : "unnamed_diffuse"; //
-
-            if (img->buffer_view) {
-              auto buffer_view = img->buffer_view;
-
-              // TODO : tag the image when it has already been gamma corrected.
-
-              // Create the resource internally.
-              Resources::LoadInternal<Image>( 
-                ResourceId(info.diffuse_map), 
-                buffer_view->size, 
-                ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
-                img->mime_type
-              ); 
-
-              //LOG_INFO( img->name, img->mime_type, buffer_view->offset, buffer_view->size );
-
-              // [optional] Create the texture directly.
-              //TEXTURE_ASSETS.create2d(AssetId(info.diffuse_map)); 
-            }
-          }
-        }
+        info.diffuse_map        = setup_gltf_texture( pmr.base_color_texture.texture, dirname, info.name + "_diffuse");
+        info.metallic_rough_map = setup_gltf_texture( pmr.metallic_roughness_texture.texture, dirname, info.name + "_metallic_rough");
       }
+
+      switch (mat.alpha_mode) {
+        case cgltf_alpha_mode_blend:
+          info.bBlending = true;
+        break;
+        case cgltf_alpha_mode_mask:
+          info.bAlphaTest = true;
+        break;
+        case cgltf_alpha_mode_opaque:
+        default:
+        break;
+      }
+
+      info.ao_map       = setup_gltf_texture( mat.occlusion_texture.texture, dirname, info.name + "_occlusion");
+      info.alpha_cutoff = mat.alpha_cutoff;
+
+      info.bDoubleSided = mat.double_sided;
+      info.bUnlit       = mat.unlit;
+
       mtl.infos.push_back(info);
     }
 
@@ -1117,7 +1220,13 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
     mtl.id = fn.substr(fn.find_last_of('/') + 1);
     mtl.id = mtl.id.substr(0, mtl.id.find_last_of('.'));
     meshfile.prefix_material_vg_names(mtl);
+  
+    // -- ANIMATION DATAS.
+    for (cgltf_size i=0; i < data->animations_count; ++i) {
+      LOG_WARNING( "GLTF animation data is not supported yet." );
+    }
   }
+
   /* ------------ */
 
   cgltf_free(data);

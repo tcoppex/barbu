@@ -28,8 +28,12 @@ struct Image : public Resource {
 
 class ImageManager : public ResourceManager<Image> {
  private:
-  Handle _load(ResourceId const& id) final;
+  // [fixme]
+  // To avoid compatibility issues on image / texture format we force them to 
+  // 4 components everywhere.
+  static constexpr int32_t kDefaultNumChannels = 4;
 
+  Handle _load(ResourceId const& id) final;
   Handle _load_internal(ResourceId const& id, int32_t size, void const* data, std::string_view mime_type) final;
 
   // Transform internal data of a crossed hdr to an array of cube faces.
