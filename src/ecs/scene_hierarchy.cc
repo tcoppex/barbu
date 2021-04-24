@@ -165,35 +165,43 @@ void SceneHierarchy::select_all(bool status) {
 }
 
 glm::vec3 SceneHierarchy::pivot(bool selected) const {
-  glm::vec3 pivot{0.0f};
+  auto const& entities = (selected && !frame_.selected.empty()) ? frame_.selected : entities_;
 
-  if (selected && !frame_.selected.empty()) {
-    for (auto const& e : frame_.selected) {
-      pivot -= e->position();
+  // [ should transform with global matrices ]
+
+  glm::vec3 pivot{0.0f};
+  if (!entities.empty()) {
+    for (auto const& e : entities) {
+      auto p = glm::vec4(e->position(), 1);
+      
+      // Transform wrt parent entity.
+      auto const parent_index = e->parent()->index();
+      auto const& gpm = (parent_index > -1) ? frame_.globals[ parent_index ] : glm::mat4(1.0f); 
+      p = gpm * p;
+      
+      pivot += glm::vec3(p);
     }
-    pivot /= frame_.selected.size();
-  } else {
-    for (auto const& e : entities_) {
-      pivot -= e->position();
-    }
-    pivot /= entities_.size();
+    pivot /= entities.size();
   }
+
   return pivot;
 }
 
 glm::vec3 SceneHierarchy::centroid(bool selected) const {
-  glm::vec3 center = pivot(selected);
+  auto const& entities = (selected && !frame_.selected.empty()) ? frame_.selected : entities_;
 
-  if (selected && !frame_.selected.empty()) {
-    for (auto const& e : frame_.selected) {
-      center -= e->centroid();
+  glm::vec3 center{ pivot(selected) };
+  if (!entities.empty()) {
+    for (auto const& e : entities) {
+      auto p = glm::vec4(e->centroid(), 1);
+      
+      // compensate for local scaling.
+      auto const& lm = e->local_matrix(); 
+      p = glm::scale(glm::mat4(1.0), glm::vec3(lm[0][0], lm[1][1], lm[2][2])) * p;
+      
+      center += glm::vec3(p);
     }
-    center /= frame_.selected.size();
-  } else {
-    for (auto const& e : entities_) {
-      center -= e->centroid();
-    }
-    center /= entities_.size();
+    center /= entities.size();
   }
 
   return center;

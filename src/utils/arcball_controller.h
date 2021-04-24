@@ -188,7 +188,6 @@ class ArcBallController : public Camera::ViewController {
   inline double pitch() const { return pitch_; }
   inline double dolly() const { return dolly_; }
 
-  inline glm::vec3 const& target() const final { return target_; } //
 
   inline float yawf() const { return static_cast<float>(yaw()); }
   inline float pitchf() const { return static_cast<float>(pitch()); }
@@ -215,12 +214,19 @@ class ArcBallController : public Camera::ViewController {
     dolly_ = dolly2_ = value; 
   }
 
+  //---------------
+  // [ target is is inversed internally, so we change the sign to compensate externally.. fixme]
+  inline glm::vec3 target() const final { 
+    return -target_; // 
+  }
+
   inline void set_target(glm::vec3 const& target, bool const bNoSmooth=false) {
-    target2_ = target;
+    target2_ = -target;
     if (bNoSmooth) {
       target_ = target2_;
     }
   }
+  //---------------
 
   inline void reset_target() {
     target_ = glm::vec3(0.0);

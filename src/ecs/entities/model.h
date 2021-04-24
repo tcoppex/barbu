@@ -20,7 +20,7 @@ class ModelEntity : public Entity {
   }
 
   glm::vec3 centroid() const override { 
-    return get<VisualComponent>().mesh()->centroid(); //
+    return get<VisualComponent>().mesh()->centroid();
   }
 };
 

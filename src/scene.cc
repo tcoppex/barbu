@@ -37,9 +37,16 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
     );
     hair_.init( scalpId ); //
     #else
-    scene_hierarchy_.import_model( 
-      ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
-    );
+    // scene_hierarchy_.import_model( 
+    //   ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
+    // );
+
+    auto e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/helmet/SciFiHelmet.gltf" );
+    if (e) { e->set_position(glm::vec3(-1.5, 0., 0.)); }
+
+    e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb" );
+    if (e) { e->set_position(glm::vec3(1.5, 0., 0.)); }
+
     params_.enable_hair = false;
     #endif
   }
