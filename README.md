@@ -4,20 +4,20 @@
 
 ![screenshot](https://i.imgur.com/qOxWtyo.png)
 
-Barbü is a *work in progress*, fairly GPU-based, prototyping playground for real-time hair simulation & fun.
+Barbü is a *work in progress*, fairly GPU-based, prototyping frameworks for real-time 3D graphics, especially aimed at simulating  hair simulation & fun.
 
 It is written in **C++ 17** and **OpenGL 4.6**.
 
 ## Some Features
 
-* Hair strand dynamics using the dynamic follow-the-leader (DFTL) algorithm.
-* Marschner's reflectance model implementation on Compute Shaders.
-* Tonemapping post-processing with HBAO.
-* Irradiance environment map based lighting.
 * Entity component based hierarchy with live scene edit.
+* PBR pipeline with Irradiance Environment map based lighting.
 * Hot-reload of external assets (*textures, models, shaders*).
+* Marschner's reflectance model implementation on Compute Shaders.
+* GPU Hair & Particles simulation.
 * GLTF 2.0 & OBJ drag-n-drop model import.
-* Colourful console logger with context tracking.
+* Features rich camera controls.
+* Colourful console logger with context tracking !
 
 ## Quickstart
 
@@ -70,7 +70,7 @@ cmake --build . --target ALL_BUILD --config Release
 
 The binary can be found in the project `./bin/` directory:
 ```bash
-../bin/barbu_demo
+../bin/barbu
 ```
 
 ## References
