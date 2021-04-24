@@ -7,13 +7,12 @@
 
 // ----------------------------------------------------------------------------
 
-void Scene::init(Camera const& camera, views::Main &ui_mainview) {
+void Scene::init(Camera &camera, views::Main &ui_mainview) {
   // OpenGL rendering parameters.
   gx::ClearColor(0.0165f, 0.0165f, 0.0160f, 1.0f);
   //gx::ClearColor(0.9f, 0.7f, 0.5f, 1.0f);
 
   scene_hierarchy_.init();
-  //scene_hierarchy_.add_bounding_sphere();
 
   // Special Rendering.
   skybox_.init();
@@ -24,7 +23,7 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
-    #if 0
+    #if 1
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -47,6 +46,9 @@ void Scene::init(Camera const& camera, views::Main &ui_mainview) {
     params_.enable_hair = false;
     #endif
   }
+
+  // Recenter view on scene's centroid.
+  ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid(), true);
   
   // UI Views.
   setup_ui_views(ui_mainview);
