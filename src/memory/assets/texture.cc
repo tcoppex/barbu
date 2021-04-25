@@ -187,7 +187,7 @@ bool Texture::setup() {
       pixels = img->pixels;
 
       // Force format consistency..
-      format = (img->channels == 4) ? GL_RGBA : (img->channels == 3) ? GL_RGBA : (img->channels == 2) ? GL_RG : GL_R;
+      format = (img->channels == 4) ? GL_RGBA : (img->channels == 3) ? GL_RGBA : (img->channels == 2) ? GL_RG : GL_RED;
     }
     bool const resolution_changed = (w != params.w) || (h != params.h);
     

@@ -8,8 +8,8 @@ list(APPEND Sources
   main.cc
   scene.cc
 
-  animation/skeleton.cc
-  animation/skeleton_controller.cc
+  # animation/skeleton.cc
+  # animation/skeleton_controller.cc
 
   core/graphics.cc
   core/app.cc
@@ -50,7 +50,7 @@ list(APPEND Headers
   scene.h
 
   animation/skeleton.h
-  animation/skeleton_controller.h
+ # animation/skeleton_controller.h
   animation/common.h
 
   core/app.h

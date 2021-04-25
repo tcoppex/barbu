@@ -39,7 +39,7 @@ void HBAO::deinit() {
     return;
   }
 
-  glDeleteTextures(textures_.size(), textures_.data());
+  glDeleteTextures(((GLsizei)textures_.size()), textures_.data());
   pgm_.ssao = 0u;
 }
 
@@ -59,8 +59,8 @@ void HBAO::process(Camera const& camera, GLuint const tex_linear_depth, GLuint &
 // ----------------------------------------------------------------------------
 
 void HBAO::init_textures() {
-  auto const width  = params_.ao_resolution.x; 
-  auto const height = params_.ao_resolution.y;
+  GLsizei const width  = static_cast<GLsizei>(params_.ao_resolution.x); 
+  GLsizei const height = static_cast<GLsizei>(params_.ao_resolution.y);
 
   // Textures.
   glCreateTextures( GL_TEXTURE_2D, kNumTextureName, textures_.data());

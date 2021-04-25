@@ -72,6 +72,7 @@ Material_t get_material() {
 // Extract fragment geometry infos.
 FragInfo_t get_worldspace_fraginfo() {
   FragInfo_t frag;
+  
   frag.P        = inPositionWS;
   frag.N        = normalize( inNormalWS );
   frag.V        = normalize( uEyePosWS - frag.P );
@@ -127,27 +128,20 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
       rgb = vec3(mat.roughness);
       rgb = gamma_uncorrect(rgb);
     break;
-
   }
 
   // Tonemapping is generally done in the postprocess stage, however for forward
   // passes - like blending - it should be applied directly. 
-  rgb = toneMapping( uToneMapMode, rgb);
+  //rgb = toneMapping( uToneMapMode, rgb);
 
   return vec4(rgb, mat.color.a);
 }
 
 // ----------------------------------------------------------------------------
 
-int uColorMode_dbg() {
-  float res = 16.;
-  //return (int((gl_FragCoord.x/1080.)*res) ^ int((gl_FragCoord.y/900.)*res)) % 8;
-  return int((gl_FragCoord.x/1535.0)*8);
-}
-
 void main() {
-  const Material_t material = get_material();
-  const FragInfo_t fraginfo = get_worldspace_fraginfo();
+  /*const*/ Material_t material = get_material();
+  /*const*/ FragInfo_t fraginfo = get_worldspace_fraginfo();
   fragColor = colorize( uColorMode, fraginfo, material);
 }
 
