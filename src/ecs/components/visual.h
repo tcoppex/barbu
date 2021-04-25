@@ -9,10 +9,7 @@
 // ----------------------------------------------------------------------------
 
 //
-// Link submeshes with materials and store basic rendering info. 
-//
-// The VisualComponent is responsible to register its material to the
-// renderer pass manager.
+// Store rendering properties and link submeshes with their material. 
 //
 class VisualComponent final : public ComponentParams<Component::Visual> {
  public:
@@ -20,33 +17,22 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
   // Render parts of the mesh matching the RenderMode.
   void render(RenderAttributes const& attributes, RenderMode render_mode) {
-    if (!mesh_->has_materials()) 
-    {
-    // Case 1 : Mesh with no materials.
-      auto mat = MATERIAL_ASSETS.get_default()->get();
-      if (render_mode == mat->render_mode()) {
-        mat->update_uniforms(attributes);
+    if (!mesh_->has_materials()) {
+      // Case 1 : Mesh with no materials.
+
+      if (render_mode == RenderMode::kDefault) {
+        material()->update_uniforms(attributes);
         mesh_->draw();
       }
-    } 
-    else 
-    {
-    // Case 2 : Mesh with submaterials.
+    } else {
+      // Case 2 : Mesh with sub materials.
 
-      // Keep track of previous pgm to avoid useless uniform setup (could be improved).
+      // Keep tracks of previous program to avoid useless uniform setup mesh wised.
       uint32_t last_pgm = 0u;
 
       auto const nsubgeometry = mesh_->nsubgeometry();
       for (auto i = 0; i < nsubgeometry; ++i) {
-        auto const& vg = mesh_->vertex_group(i);
-        auto const material_id = AssetId(vg.name); //
-        //LOG_INFO("material : ", material_id.c_str(), MATERIAL_ASSETS.has(material_id));
-
-        // If the material exists for the mesh, find it, otherwhise take the default material.
-        auto mat = (MATERIAL_ASSETS.has(material_id)) ?
-          MATERIAL_ASSETS.get(material_id)->get() :
-          MATERIAL_ASSETS.get_default()->get()
-        ;
+        auto const mat = material(i);
 
         // Check the material render mode.
         if (render_mode != mat->render_mode()) {
@@ -58,7 +44,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
         mat->update_uniforms(attributes, last_pgm == pgm);
         last_pgm = pgm;
 
-        // Force Double-Sided ?
+        // Force double-sided rendering when requested.
         bool const bCullFace = gx::IsEnabled( gx::State::CullFace );
         if (mat->double_sided()) {
           gx::Disable( gx::State::CullFace );
@@ -66,7 +52,6 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
         // Draw submesh.
         mesh_->draw_submesh(i);
-        //CHECK_GX_ERROR();
 
         // Restore pipeline state.
         if (bCullFace) {
@@ -74,6 +59,8 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
         }
       }
     }
+
+    CHECK_GX_ERROR();
   }
 
   // Add a mesh with a default material for each submeshes.
@@ -96,7 +83,26 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
   }
 
  private:
+
+  inline MaterialHandle material(int32_t index=0) {
+    auto const default_material = MATERIAL_ASSETS.get_default()->get();
+
+    if (!mesh_->has_materials()) {
+      return default_material;
+    }
+    auto const& vg = mesh_->vertex_group(index);
+    auto const material_id = AssetId(vg.name);
+
+    return (MATERIAL_ASSETS.has(material_id)) ?
+      MATERIAL_ASSETS.get(material_id)->get() :
+      default_material
+    ;
+  }
+
   MeshHandle mesh_; 
+
+  // [right now the mesh access its linked materials at import but we could use
+  // an internal map to access custom one]
   //std::map< std::string, MaterialAssetHandle > materials_;
 };
 
