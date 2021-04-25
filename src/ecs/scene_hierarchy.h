@@ -34,7 +34,7 @@ class SceneHierarchy {
   void update(float const dt, Camera const& camera);
 
   // Add an entity to the scene hierarchy placed on the root when no parent is
-  // specififed. 
+  // specified. 
   void add_entity(EntityHandle entity, EntityHandle parent = nullptr);
 
   // Remove an entity to the list of entity and update its relationship links.

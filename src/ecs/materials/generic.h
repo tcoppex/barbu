@@ -78,12 +78,24 @@ class GenericMaterial : public Material {
     auto const pgm = handle->id;
 
     float const cutoff = (render_mode() == RenderMode::CutOff) ? alpha_cutoff_ : 0.0f;
-    //auto const cm = (color_mode == ColorMode::kInternal) ? color_mode_ : color_mode;
+    
+    auto const cm = static_cast<int32_t>(color_mode_); 
+    //(color_mode == ColorMode::kInternal) ? color_mode_ : color_mode;
+    
     bool const hasAlbedo      = static_cast<bool>(tex_albedo_);
     bool const hasMetalRough  = static_cast<bool>(tex_metal_rough_);
     bool const hasAO          = static_cast<bool>(tex_ao_);
     
-    gx::SetUniform( pgm, "uColorMode",      static_cast<int32_t>(color_mode_));
+    int32_t image_unit = 0;
+    auto bind_texture = [&pgm, &image_unit](auto const& id, TextureHandle tex) {
+      if (tex) {
+        gx::BindTexture( tex->id, image_unit);
+        gx::SetUniform( pgm, id,  image_unit);
+        ++image_unit;
+      }
+    };
+
+    gx::SetUniform( pgm, "uColorMode",      cm);
     gx::SetUniform( pgm, "uColor",          color_);
     gx::SetUniform( pgm, "uAlphaCutOff",    cutoff);
     gx::SetUniform( pgm, "uMetallic",       metallic_);
@@ -92,26 +104,10 @@ class GenericMaterial : public Material {
     gx::SetUniform( pgm, "uHasAlbedo",      hasAlbedo);
     gx::SetUniform( pgm, "uHasMetalRough",  hasMetalRough);
     gx::SetUniform( pgm, "uHasAO",          hasAO);
-
-    // Note :
-    // Check how to retrieve attribs from share texture, eg. (AO + Metal Rough) in RGB.
-
-    int32_t image_unit = 0;
-    if (hasAlbedo) {
-      gx::BindTexture( tex_albedo_->id,     image_unit);
-      gx::SetUniform( pgm, "uAlbedoTex",    image_unit);
-      ++image_unit;
-    }
-    if (hasMetalRough) {
-      gx::BindTexture( tex_metal_rough_->id,  image_unit);
-      gx::SetUniform( pgm, "uMetalRoughTex",  image_unit);
-      ++image_unit;
-    }
-    if (hasAO) {
-      gx::BindTexture( tex_ao_->id,   image_unit);
-      gx::SetUniform( pgm, "uAOTex",  image_unit);
-      ++image_unit;
-    }
+  
+    bind_texture( "uAlbedoTex",     tex_albedo_);
+    bind_texture( "uMetalRoughTex", tex_metal_rough_);
+    bind_texture( "uAOTex",         tex_ao_);
   }
 
  private:
