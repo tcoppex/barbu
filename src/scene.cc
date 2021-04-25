@@ -23,7 +23,7 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
-    #if 1
+    #if 0
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -36,11 +36,11 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
     );
     hair_.init( scalpId ); //
     #else
-    // scene_hierarchy_.import_model( 
-    //   ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
-    // );
+    scene_hierarchy_.import_model( 
+      ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
+    );
 
-    auto e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf" );
+    //auto e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf" );
     // if (e) { e->set_position(glm::vec3(-1.5, 0., 0.)); }
 
     params_.enable_hair = false;

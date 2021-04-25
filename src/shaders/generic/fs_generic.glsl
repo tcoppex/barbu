@@ -132,7 +132,7 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
 
   // Tonemapping is generally done in the postprocess stage, however for forward
   // passes - like blending - it should be applied directly. 
-  //rgb = toneMapping( uToneMapMode, rgb);
+  rgb = toneMapping( uToneMapMode, rgb);
 
   return vec4(rgb, mat.color.a);
 }

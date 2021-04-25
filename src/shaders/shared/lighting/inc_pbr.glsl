@@ -89,7 +89,6 @@ BRDFMaterial_t get_brdf_material(in Material_t mat) {
 // ----------------------------------------------------------------------------
 
 vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
-/*
   //-----------
   LightInfo_t uLightInfos[4];
   int uNumLights = 1;
@@ -150,10 +149,10 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   }
 
   // Final light color.
-  const vec3 color = (L0 + 0.25*mat.ambient) * mat.ao;
+  const vec3 color = (L0 + 0.5*mat.ambient) * mat.ao;
 
   return color;
-*/
+
   return vec3(1.0);
 }
 
