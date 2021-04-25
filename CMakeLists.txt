@@ -34,7 +34,7 @@ option(OPT_USE_GLEW                 "Use GLEW for OpenGL extension ?"       OFF)
 
 option(OPT_ENABLE_CLANG_TIDY        "Use clang-tidy ?"                      OFF)
 
-option(OPT_ENABLE_DEBUG_LOG         "Display complementary debug log ?"     ON)
+option(OPT_ENABLE_DEBUG_LOG         "Enable complementary debug log ?"      OFF)
 
 # -----------------------------------------------------------------------------
 # Project paths.
