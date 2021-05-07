@@ -5,6 +5,7 @@
 #include "core/glfw.h"
 #include "core/events.h"
 #include "core/logger.h"
+#include "core/global_clock.h"
 #include "memory/assets/assets.h"
 #include "ui/views/Main.h"
 
@@ -13,10 +14,12 @@
 bool App::init(char const* title, AppScene *scene) {
   // System parameters.
   std::setbuf(stderr, nullptr);
-  std::srand(static_cast<uint32_t>(std::time(nullptr)));
+  rand_seed_ = static_cast<uint32_t>(std::time(nullptr));
+  std::srand(rand_seed_);
 
   // Init singletons.
   Logger::Initialize();
+  GlobalClock::Initialize();
 
   if (!scene) {
     LOG_ERROR( "no scene was specified.");
@@ -93,8 +96,9 @@ bool App::init(char const* title, AppScene *scene) {
   scene_ = scene;
   scene_->init(camera_, *ui_mainview_);
 
-  // Start the chrono.
-  time_ = std::chrono::steady_clock::now();
+  // Start the FPS chrono.
+  time_ = std::chrono::steady_clock::now(); //
+  GlobalClock::Get().resume();
 
   return true;
 }
@@ -115,6 +119,7 @@ void App::deinit() {
   gx::Deinitialize();
 
   Logger::Deinitialize();
+  GlobalClock::Deinitialize();
 }
 
 void App::run() {
@@ -180,22 +185,42 @@ void App::frame() {
 
 void App::update_time() {
   auto constexpr kMaxFPS = 90.0;
-  auto constexpr fps_time = std::chrono::duration<double>(1.0 / (1.015 * kMaxFPS));
+  auto constexpr fps_time = std::chrono::duration<double>(1.0 / (1.005 * kMaxFPS));
 
+  // Regulate FPS.
   auto local_update_time = [this]() {
     auto const tick      = std::chrono::steady_clock::now();
     auto const time_span = std::chrono::duration_cast<std::chrono::duration<double>>(tick - time_);
     time_      = tick;
-    deltatime_ = static_cast<float>(time_span.count());
+    deltatime_ = static_cast<float>(time_span.count()); // [overwritten]
     return time_span;
   };
 
   auto const time_span = local_update_time();
 
-  // Regulate FPS.
   if (params_.regulate_fps && (time_span < fps_time)) {
     std::this_thread::sleep_for(fps_time - time_span);
     local_update_time();
+  }
+
+  //----
+
+  // Update the global clock.  
+  {
+    auto &gc = GlobalClock::Get();
+
+    // The first few clock updates can occurs a very long time after the app initialization.
+    // Therefore we stabilize the dt the first frames. [ improve ? ]
+    if (gc.framecount_total() < 2) {
+      gc.stabilize_delta_time( 1000.0 / kMaxFPS );
+    }
+    gc.update();
+
+    // Bypass previous "precise" deltatime using global clock.
+    deltatime_ = gc.delta_time();
+    
+    // LOG_INFO( gc.delta_time(), gc.application_delta_time(), gc.frame_elapsed_time(), gc.application_time()  );
+    // LOG_INFO( gc.time_scale(), gc.fps(), gc.framecount_total() ); 
   }
 }
 

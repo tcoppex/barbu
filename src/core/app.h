@@ -85,6 +85,8 @@ class App {
   GLFWwindow *window_;
   AppScene *scene_;
 
+  uint32_t rand_seed_;
+
   // Time.
   std::chrono::steady_clock::time_point time_;
   float deltatime_;
