@@ -183,7 +183,13 @@ class Logger : public Singleton<Logger> {
 #define LOG_DEBUG_INFO( ... )   Logger::Get().info( __FILE__, __LINE__, ##__VA_ARGS__)
 #else
 #define LOG_DEBUG( ... )        
-#define LOG_DEBUG_INFO( ... )   
+#define LOG_DEBUG_INFO( ... )
+#endif
+
+#ifndef NDEBUG
+#define LOG_CHECK( x )          if (!(x)) Logger::Get().warning( __FILE__, __LINE__, #x, " test fails")
+#else
+#define LOG_CHECK( x )          if (!(x)) {}
 #endif
 
 // ----------------------------------------------------------------------------
