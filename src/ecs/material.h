@@ -21,7 +21,10 @@ struct RenderAttributes {
   glm::mat4 const* irradiance_matrices;
   glm::mat4 world_matrix;
   glm::mat4 mvp_matrix;
+  uint32_t skinning_texid = 0u; //
+
   glm::vec3 eye_position;
+  //int32_t tonemap_mode;
 };
 
 // ----------------------------------------------------------------------------
@@ -30,9 +33,12 @@ class Material {
  public:
   Material() = default;
 
-  Material(AssetId program_id, RenderMode render_mode = RenderMode::kDefault) : 
-    program_id_(program_id), 
-    render_mode_(render_mode)
+  Material(AssetId program_id, RenderMode render_mode = RenderMode::kDefault)
+    : program_id_(program_id)
+    , render_mode_(render_mode)
+    , image_unit_(0u)
+    , bDoubleSided_(false)
+    , last_image_unit_(0u)
   {}
 
   virtual ~Material() {
@@ -56,14 +62,29 @@ class Material {
       auto const pgm = pgm_handle->id;
       gx::UseProgram( pgm );
       
+      last_image_unit_ = 0;
+
       // (vertex)
       gx::SetUniform( pgm, "uModelMatrix",        attributes.world_matrix);
       gx::SetUniform( pgm, "uMVP",                attributes.mvp_matrix);
       gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
+
+      // [wip]
+      if (attributes.skinning_texid > 0) {
+        gx::BindTexture( attributes.skinning_texid, last_image_unit_);
+        gx::SetUniform( pgm, "uSkinningDatas",      last_image_unit_);    
+        ++last_image_unit_;
+
+        //glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &su_index);
+      }
+
       // (fragment)
       gx::SetUniform( pgm, "uEyePosWS",           attributes.eye_position);
       //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
+    
+      CHECK_GX_ERROR();
     }
+    image_unit_ = last_image_unit_;
 
     update_internals();
   }
@@ -96,9 +117,13 @@ class Material {
   virtual void update_internals() = 0;
 
   AssetId    program_id_;
-
   RenderMode render_mode_;
-  bool bDoubleSided_ = false;
+
+  int32_t image_unit_; //
+  bool bDoubleSided_; //
+
+ private:
+  int32_t last_image_unit_;
 
  public:
   UIView *ui_view_ = nullptr; // [not used yet]
