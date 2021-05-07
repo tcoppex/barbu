@@ -138,13 +138,13 @@ struct MaterialInfo {
 
   float alpha_cutoff = 0.5f;
 
-  float metallic  = 0.0f;
-  float roughness = 0.4f;
+  float metallic    = 0.0f;
+  float roughness   = 0.4f;
 
   bool bAlphaTest   = false;
   bool bBlending    = false;  // (Blending always preempt alpha test)
 
-  bool bDoubleSided = false;
+  bool bDoubleSided = false; //
   bool bUnlit       = false;
 };
 
