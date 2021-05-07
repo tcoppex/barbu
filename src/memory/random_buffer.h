@@ -1,5 +1,5 @@
-#ifndef UTILS_RANDOM_BUFFER_H_
-#define UTILS_RANDOM_BUFFER_H_
+#ifndef BARBU_MEMORY_RANDOM_BUFFER_H_
+#define BARBU_MEMORY_RANDOM_BUFFER_H_
 
 #include <random>
 #include "core/graphics.h"
@@ -36,4 +36,4 @@ class RandomBuffer {
 
 // ----------------------------------------------------------------------------
 
-#endif // UTILS_RANDOM_BUFFER_H_
+#endif // BARBU_MEMORY_RANDOM_BUFFER_H_
