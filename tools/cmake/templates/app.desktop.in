@@ -11,4 +11,4 @@ Name=@BARBU_APPNAME@
 Name[en_US]=@BARBU_APPNAME@
 Terminal=false
 Type=Application
-Version=1.0
+Version=@CMAKE_PROJECT_VERSION@
