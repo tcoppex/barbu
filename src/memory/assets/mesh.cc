@@ -122,6 +122,7 @@ bool Mesh::setup() {
   uint32_t bytesize = static_cast<uint32_t>(nvertices_ * sizeof(meshdata.vertices[0u]));
   glNamedBufferStorage(vbo_, bytesize, meshdata.vertices.data(), 0);
 
+  // [use bindless vao instead ?]
   glBindVertexArray(vao_);
   {
     auto binding_index = 0u;
@@ -160,7 +161,7 @@ bool Mesh::setup() {
 
         attrib_index = Mesh::ATTRIB_JOINT_INDICES;
         num_component = static_cast<uint32_t>((sizeof MeshData::Skinning_t::joint_indices) / sizeof(MeshData::Skinning_t::joint_indices[0u]));
-        glVertexAttribFormat(attrib_index, num_component, GL_UNSIGNED_INT, GL_FALSE, offsetof(MeshData::Skinning_t, joint_indices));
+        glVertexAttribIFormat(attrib_index, num_component, GL_UNSIGNED_INT, offsetof(MeshData::Skinning_t, joint_indices));
         glVertexAttribBinding(attrib_index, binding_index);
         glEnableVertexAttribArray(attrib_index);
 
