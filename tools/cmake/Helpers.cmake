@@ -8,46 +8,47 @@
 #         need to call set($(varname) $(varname) PARENT_SCOPE) at the end.
 
 # -----------------------------------------------------------------------------
+# Capitalize first letter of a string.
+# -----------------------------------------------------------------------------
+
+function(helpers_capitalize input)
+  string(SUBSTRING ${input} 0 1 FIRST_LETTER)
+  string(TOUPPER ${FIRST_LETTER} FIRST_LETTER)
+  string(REGEX REPLACE "^.(.*)" "${FIRST_LETTER}\\1" output "${input}")
+  set(CAPITALIZE_OUTPUT ${output} PARENT_SCOPE) #
+endfunction(helpers_capitalize)
+
+# -----------------------------------------------------------------------------
 # Generate a c++ configuration header from a template.
 # -----------------------------------------------------------------------------
 
-function(helpers_generateConfigHeader source_dir output_header_path)
+function(helpers_generateUnixShortcut output_dir)
   # Define variables that will be replaced in the configuration file.
   # Note : some of the used variables are already defined.
   #------------
-  # Head guards
-  string(TOUPPER ${output_header_path} CONFIG_HEAD_GUARD)
-  string(REGEX REPLACE "[\/|\.]" "_" CONFIG_HEAD_GUARD ${CONFIG_HEAD_GUARD})
 
-  # Project macro prefix
-  string(TOUPPER ${CMAKE_PROJECT_NAME} PROJECT_PREFIX)
-  
-  # Platform name.
-  string(TOUPPER ${OS_NAME} PLATFORM_NAME)
+  # already defined : BARBU_ASSETS_DIR
+  set(BARBU_NAME          "${CMAKE_PROJECT_NAME}")
+  set(BARBU_EXE_PATH      ${BARBU_BINARY_DIR}/${BARBU_NAME}) #
 
-  # Debug state
-  if(DEBUG)
-    set(USE_DEBUG 1)
-  else()
-    set(USE_DEBUG 0)
-  endif()
-  #------------
+  helpers_capitalize(${BARBU_NAME})
+  set(BARBU_APPNAME ${CAPITALIZE_OUTPUT})
 
-  set(CONFIG_TEMPLATE_FILE  ${CMAKE_MODULE_PATH}/config_template.h.in)
-  set(CONFIG_HEADER_FILE    ${source_dir}/${output_header_path})
+  set(TEMPLATE_FILE       ${CMAKE_MODULE_PATH}/templates/app.desktop.in)
+  set(SHORTCUT_DST_FILE   ${output_dir}/${BARBU_APPNAME}.desktop)
   configure_file(
-    ${CONFIG_TEMPLATE_FILE} 
-    ${CONFIG_HEADER_FILE}
+    ${TEMPLATE_FILE} 
+    ${SHORTCUT_DST_FILE}
     NEWLINE_STYLE UNIX
   )
   # Add the file to the clean target.
-  if(EXISTS ${CONFIG_HEADER_FILE} AND NOT IS_DIRECTORY ${CONFIG_HEADER_FILE})
-    set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES ${CONFIG_HEADER_FILE})
+  if(EXISTS ${SHORTCUT_DST_FILE} AND NOT IS_DIRECTORY ${SHORTCUT_DST_FILE})
+    set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES ${SHORTCUT_DST_FILE})
   endif()
 
   # Put the config file in the parent scope to be added to dependencies.
-  set(CONFIG_HEADER_FILE    ${CONFIG_HEADER_FILE}   PARENT_SCOPE)
-endfunction(helpers_generateConfigHeader)
+  set(SHORTCUT_DST_FILE ${SHORTCUT_DST_FILE} PARENT_SCOPE)
+endfunction(helpers_generateUnixShortcut)
 
 # -----------------------------------------------------------------------------
 # Set a default build type if none was specified
