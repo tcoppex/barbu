@@ -86,12 +86,11 @@ class GenericMaterial : public Material {
     bool const hasMetalRough  = static_cast<bool>(tex_metal_rough_);
     bool const hasAO          = static_cast<bool>(tex_ao_);
     
-    int32_t image_unit = 0;
-    auto bind_texture = [&pgm, &image_unit](auto const& id, TextureHandle tex) {
-      if (tex) {
-        gx::BindTexture( tex->id, image_unit);
-        gx::SetUniform( pgm, id,  image_unit);
-        ++image_unit;
+    auto bind_texture = [this, &pgm](auto const& name, TextureHandle tex) {
+      if (nullptr != tex) {
+        gx::BindTexture( tex->id, image_unit_ /*, material_sampler*/);
+        gx::SetUniform( pgm, name,  image_unit_);
+        ++image_unit_;
       }
     };
 
@@ -108,6 +107,8 @@ class GenericMaterial : public Material {
     bind_texture( "uAlbedoTex",     tex_albedo_);
     bind_texture( "uMetalRoughTex", tex_metal_rough_);
     bind_texture( "uAOTex",         tex_ao_);
+
+    CHECK_GX_ERROR();
   }
 
  private:
