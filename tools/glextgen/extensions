@@ -99,6 +99,7 @@ glShaderStorageBlockBinding
 glTexStorage2D
 glTexStorage3D
 glTexSubImage3D
+glTextureBuffer
 glTextureParameteri
 glTextureStorage2D
 glTextureSubImage2D
