@@ -32,9 +32,12 @@ endif()
 # GLEW is optional and not provided, by default extensions are loaded manually.
 option(OPT_USE_GLEW                 "Use GLEW for OpenGL extension ?"       OFF)
 
+option(OPT_USE_OPENMP               "Use OpenMP for pragma concurrency ?"   OFF)
+
 option(OPT_ENABLE_CLANG_TIDY        "Use clang-tidy ?"                      OFF)
 
 option(OPT_ENABLE_DEBUG_LOG         "Enable complementary debug log ?"      OFF)
+
 
 # -----------------------------------------------------------------------------
 # Project paths.
@@ -178,6 +181,7 @@ if(USE_GCC OR USE_CLANG)
     -Wformat=2 -Wformat-truncation -Wformat-overflow
     #-Wduplicated-branches 
     -Wduplicated-cond
+    -Wno-unknown-pragmas 
     -Wno-unused-function 
     -Wno-unused-parameter
     -Wno-missing-field-initializers
@@ -202,10 +206,12 @@ if(USE_GCC OR USE_CLANG)
     -fdata-sections
     -fno-exceptions
     -fno-rtti
+    # -ftree-loop-distribution
+    # -funroll-loops
   )
 
   list(APPEND CXX_FLAGS_DEBUG           -O0 -g3 -Wundef) #-Wconversion)
-  list(APPEND CXX_FLAGS_RELEASE         -O2)
+  list(APPEND CXX_FLAGS_RELEASE         -O2 -msse4.1)
   list(APPEND CXX_FLAGS_RELWITHDEBINFO  ${CXX_FLAGS_RELEASE} -g)
   
   # Linker flags.
@@ -217,7 +223,9 @@ if(USE_GCC OR USE_CLANG)
 
   # For C++17 filesystem support, might became depecrated.
   set(STD_CXX_FILESYSTEM_LIB stdc++fs)
+
 elseif(USE_MSVC)
+  
   list(APPEND CXX_FLAGS
     /W4 
     /w14640   # enable warning on thread un-safe static member initialization.
@@ -306,12 +314,22 @@ else()
   list(APPEND ADDITIONAL_MAKE_CLEAN_FILES "${GLEXTGEN_OUTPUT_DIR}")
 endif(OPT_USE_GLEW)
 
+# OpenMP
+if (OPT_USE_OPENMP)
+  find_package(OpenMP)
+  if(OPENMP_FOUND)
+    list(APPEND CXX_FLAGS       "${OpenMP_CXX_FLAGS}")
+    list(APPEND CustomLibs      "${OpenMP_CXX_LIBRARIES}")
+  endif()
+endif()
+
 # -----------------------------------------------------------------------------
 # Thirdparties Submodule dependencies.
 # -----------------------------------------------------------------------------
 
 # GLM : math library.
 set(GLM_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/glm)
+list(APPEND CustomDefinitions -DGLM_COMPILER_GCC61=0)
 
 # GLFW : window manager.
 set(GLFW_ROOT ${BARBU_THIRD_PARTY_DIR}/glfw)
@@ -383,6 +401,9 @@ if(OS_LINUX)
   if(NOT DEBUG)
     list(APPEND CustomDefinitions NDEBUG)
   endif()
+
+  helpers_generateUnixShortcut(${BARBU_BINARY_DIR}) #
+
 endif()
 
 if(OS_WIN32)
