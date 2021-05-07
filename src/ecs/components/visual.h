@@ -2,9 +2,13 @@
 #define BARBU_ECS_COMPONENTS_VISUAL_H_
 
 #include <map>
+
 #include "ecs/component.h"
 #include "ecs/materials/generic.h"
 #include "memory/assets/mesh.h"
+
+class Entity;
+using EntityHandle = std::shared_ptr<Entity>;
 
 // ----------------------------------------------------------------------------
 
@@ -64,7 +68,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
   }
 
   // Add a mesh with a default material for each submeshes.
-  void set_mesh(MeshHandle mesh) {
+  inline void set_mesh(MeshHandle mesh) {
     mesh_ = mesh;
 
     // materials_.clear();
@@ -72,6 +76,10 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     //   auto mat = MATERIAL_ASSETS.get( AssetId(vg.name) );
     //   materials_.insert_or_assign( vg.name, mat->loaded() ? mat : MATERIAL_ASSETS.get_default());
     // }
+  }
+
+  inline void set_rig(EntityHandle rig) {
+    rig_ = rig;
   }
 
   inline MeshHandle mesh() { 
@@ -82,8 +90,11 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     return mesh_; 
   }
 
- private:
+  inline EntityHandle rig() const {
+    return rig_;
+  }
 
+ private:
   inline MaterialHandle material(int32_t index=0) {
     auto const default_material = MATERIAL_ASSETS.get_default()->get();
 
@@ -99,7 +110,10 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     ;
   }
 
-  MeshHandle mesh_; 
+  MeshHandle mesh_ = nullptr; 
+
+  // If the entity is skinned, reference its rig here.
+  EntityHandle rig_ = nullptr;
 
   // [right now the mesh access its linked materials at import but we could use
   // an internal map to access custom one]
