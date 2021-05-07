@@ -75,21 +75,23 @@ The binary can be found in the project `./bin/` directory:
 
 ## References
 
-* ["Hair Animation and Rendering in the Nalu Demo"](https://developer.nvidia.com/gpugems/gpugems2/part-iii-high-quality-rendering/chapter-23-hair-animation-and-rendering-nalu-demo). Hubert Nguyen, William Donnelly, GPU Gems 2, Chap 23
-
-* ["Real time hair simulation and rendering on the GPU"](https://developer.download.nvidia.com/presentations/2008/SIGGRAPH/RealTimeHairRendering_SponsoredSession2.pdf). Sarah Tariq, Louis Bavoil. ACM SIGGRAPH 2008 talks.
-
-* ["Practical Applications of Compute for Simulation in Agni's Philosophy"](http://www.jp.square-enix.com/tech/library/pdf/SiggraphAsia2014_simulation.pdf), Napaporn Metaaphanon, GPU Compute for Graphics, ACM SIGGRAPH ASIA 2014 Courses.
+* ["An Efficient Representation for Irradiance Environment Maps"](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.458.6377&rep=rep1&type=pdf), Ramamoorthi, Ravi, and Pat Hanrahan. _Proceedings of the 28th annual conference on Computer graphics and interactive techniques_. 2001.
 
 * ["Fast Simulation of Inextensible Hair and Fur"](https://matthias-research.github.io/pages/publications/FTLHairFur.pdf). M. Müller, T.J. Kim, N. Chentanez. Virtual Reality Interactions and Physical Simulations (VRIPhys 2012).
 
+* ["Geometric Skinning with Approximate Dual Quaternion Blending."](https://www.cs.utah.edu/~ladislav/kavan08geometric/kavan08geometric.pdf), Kavan, Ladislav, et al. ACM Transactions on Graphics (TOG) 27.4 (2008): 1-23.
+
+* ["Hair Animation and Rendering in the Nalu Demo"](https://developer.nvidia.com/gpugems/gpugems2/part-iii-high-quality-rendering/chapter-23-hair-animation-and-rendering-nalu-demo). Hubert Nguyen, William Donnelly, GPU Gems 2, Chap 23
+
 * ["Light Scattering from Human Hair Fibers"](https://graphics.stanford.edu/papers/hair/). Marschner, S.R., Jensen, H.W., Cammarano, M., Worley, S. and Hanrahan, P., 2003. ACM Transactions on Graphics (TOG), 22(3), pp.780-791.
+
+* ["Practical Applications of Compute for Simulation in Agni's Philosophy"](http://www.jp.square-enix.com/tech/library/pdf/SiggraphAsia2014_simulation.pdf), Napaporn Metaaphanon, GPU Compute for Graphics, ACM SIGGRAPH ASIA 2014 Courses.
+
+* ["Real time hair simulation and rendering on the GPU"](https://developer.download.nvidia.com/presentations/2008/SIGGRAPH/RealTimeHairRendering_SponsoredSession2.pdf). Sarah Tariq, Louis Bavoil. ACM SIGGRAPH 2008 talks.
 
 * ["The Importance of Being Linear"](https://developer.nvidia.com/gpugems/gpugems3/part-iv-image-effects/chapter-24-importance-being-linear). Larry Gritz, Eugene d'Eon, GPU Gems 3, Chap 24.
 
 * ["Uncharted 2: HDR Lighting"](https://gdcvault.com/play/1012351/Uncharted-2-HDR). John Hable, GDC 2012.
-
-* ["An Efficient Representation for Irradiance Environment Maps"](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.458.6377&rep=rep1&type=pdf), Ramamoorthi, Ravi, and Pat Hanrahan. _Proceedings of the 28th annual conference on Computer graphics and interactive techniques_. 2001.
 
 ## License
 
