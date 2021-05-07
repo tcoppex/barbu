@@ -1,0 +1,14 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Categories=Graphics;3DGraphics;
+Comment=Real-time animation framework
+Exec=@BARBU_EXE_PATH@
+GenericName=3D framework
+Icon=@BARBU_ASSETS_DIR@/icons/appicon.png
+Keywords=@BARBU_NAME@;3d;animation;fx;renderer;engine;hair;simulation;
+Name=@BARBU_APPNAME@
+Name[en_US]=@BARBU_APPNAME@
+Terminal=false
+Type=Application
+Version=1.0
