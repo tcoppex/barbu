@@ -3,7 +3,9 @@
 #include <array>
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
+
 #include "core/logger.h"
+#include "memory/enum_array.h"
 
 // ----------------------------------------------------------------------------
 // Load Extensions.
@@ -75,27 +77,6 @@ bool checkExtensions(char const* extensions[]) {
   return valid;
 }
 
-// Wrap an array to accept enum class as indexer.
-// Original code from Daniel P. Wright.
-template<typename T, typename Indexer>
-class LookUpArray : std::array<T, static_cast<size_t>(Indexer::kCount)> {
-  using super = std::array<T, static_cast<size_t>(Indexer::kCount)>;
-
- public:
-  constexpr LookUpArray(std::initializer_list<T> il) {
-    assert( il.size() == super::size());
-    std::copy(il.begin(), il.end(), super::begin());
-  }
-
-  T&       operator[](Indexer i)       { return super::at((size_t)i); }
-  const T& operator[](Indexer i) const { return super::at((size_t)i); }
-
-  //T* data() { return super::data(); }
-
-  LookUpArray() : super() {}
-  using super::operator[];
-};
-
 } // namespace
 
 
@@ -106,7 +87,7 @@ class LookUpArray : std::array<T, static_cast<size_t>(Indexer::kCount)> {
 namespace gx {
 
 static const
-LookUpArray<uint32_t, State> gl_capability{
+EnumArray<uint32_t, State> gl_capability{
   GL_BLEND,
   GL_CULL_FACE,
   GL_DEPTH_TEST,
@@ -119,21 +100,21 @@ LookUpArray<uint32_t, State> gl_capability{
 };
 
 static const
-LookUpArray<uint32_t, Face> gl_facemode{
+EnumArray<uint32_t, Face> gl_facemode{
   GL_FRONT,
   GL_BACK,
   GL_FRONT_AND_BACK,
 };
 
 static const
-LookUpArray<uint32_t, RenderMode> gl_polygonmode{
+EnumArray<uint32_t, RenderMode> gl_polygonmode{
   GL_POINT, 
   GL_LINE,
   GL_FILL,
 };
 
 static const
-LookUpArray<uint32_t, BlendFactor> gl_blendfactor{
+EnumArray<uint32_t, BlendFactor> gl_blendfactor{
   GL_ZERO, 
   GL_ONE, 
   GL_SRC_COLOR, 
