@@ -4,6 +4,8 @@
 #include "memory/asset_factory.h"
 #include "memory/resources/mesh_data.h"
 
+#include "shaders/generic/interop.h"
+
 // ----------------------------------------------------------------------------
 
 using MeshParameters = AssetParameters;
@@ -13,11 +15,11 @@ using MeshParameters = AssetParameters;
 class Mesh : public Asset<MeshParameters, MeshData> {
  public:
   enum AttributeBinding {
-    ATTRIB_POSITION       = 0,
-    ATTRIB_TEXCOORD       = 1,
-    ATTRIB_NORMAL         = 2,
-    // ATTRIB_JOINT_INDICES  = 3,
-    // ATTRIB_JOINT_WEIGHTS  = 4,
+    ATTRIB_POSITION       = VERTEX_ATTRIB_POSITION,
+    ATTRIB_TEXCOORD       = VERTEX_ATTRIB_TEXCOORD,
+    ATTRIB_NORMAL         = VERTEX_ATTRIB_NORMAL,
+    ATTRIB_JOINT_INDICES  = VERTEX_ATTRIB_JOINT_INDICES,
+    ATTRIB_JOINT_WEIGHTS  = VERTEX_ATTRIB_JOINT_WEIGHTS,
     kNumVertexAttributeBinding
   };
 
@@ -48,6 +50,8 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   inline VertexGroups_t const& vertex_groups() const noexcept { return vgroups_; }
   inline VertexGroup const& vertex_group(int32_t index) const { return vgroups_.at(index); }
 
+  inline SkeletonHandle skeleton() { return skeleton_; }
+
   inline glm::vec3 const& centroid() const noexcept { return centroid_; }
   inline glm::vec3 const& bounds() const noexcept { return bounds_; }
 
@@ -61,6 +65,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   // Buffer ids.
   uint32_t vao_ = 0u;
   uint32_t vbo_ = 0u;
+  uint32_t skin_vbo_ = 0u;
   uint32_t ibo_ = 0u;
 
   // Drawing parameters.
@@ -71,6 +76,9 @@ class Mesh : public Asset<MeshParameters, MeshData> {
 
   // Material specific submeshes.
   VertexGroups_t vgroups_;
+
+  // Associated skeleton [tmp ?].
+  SkeletonHandle skeleton_ = nullptr; //
 
   // Axis-Aligned Bounding box.
   glm::vec3 centroid_;

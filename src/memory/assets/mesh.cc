@@ -67,6 +67,7 @@ uint32_t Mesh::get_draw_mode(MeshData::PrimitiveType primitive) const {
 void Mesh::allocate() {
   if (!loaded()) {
     glCreateBuffers(1u, &vbo_);
+    glCreateBuffers(1u, &skin_vbo_);
     glCreateBuffers(1u, &ibo_);
     glCreateVertexArrays(1u, &vao_);
   }
@@ -76,6 +77,7 @@ void Mesh::allocate() {
 void Mesh::release() {
   if (loaded()) {
     glDeleteBuffers(1u, &vbo_);
+    glDeleteBuffers(1u, &skin_vbo_);
     glDeleteBuffers(1u, &ibo_);
     glDeleteVertexArrays(1u, &vao_);
     vbo_ = ibo_ = vao_ = 0u;
@@ -101,6 +103,8 @@ bool Mesh::setup() {
   nfaces_     = meshdata.nfaces();
   vgroups_    = meshdata.vgroups;
 
+  skeleton_ = meshdata.skeleton;
+
   // Calculate the mesh AABB.
   meshdata.calculate_bounds( centroid_, bounds_);
 
@@ -117,10 +121,10 @@ bool Mesh::setup() {
   // Setup internal buffers.
   uint32_t bytesize = static_cast<uint32_t>(nvertices_ * sizeof(meshdata.vertices[0u]));
   glNamedBufferStorage(vbo_, bytesize, meshdata.vertices.data(), 0);
-  
+
   glBindVertexArray(vao_);
   {
-    auto constexpr binding_index = 0u;
+    auto binding_index = 0u;
     glBindVertexBuffer(binding_index, vbo_, 0u, sizeof(MeshData::Vertex_t));
     {
       uint32_t attrib_index, num_component;
@@ -142,6 +146,31 @@ bool Mesh::setup() {
       glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, normal));
       glVertexAttribBinding(attrib_index, binding_index);
       glEnableVertexAttribArray(attrib_index);
+    }
+    ++binding_index;
+
+    if (!meshdata.skinnings.empty()) {
+      // Skinning buffer.
+      uint32_t const skin_bytesize = static_cast<uint32_t>(nvertices_ * sizeof(meshdata.skinnings[0u]));
+      glNamedBufferStorage(skin_vbo_, skin_bytesize, meshdata.skinnings.data(), 0);
+
+      glBindVertexBuffer(binding_index, skin_vbo_, 0, sizeof(MeshData::Skinning_t));
+      {
+        uint32_t attrib_index, num_component;
+
+        attrib_index = Mesh::ATTRIB_JOINT_INDICES;
+        num_component = static_cast<uint32_t>((sizeof MeshData::Skinning_t::joint_indices) / sizeof(MeshData::Skinning_t::joint_indices[0u]));
+        glVertexAttribFormat(attrib_index, num_component, GL_UNSIGNED_INT, GL_FALSE, offsetof(MeshData::Skinning_t, joint_indices));
+        glVertexAttribBinding(attrib_index, binding_index);
+        glEnableVertexAttribArray(attrib_index);
+
+        attrib_index = Mesh::ATTRIB_JOINT_WEIGHTS;
+        num_component = static_cast<uint32_t>((sizeof MeshData::Skinning_t::joint_weights) / sizeof(MeshData::Skinning_t::joint_weights[0u]));
+        glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_TRUE/**/, offsetof(MeshData::Skinning_t, joint_weights));
+        glVertexAttribBinding(attrib_index, binding_index);
+        glEnableVertexAttribArray(attrib_index);
+      }
+      ++binding_index;
     }
   }
   glBindVertexArray(0u);
@@ -178,25 +207,25 @@ MeshFactory::Handle MeshFactory::add_object(std::string const& basename, MeshDat
 MeshFactory::Handle MeshFactory::createGrid(int resolution, float size) {
   MeshData meshdata;
   MeshData::Grid( meshdata, resolution, size);
-  return add_object( "grid", meshdata );
+  return add_object( "GridMesh", meshdata );
 }
 
 MeshFactory::Handle MeshFactory::createCube(float size) {
   MeshData meshdata;
   MeshData::Cube( meshdata, size);
-  return add_object( "cube", meshdata );
+  return add_object( "CubeMesh", meshdata );
 }
 
 MeshFactory::Handle MeshFactory::createWireCube(float size) {
   MeshData meshdata;
   MeshData::WireCube( meshdata, size);
-  return add_object( "wirecube", meshdata );
+  return add_object( "WireCubeMesh", meshdata );
 }
 
 MeshFactory::Handle MeshFactory::createSphere(int xres, int yres, float radius) {
   MeshData meshdata;
   MeshData::Sphere( meshdata, xres, yres, radius);
-  return add_object( "sphere", meshdata );
+  return add_object( "SphereMesh", meshdata );
 }
 
 // ----------------------------------------------------------------------------
