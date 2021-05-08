@@ -32,10 +32,13 @@ endif()
 # GLEW is optional and not provided, by default extensions are loaded manually.
 option(OPT_USE_GLEW                 "Use GLEW for OpenGL extension ?"       OFF)
 
-option(OPT_USE_OPENMP               "Use OpenMP for pragma concurrency ?"   OFF)
-
+# Enable clang static code analyzer.
 option(OPT_ENABLE_CLANG_TIDY        "Use clang-tidy ?"                      OFF)
 
+# Concurrency is used to speedup skinning animations and some loops.
+option(OPT_USE_OPENMP               "Use OpenMP for pragma concurrency ?"   OFF)
+
+# Verbose logs are disabled by default.
 option(OPT_ENABLE_DEBUG_LOG         "Enable complementary debug log ?"      OFF)
 
 
@@ -55,7 +58,7 @@ set(BARBU_TOOLS_DIR                 ${BARBU_ROOT_PATH}/tools)
 # Created (output) directories.
 set(BARBU_BINARY_DIR                ${BARBU_ROOT_PATH}/bin)
 
-# Mark the binary directory for removal (be cautious !).
+# Mark the binary directory for removal using 'clean' (be cautious !).
 #set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES ${BARBU_BINARY_DIR})
 
 # -----------------------------------------------------------------------------
@@ -360,6 +363,7 @@ list(APPEND IMGUI_SOURCES
   # ${IM3D_INCLUDE_DIR}/im3d.h
 )
 
+# build imgui as a static library (rather than internally).
 if(1)
   set(IMGUI_LIB imgui)
   add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
@@ -375,7 +379,6 @@ if(1)
     set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
   endif()
 endif()
-
 
 # Add Library dependencies.
 list(APPEND CustomLibs
@@ -402,8 +405,8 @@ if(OS_LINUX)
     list(APPEND CustomDefinitions NDEBUG)
   endif()
 
+  # On GNU / Linux, generate an app shortcut to be executable using the WM.
   helpers_generateUnixShortcut(${BARBU_BINARY_DIR}) #
-
 endif()
 
 if(OS_WIN32)
@@ -426,7 +429,7 @@ list(APPEND CustomIncludeDirs
   ${GLM_INCLUDE_DIR}
   ${IMGUI_INCLUDE_DIR}
 
-  # OpenGL header for Windows.
+  # OpenGL headers, needed on Windows.
   ${BARBU_THIRD_PARTY_DIR}/include
 )
 
@@ -444,9 +447,9 @@ list(APPEND CustomDefinitions
 )
 
 if(OPT_ENABLE_DEBUG_LOG)
-list(APPEND CustomDefinitions 
-  -DBARBU_ENABLE_DEBUG_LOG
-)
+  list(APPEND CustomDefinitions 
+    -DBARBU_ENABLE_DEBUG_LOG
+  )
 endif()
 
 # -----------------------------------------------------------------------------
