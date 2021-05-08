@@ -72,6 +72,13 @@ list(APPEND CMAKE_MODULE_PATH       ${BARBU_TOOLS_DIR}/cmake)
 include(Helpers)
 
 # -----------------------------------------------------------------------------
+# Determine the machine total number of processors.
+# -----------------------------------------------------------------------------
+
+include(ProcessorCount)
+ProcessorCount(BARBU_NPROC_MAX)
+
+# -----------------------------------------------------------------------------
 # CMake general options.
 # -----------------------------------------------------------------------------
 
@@ -444,6 +451,7 @@ list(APPEND CustomLibs
 list(APPEND CustomDefinitions 
   -DSHADERS_DIR="${BARBU_SHADERS_DIR}"
   -DASSETS_DIR="${BARBU_ASSETS_DIR}"
+  -DBARBU_NPROC_MAX=${BARBU_NPROC_MAX}
 )
 
 if(OPT_ENABLE_DEBUG_LOG)
