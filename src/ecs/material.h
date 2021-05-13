@@ -4,6 +4,7 @@
 #include "glm/glm.hpp"
 
 #include "memory/assets/assets.h" //
+#include "memory/enum_array.h"
 #include "ui/ui_view.h"
 
 // ----------------------------------------------------------------------------
@@ -18,11 +19,13 @@ enum class RenderMode {
 
 // Attributes shared by all materials.
 struct RenderAttributes {
-  glm::mat4 const* irradiance_matrices;
   glm::mat4 world_matrix;
   glm::mat4 mvp_matrix;
-  uint32_t skinning_texid = 0u; //
 
+  uint32_t skinning_texid = 0u;
+  SkinningMode skinning_mode;
+
+  glm::mat4 const* irradiance_matrices = nullptr;
   glm::vec3 eye_position;
   //int32_t tonemap_mode;
 };
@@ -51,7 +54,7 @@ class Material {
   // Set internal data from material loading info.
   virtual void setup(MaterialInfo const& info) = 0;
 
-  // Update uniforms for the material before rendering.
+  // Update commons uniforms for the material before rendering.
   void update_uniforms(RenderAttributes const& attributes, bool bUseSameProgram = false) {
     if (!bUseSameProgram) {
       auto pgm_handle = program();
@@ -67,18 +70,23 @@ class Material {
       // (vertex)
       gx::SetUniform( pgm, "uModelMatrix",        attributes.world_matrix);
       gx::SetUniform( pgm, "uMVP",                attributes.mvp_matrix);
-      gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
 
-      // [wip]
-      if (attributes.skinning_texid > 0) {
+      // (vertex skinning)
+      if (attributes.skinning_texid > 0u) {
         gx::BindTexture( attributes.skinning_texid, last_image_unit_);
         gx::SetUniform( pgm, "uSkinningDatas",      last_image_unit_);    
         ++last_image_unit_;
 
-        //glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &su_index);
+        // [clean]
+        skinning_subroutines_[ SkinningMode::LinearBlending ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_LBS");
+        skinning_subroutines_[ SkinningMode::DualQuaternion ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_DQBS");
+        auto const& su_index = skinning_subroutines_[ attributes.skinning_mode ];
+        LOG_CHECK( su_index != GL_INVALID_INDEX );
+        glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &su_index);
       }
 
       // (fragment)
+      gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
       gx::SetUniform( pgm, "uEyePosWS",           attributes.eye_position);
       //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
     
@@ -119,6 +127,7 @@ class Material {
   AssetId    program_id_;
   RenderMode render_mode_;
 
+  EnumArray< uint32_t, SkinningMode > skinning_subroutines_; //
   int32_t image_unit_; //
   bool bDoubleSided_; //
 
