@@ -19,8 +19,8 @@ class ModelEntity : public Entity {
     return get<VisualComponent>().mesh();
   }
 
-  glm::vec3 centroid() const override { 
-    return get<VisualComponent>().mesh()->centroid();
+  SkeletonHandle skeleton() {
+    return mesh()->skeleton();
   }
 };
 
