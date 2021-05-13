@@ -23,7 +23,7 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
-    #if 0
+#if 1
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -35,16 +35,15 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
       ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" 
     );
     hair_.init( scalpId ); //
-    #else
-    scene_hierarchy_.import_model( 
-      ASSETS_DIR "/models/gltf_samples/RiggedFigure.glb" 
+
+#else
+    auto e = scene_hierarchy_.import_model(
+      // ASSETS_DIR "/models//gltf_samples/RiggedFigure.glb" 
+      ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
     );
 
-    //auto e = scene_hierarchy_.import_model( ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf" );
-    // if (e) { e->set_position(glm::vec3(-1.5, 0., 0.)); }
-
     params_.enable_hair = false;
-    #endif
+#endif
   }
 
   // Recenter view on scene's centroid.
@@ -77,7 +76,7 @@ void Scene::update(float const dt, Camera &camera) {
     params_.show_wireframe ^= true;
   }
 
-  auto &selected = scene_hierarchy_.selected();
+  auto const& selected = scene_hierarchy_.selected();
   if (!selected.empty()) {
     // Reset.
     if ('x' == eventData.lastChar) {
@@ -87,10 +86,10 @@ void Scene::update(float const dt, Camera &camera) {
     } 
     // Delete.
     else if ('X' == eventData.lastChar) {
-      scene_hierarchy_.select_all(false);
       for (auto &e : selected) {
-        scene_hierarchy_.remove_entity(e);
+        scene_hierarchy_.remove_entity(e, true);
       }
+      scene_hierarchy_.select_all(false);
     }
   }
   
@@ -281,14 +280,98 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
 
     // Show Gizmo.
     if (params_.show_transform) {
+      bool constexpr use_centroid = false; //
+
       // 1) Use global matrices for gizmos.
       for (auto e : scene_hierarchy_.selected()) {
         auto &global = scene_hierarchy_.global_matrix( e->index() );
-        Im3d::Gizmo( e->name().c_str(), glm::value_ptr( global ));
+        auto const& centroid = e->centroid();
+        
+        if (use_centroid) {
+          global = glm::translate( global, centroid);
+        }
+        Im3d::Gizmo( e->name().c_str(), glm::value_ptr(global));
+        if (use_centroid) {
+          global = glm::translate( global, -centroid);
+        }
       }
       // 2) Recompute selected locals from modified globals.
       scene_hierarchy_.update_selected_local_matrices();
     }
+ 
+#if 1
+    // --------------------------------
+    // XXX DEBUG XXX
+    // Display debug rig from entities skeleton structure.
+    //
+    // [ todo instead :
+    //   modify the globals matrices of rig's entities inside scene_hierarchy
+    //   and render debug shape using the entity structure.
+    // ]
+    //
+    for (auto const& e : scene_hierarchy_.drawables()) {
+      auto const& visual{ e->get<VisualComponent>() };
+
+      // [should otherwise probably use the rig entities]
+      SkeletonHandle const skl{ visual.mesh()->skeleton() };
+      
+      if (!skl) {
+        continue;
+      }
+      //LOG_INFO("rendering njoints :", skl->njoints());
+
+      // -----------
+           
+      // Global transform.
+      auto const& global_matrix = scene_hierarchy_.global_matrix(e->index());
+
+      // Count the number of children per parents for color marking.
+      std::vector<int32_t> nchildren(skl->njoints(), 0);
+      for (auto parent_id : skl->parents) {
+        if (parent_id > -1) {
+          nchildren[parent_id] += 1;
+        }
+      }
+
+      std::vector<glm::vec4> positions;
+      positions.reserve(skl->njoints());
+
+      auto const& global_bind_matrices = (e->has<SkinComponent>()) 
+        ? e->get<SkinComponent>().controller().global_pose_matrices()
+        : skl->global_bind_matrices
+      ;
+
+      for (auto const& global_bind_matrix : global_bind_matrices) {
+        auto const matrix{ global_matrix * global_bind_matrix };
+        positions.push_back( matrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
+      }
+
+      std::vector<int32_t> unique_child_id(skl->njoints(), 0);
+      for (int i=0; i < skl->njoints(); ++i) {
+        auto parent_id = skl->parents[i];
+        if ((parent_id > -1) && (nchildren[parent_id] == 1)) {
+          unique_child_id[parent_id] = i;
+        }
+      }
+
+      for (int i = 0; i < skl->njoints(); ++i) {
+        auto const start = glm::vec3( positions[i] );
+        auto const end   = glm::vec3( positions[unique_child_id[i]] );
+
+        // (color)
+        auto const n = nchildren[i];
+        auto rgb = (n==0) ? Im3d::Color(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)) :    // leaf
+                   (n==1) ? Im3d::Color(glm::vec4(0.5f, 1.0f, 0.5f, 1.0f)) :    // joint
+                            Im3d::Color(glm::vec4(1.0f, 1.0f, 0.9f, 1.0f)) ;    // node
+
+        Im3d::PushColor( rgb );
+        (n==1) ? Im3d::DrawPrism( start, end, 0.02, 5) : Im3d::DrawSphere( start, 0.04, 16);
+        Im3d::PopColor();
+      }
+    }
+    // --------------------------------
+#endif
+    
   }
 
   CHECK_GX_ERROR();
@@ -325,12 +408,22 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
 
     // External, per-mesh render attributes.
     RenderAttributes attributes;
-    attributes.irradiance_matrices = skybox_.irradiance_matrices();
+    // (vertex)
     attributes.world_matrix        = world;
     attributes.mvp_matrix          = camera.viewproj() * world;
-    attributes.eye_position        = camera.position(); // !!
 
-    // visual parameters.
+    if (drawable->has<SkinComponent>()) {
+      auto const& skin = drawable->get<SkinComponent>();
+      attributes.skinning_texid = skin.get_texture_id(); //
+      attributes.skinning_mode  = skin.skinning_mode();
+    }
+
+    // (fragment)
+    attributes.irradiance_matrices = skybox_.irradiance_matrices();
+    attributes.eye_position        = camera.position(); //
+    //attributes.tonemap_mode      = tonemap_mode;
+
+    // Rendering.
     auto &visual = drawable->get<VisualComponent>();
     visual.render( attributes, render_mode );
   };
