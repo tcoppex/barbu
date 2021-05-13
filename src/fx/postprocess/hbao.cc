@@ -77,7 +77,7 @@ void HBAO::init_shaders() {
   pgm_.blur_y  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_y.glsl" )->id;
 
   // check we found the subroutine location.
-  assert( glGetSubroutineUniformLocation(pgm_.ssao, GL_COMPUTE_SHADER, "suHBAO") > -1 ); //
+  LOG_CHECK( glGetSubroutineUniformLocation(pgm_.ssao, GL_COMPUTE_SHADER, "suHBAO") > -1 ); //
 
   CHECK_GX_ERROR();
 }
