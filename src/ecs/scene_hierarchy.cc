@@ -1,9 +1,20 @@
 #include "ecs/scene_hierarchy.h"
 
 #include <algorithm>
+#include <vector>
+
 #include "glm/gtc/matrix_inverse.hpp"
+
 #include "core/camera.h"
 #include "ui/views/ecs/SceneHierarchyView.h"
+#include "core/global_clock.h"
+
+// ----------------------------------------------------------------------------
+
+// Default name given to rig entity loaded from model.
+static constexpr char const* kDefaultRigEntityName{ "[rig]" };
+
+constexpr bool kEnableLoadRigHierarchy = true;
 
 // ----------------------------------------------------------------------------
 
@@ -19,6 +30,8 @@ void SceneHierarchy::init() {
 }
 
 void SceneHierarchy::update(float const dt, Camera const& camera) {
+  float const global_time = GlobalClock::Get().application_time();
+
   // Clear per-frame data.
   frame_.clear();
   frame_.globals.resize(entities_.size(), glm::mat4(1.0f));
@@ -28,7 +41,7 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
 
   // Retrieve renderable entities.
   for (auto& e : entities_) {
-    if (((views::SceneHierarchyView*)ui_view)->is_selected(e->index())) {
+    if (is_selected(e)) {
       frame_.selected.push_back( e );
     }
 
@@ -39,16 +52,24 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
 
   // Sort the drawables front to back.
   sort_drawables(camera);
+
+  // Animate nodes with skinning (for now, suppose them all drawables).
+  for (auto& e : frame_.drawables) {
+    if (e->has<SkinComponent>()) {
+      e->get<SkinComponent>().update(global_time);
+    }
+  }
 }
 
 void SceneHierarchy::add_entity(EntityHandle entity, EntityHandle parent) {
   assert( nullptr != entity );
   assert( nullptr == entity->parent_ );
-  //assert( entity->children_.empty() );
 
   if (nullptr == parent) {
-    parent = root_; 
-             //entities_.empty() ? root_ : entities_.back();
+    parent = root_;
+
+    // [debug only] 
+    //parent = entities_.empty() ? root_ : entities_.back();
   }
 
   entity->parent_ = parent;
@@ -58,10 +79,23 @@ void SceneHierarchy::add_entity(EntityHandle entity, EntityHandle parent) {
 
 void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
   if (nullptr == entity) {
-    LOG_WARNING(__FUNCTION__, ": invalid parameters.");
     return;
   }
   
+  // Remove rig from loaded model. 
+  if (entity->has<VisualComponent>()) {
+    auto visual = entity->get<VisualComponent>();
+    if (auto rig = visual.rig(); rig) {
+      remove_entity( rig, true);
+      visual.set_rig(nullptr);
+    }
+  } else if(entity->name() == kDefaultRigEntityName) {
+    if (auto parent = entity->parent(); parent && parent->has<VisualComponent>()) {
+      parent->get<VisualComponent>().set_rig(nullptr);
+      LOG_DEBUG_INFO( "Auto removed rig from parent." );
+    }
+  }
+
   if (entity->parent_) {
     // Remove the entity from its parent.
     auto &siblings = entity->parent_->children_;
@@ -101,7 +135,6 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
 
 void SceneHierarchy::reset_entity(EntityHandle entity, bool bRecursively) {
   if (nullptr == entity) {
-    LOG_WARNING(__FUNCTION__, ": invalid parameters.");
     return;
   }
 
@@ -119,7 +152,7 @@ void SceneHierarchy::reset_entity(EntityHandle entity, bool bRecursively) {
 
 EntityHandle SceneHierarchy::import_model(std::string_view filename) {
   /// This load the whole geometry of the file as a single mesh.
-  /// TODO : create an importer for scene structure.
+  /// [ create an importer for scene structure. ]
 
   // When successful, add a new model entity to the scene.
   if (auto mesh = MESH_ASSETS.create( AssetId(filename) ); mesh && mesh->loaded()) {
@@ -132,11 +165,64 @@ EntityHandle SceneHierarchy::import_model(std::string_view filename) {
     // Create a new mesh entity node.
     auto entity = create_model_entity(basename, mesh);
 
-    // [todo : hold the camera internally ?]
-    //entity->transform().set_position(camera.target());
+    // Handle skinned model.
+    if (entity) {
+      if (auto skl = entity->as<ModelEntity>().skeleton(); skl) {
 
+        // ----------------------------
+        // [ Work In Progress]
+        // Add a skin component to the entity.
+        {
+          auto& skin = entity->add<SkinComponent>();
+          skin.set_skeleton( skl );
+
+          // [it's important to use references, for pointer validity... XXX]
+          if (auto& clips = skl->clips; !clips.empty()) {
+            clips[0].bLoop = true; // [debug]
+            auto& sequence = skin.sequence();
+            sequence.push_back( SequenceClip_t(&clips[0]) );
+          } else {
+            LOG_WARNING( "no clips for skinned entity", basename );
+          }
+        }
+        // ----------------------------
+
+        // Add a mockup rig as sub hierarchy.  
+        if constexpr (kEnableLoadRigHierarchy) {
+  
+          // Note : 
+          // This could disrupt the entity focus feature.
+
+          auto const njoints{ skl->njoints() };
+          std::vector<EntityHandle> rig( njoints );
+
+          // Calculate the bones globals binds.
+          // ( costly as it inverts the inverse global binds )
+          skl->calculate_global_bind_matrices();
+
+          // Create an upper rig entity.
+          EntityHandle rig_root = std::make_shared<Entity>( kDefaultRigEntityName ); 
+          add_entity( rig_root, entity);
+
+          // Add the rig root to the visual component.
+          entity->get<VisualComponent>().set_rig( rig_root );
+
+          // Add hierarchy.
+          for (int i = 0; i < njoints; ++i) {
+            rig[i] = std::make_shared<Entity>( skl->names[i] );
+            
+            auto const parent_id = skl->parents[i];
+            add_entity( rig[i], (parent_id > -1) ? rig[parent_id] : rig_root);
+
+            auto const& parent_inv_matrix = (parent_id > -1) ? skl->inverse_bind_matrices[parent_id] : glm::mat4(1.0f);
+            rig[i]->local_matrix() = parent_inv_matrix * skl->global_bind_matrices[i];
+          }
+        }
+      }
+    }
     return entity;
   }
+
   return nullptr;
 }
 
@@ -148,9 +234,9 @@ void SceneHierarchy::update_selected_local_matrices() {
     auto &local = e->local_matrix();
     auto const& global = global_matrix( e->index() );
 
-    // (right now the roots dont have globals, so we check its not the parent)
     auto p = e->parent();
     glm::mat4 inv_parent{1.0f};
+    
     if (p && (p->index() > -1)) {
       auto const& parent_global{ global_matrix(p->index()) };
       inv_parent = glm::affineInverse( parent_global );
@@ -164,22 +250,17 @@ void SceneHierarchy::select_all(bool status) {
   ((views::SceneHierarchyView*)ui_view)->select_all(status);
 }
 
+bool SceneHierarchy::is_selected(EntityHandle entity) const {
+  return entity ? ((views::SceneHierarchyView*)ui_view)->is_selected(entity->index()) : false;
+}
+
 glm::vec3 SceneHierarchy::pivot(bool selected) const {
   auto const& entities = (selected && !frame_.selected.empty()) ? frame_.selected : entities_;
 
-  // [ should transform with global matrices ]
-
-  glm::vec3 pivot{0.0f};
+  glm::vec3 pivot{ 0.0f };
   if (!entities.empty()) {
     for (auto const& e : entities) {
-      auto p = glm::vec4(e->position(), 1);
-      
-      // Transform wrt parent entity.
-      auto const parent_index = e->parent()->index();
-      auto const& gpm = (parent_index > -1) ? frame_.globals[ parent_index ] : glm::mat4(1.0f); 
-      p = gpm * p;
-      
-      pivot += glm::vec3(p);
+      pivot += entity_global_position(e);
     }
     pivot /= entities.size();
   }
@@ -265,13 +346,9 @@ void SceneHierarchy::sort_drawables(Camera const& camera) {
   auto const& eye_dir = camera.direction();
 
   // Calculate the dot product of an entity to the camera direction.
-  auto calculate_entity_dp = [eye_pos, eye_dir](EntityHandle const& e) {
-    glm::vec3 centroid = glm::vec3(0.0f);
-    if (auto visual = e->get<VisualComponent>(); e->has<VisualComponent>()) {
-      centroid = visual.mesh()->centroid();
-    }
-    auto const& pos = e->transform().position() - centroid;
-    auto const dir = pos - eye_pos; 
+  auto calculate_entity_dp = [this, eye_pos, eye_dir](EntityHandle const& e) {
+    auto const pos = entity_global_centroid(e);
+    auto const dir = pos - eye_pos;
     return glm::dot(eye_dir, dir);
   };
 

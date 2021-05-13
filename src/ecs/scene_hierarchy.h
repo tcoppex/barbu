@@ -20,6 +20,8 @@ class SceneHierarchy {
  public:
   using EntityList_t = std::list<EntityHandle>;
 
+  static constexpr glm::mat4 sIdentity{1.0f};
+
  public:
   SceneHierarchy() {
     root_ = std::make_shared<Entity>();
@@ -49,16 +51,32 @@ class SceneHierarchy {
   // Update locals matrices based on their modified globals.
   void update_selected_local_matrices();
   
-  glm::mat4 & global_matrix(int32_t index) { return frame_.globals[index]; } //
-  glm::mat4 const& global_matrix(int32_t index) const { return frame_.globals[index]; } //
+  // Return the global matrix for the given entity index.
+  inline glm::mat4 & global_matrix(int32_t index) { return frame_.globals[index]; }
+  inline glm::mat4 const& global_matrix(int32_t index) const { return frame_.globals[index]; }
 
-  EntityList_t const& selected() const { return frame_.selected; }
-  EntityList_t const& drawables() const { return frame_.drawables; }
-  
+  // Return the entity position in world space.
+  inline glm::vec3 entity_global_position(EntityHandle e) const {
+    return glm::vec3(parent_global_matrix(e) * glm::vec4(e->position(), 1.0)); //
+  }
+
+  // Return the entity centroid in world space.
+  inline glm::vec3 entity_global_centroid(EntityHandle e) const {
+    return glm::vec3(parent_global_matrix(e) * glm::vec4(e->centroid(), 1.0)); //
+  }
+
+  inline EntityList_t const& all() const { return entities_; }
+  inline EntityList_t const& selected() const { return frame_.selected; }
+  inline EntityList_t const& drawables() const { return frame_.drawables; }
+
+  // Select / Unselect all entities depending on status.
   void select_all(bool status);
 
+  // Return true when the entity is selected.
+  bool is_selected(EntityHandle entity) const;
+
   // Return the pivot / centroid of the scene from the entities root.
-  // If selected is true, limit to the selection.
+  // If selected is true, will be limited to the selection.
   glm::vec3 pivot(bool selected=true) const;
   glm::vec3 centroid(bool selected=true) const;
 
@@ -98,6 +116,13 @@ class SceneHierarchy {
 
   // Sort drawable entities front to back, relative to the camera.
   void sort_drawables(Camera const& camera);
+
+  inline glm::mat4 const& parent_global_matrix(EntityHandle e) const { 
+    if (auto index = e->parent()->index(); index >= 0) {
+      return global_matrix(index);
+    }
+    return sIdentity; 
+  }
 
   // Entry to the entity hierarchy.
   EntityHandle root_;
