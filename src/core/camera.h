@@ -49,7 +49,14 @@ class Camera {
     bUseOrtho_ = false;
   }
 
-  //void set_ortho(); // [todo]
+  // void set_ortho(float w, float h, float near, float far) {
+  //   width_  = w;
+  //   height_ = h;
+  //   //linear_params_ = glm::vec4( near, far, 1.0, 1.0); //
+  //   float k = 1.f/200.0f;
+  //   proj_ = glm::ortho(-w*k, w*k, -h*k, h*k, near, 10.f*far); 
+  //   bUseOrtho_ = true;
+  // }
 
   void update(float dt) {
     controller_->update(dt);

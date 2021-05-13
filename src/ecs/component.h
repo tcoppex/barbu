@@ -11,6 +11,7 @@ class Component {
   enum Type {
     Transform,
     Visual,
+    Skin,
     kNumComponentType,
     kUndefined
   };

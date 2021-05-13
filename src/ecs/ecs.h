@@ -8,6 +8,7 @@
 
 #include "ecs/components/transform.h"
 #include "ecs/components/visual.h"
+#include "ecs/components/skin.h"
 
 #include "ecs/entities/model.h"
 
