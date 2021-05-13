@@ -2,25 +2,29 @@
 
 #include "generic/interop.h"
 
-#include "shared/lighting/inc_pbr.glsl"
-#include "shared/structs/inc_fraginfo.glsl"
-#include "shared/structs/inc_material.glsl"
-#include "shared/inc_tonemapping.glsl"
-
 // ----------------------------------------------------------------------------
 
 // Inputs.
 layout(location = 0) in vec3 inPositionWS;
 layout(location = 1) in vec2 inTexcoord;
 layout(location = 2) in vec3 inNormalWS;
-layout(location = 3) in vec3 inIrradiance;
+// layout(location = 3) in vec4 inDebugColor;
 
 // Outputs.
 layout(location = 0) out vec4 fragColor;
 
+// ----------------------------------------------------------------------------
+
+#include "shared/lighting/inc_pbr.glsl"
+#include "shared/structs/inc_fraginfo.glsl"
+#include "shared/structs/inc_material.glsl"
+#include "shared/inc_tonemapping.glsl"
+
+
 // Uniforms : Generic.
 uniform int uToneMapMode = TONEMAPPING_NONE;
 uniform vec3 uEyePosWS;
+uniform mat4 uIrradianceMatrices[3];
 
 // Uniforms : Material.
 uniform int uColorMode;
@@ -63,7 +67,8 @@ Material_t get_material() {
   mat.roughness = metal_rough.y;
 
   // Ambient using environment map Irradiance from the Vertex Shader.
-  mat.ambient = mat.color.rgb * inIrradiance;
+  mat.ambient = mat.color.rgb;// * inIrradiance;
+
   mat.ao = pow(ao, 1.0);
 
   return mat;
@@ -77,13 +82,25 @@ FragInfo_t get_worldspace_fraginfo() {
   frag.N        = normalize( inNormalWS );
   frag.V        = normalize( uEyePosWS - frag.P );
   frag.uv       = inTexcoord.xy;
-  frag.n_dot_v  = dot(frag.N, frag.V);
+  frag.n_dot_v  = max(dot(frag.N, frag.V), 0);
 
-  // Deal with double sided plane.
-  const float s = sign(frag.n_dot_v);
-  frag.N *= s;
+  // [fixme] Deal with double sided plane.
+  // const float s = sign(frag.n_dot_v);
+  // frag.N *= s;
 
   return frag;
+}
+
+// ----------------------------------------------------------------------------
+
+vec3 compute_irradiance(in vec3 normalWS, in mat4 irradianceMatrices[3]) {
+  const vec4 n = vec4( normalWS, 1.0);
+  const vec3 irr = vec3(
+    dot( n, irradianceMatrices[0] * n),
+    dot( n, irradianceMatrices[1] * n),
+    dot( n, irradianceMatrices[2] * n)
+  );
+  return irr;
 }
 
 // ----------------------------------------------------------------------------
@@ -140,8 +157,12 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
 // ----------------------------------------------------------------------------
 
 void main() {
-  /*const*/ Material_t material = get_material();
-  /*const*/ FragInfo_t fraginfo = get_worldspace_fraginfo();
+  Material_t material = get_material();
+  FragInfo_t fraginfo = get_worldspace_fraginfo();
+
+  // [issue with linearization]
+  material.ambient *= compute_irradiance( fraginfo.N, uIrradianceMatrices);
+
   fragColor = colorize( uColorMode, fraginfo, material);
 }
 
