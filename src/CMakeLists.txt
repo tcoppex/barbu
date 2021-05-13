@@ -8,14 +8,17 @@ list(APPEND Sources
   main.cc
   scene.cc
 
-  # animation/skeleton.cc
-  # animation/skeleton_controller.cc
+  animation/skeleton.cc
+  animation/blend_tree.cc
+  animation/skeleton_controller.cc
 
   core/graphics.cc
   core/app.cc
   core/events.cc
+  core/global_clock.cc
 
   ecs/scene_hierarchy.cc
+  ecs/components/skin.cc
 
   fx/gpu_particle.cc
   fx/grid.cc
@@ -32,6 +35,7 @@ list(APPEND Sources
   memory/assets/material_asset.cc
   memory/resources/image.cc
   memory/resources/mesh_data.cc
+  memory/resources/mesh_data_manager.cc
   memory/resources/resources.cc
   memory/resources/shader.cc
   memory/pingpong_buffer.cc
@@ -50,17 +54,23 @@ list(APPEND Headers
   scene.h
 
   animation/skeleton.h
- # animation/skeleton_controller.h
+  animation/skeleton_controller.h
   animation/common.h
+  animation/blend_tree.h
+  animation/blend_node.h
 
   core/app.h
   core/events.h
   core/graphics.h
+  core/global_clock.h
 
   ecs/ecs.h
   ecs/entity.h
   ecs/component.h
   ecs/scene_hierarchy.h
+  ecs/components/skin.h
+  ecs/components/transform.h
+  ecs/components/visual.h
   
   fx/gpu_particle.h
   fx/grid.h
@@ -87,15 +97,18 @@ list(APPEND Headers
   memory/null_vector.h
   memory/pingpong_buffer.h
   memory/random_buffer.h
+  memory/enum_array.h
 
   utils/arcball_controller.h
   utils/cpu_particle.h
   utils/gizmo.h
+  utils/mathutils.h
+  utils/raw_mesh_file.h
+  utils/singleton.h
 
   ui/imgui_wrapper.h
   ui/ui_controller.h
   ui/ui_view.h
-
   ui/views/SceneView.h
   ui/views/fx/HairView.h
   ui/views/fx/MarschnerView.h
