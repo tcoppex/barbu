@@ -65,7 +65,6 @@ struct MeshData : public Resource {
     glm::vec3 normal;
   };
 
-  // WIP
   struct Skinning_t {
     glm::uvec4 joint_indices;
     glm::vec4 joint_weights;
@@ -86,7 +85,7 @@ struct MeshData : public Resource {
 
   // Attributes.
   VertexBuffer_t    vertices;
-  SkinningBuffer_t  skinnings; //
+  SkinningBuffer_t  skinnings;
 
   // Elements.
   IndexBuffer_t     indices;
@@ -97,6 +96,7 @@ struct MeshData : public Resource {
   // Material data associated to the mesh.
   MaterialFile      material; //
 
+  // [tmp ? might become its own resource]
   SkeletonHandle    skeleton = nullptr; //
 
   // -------------------
