@@ -4,10 +4,12 @@
 #include <cassert>
 #include <array>
 #include <vector>
+#include <unordered_map>
 #include <string_view>
 
 #include "ecs/component.h"
 #include "ecs/components/transform.h"
+#include "ecs/components/visual.h" //
 
 // ----------------------------------------------------------------------------
 
@@ -20,9 +22,11 @@ class SceneHierarchy;
 
 //
 //  An entity define the representation of an object in 3D space that
-//  communicate using a set of components. 
-//  
-//  Each entities possessed at least the transform component.
+//  communicate using a set of components.   
+//  Each entities possess at least the transform component.
+//
+//  Note : Ideally an entity should be empty and its components added in
+//         a larger buffer in the SceneHierarchy.
 //
 class Entity {
  public:
@@ -31,7 +35,7 @@ class Entity {
   using EntityChildren_t = std::vector<EntityHandle>;
 
  public:
-  Entity() = default; //
+  Entity() = default;
 
   Entity(std::string_view name)
     : name_(name)
@@ -43,13 +47,15 @@ class Entity {
 
   virtual void update(float const dt) {}
 
-  EntityHandle parent() const { return parent_; }
+  inline EntityHandle parent() const { return parent_; }
   
-  EntityChildren_t const& children() const { return children_; }
+  inline EntityChildren_t const& children() const { return children_; }
 
-  std::string const& name() const { return name_; }
+  inline std::string const& name() const { return name_; }
 
-  int32_t index() const { return index_; }
+  inline int32_t index() const { return index_; }
+
+  // -- Components access.
 
   // Return true if the entity possess the component.
   template<typename T> bool has() const noexcept {
@@ -58,11 +64,13 @@ class Entity {
   
   // Return a reference to the component [ return shared_ptr<T> instead ? ].
   template<typename T> T & get() {
+    assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
   // Return a constant reference to the component.
   template<typename T> T const& get() const {
+    assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
@@ -76,8 +84,11 @@ class Entity {
 
   // Remove the given component.
   template<typename T> void remove() {
+    static_assert(T::Type != Component::Type::Transform);
     components_[T::Type].reset();
   }
+
+  // -- Transform component quick access points.
 
   inline TransformComponent & transform() { return get<TransformComponent>(); }
   inline TransformComponent const& transform() const { return get<TransformComponent>(); }
@@ -88,7 +99,20 @@ class Entity {
   inline glm::vec3 position() const { return transform().position(); }
   inline void set_position(glm::vec3 const& pos) { transform().set_position(pos); }
 
-  virtual glm::vec3 centroid() const { return position(); }
+  // Return the barycenter of an object, depending on its components. 
+  inline glm::vec3 centroid() const { 
+    if (has<VisualComponent>()) {
+      return get<VisualComponent>().mesh()->centroid();
+    }
+    return position(); 
+  }
+
+  // -- Miscs.
+
+  // Let view the entity as a subtype. [bug prone]
+  template<typename T> T& as() {
+    return *((T*)this);
+  }
 
  protected:
   EntityHandle parent_ = nullptr;
@@ -98,8 +122,9 @@ class Entity {
   int32_t index_ = -1;        // index in the scene hierarchy per-frame structure.
 
  private:
+  // [ should probably use a map, and be set externally ]
   using ComponentBuffer = std::array< ComponentHandle, Component::kNumComponentType >;
-  
+
   ComponentBuffer components_;
 };
 
