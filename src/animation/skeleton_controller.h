@@ -29,6 +29,10 @@ class SkeletonController {
     return dual_quaternions_;
   }
 
+  int32_t njoints() const {
+    return njoints_;
+  }
+
   /* Fill the in-between skinning matrices for the given time and sequence. 
    * Return true when it succeeds, false when no data where computed. */
   bool evaluate(SkinningMode const mode, SkeletonHandle skeleton, float const global_time, Sequence_t &sequence);
