@@ -4,18 +4,13 @@
 #include <cassert>
 #include <array>
 #include <vector>
-#include <unordered_map>
 #include <string_view>
 
 #include "ecs/component.h"
 #include "ecs/components/transform.h"
 #include "ecs/components/visual.h" //
 
-// ----------------------------------------------------------------------------
-
-class Entity;
-using EntityHandle = std::shared_ptr<Entity>;
-
+#include "ecs/entity-fwd.h"
 class SceneHierarchy;
 
 // ----------------------------------------------------------------------------
@@ -49,7 +44,11 @@ class Entity {
 
   inline EntityHandle parent() const { return parent_; }
   
+  inline int32_t nchildren() const { return static_cast<int32_t>(children_.size()); }
+
   inline EntityChildren_t const& children() const { return children_; }
+
+  inline EntityHandle child(int32_t index) { return (index < nchildren()) ? children_[index] : nullptr; }
 
   inline std::string const& name() const { return name_; }
 
