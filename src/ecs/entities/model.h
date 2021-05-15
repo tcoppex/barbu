@@ -6,6 +6,9 @@
 
 // ----------------------------------------------------------------------------
 
+//
+//  A prebuilt entity that store a mesh.
+//
 class ModelEntity : public Entity {
  public:
   ModelEntity(std::string_view name, MeshHandle mesh)

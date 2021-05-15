@@ -7,8 +7,7 @@
 #include "ecs/materials/generic.h"
 #include "memory/assets/mesh.h"
 
-class Entity;
-using EntityHandle = std::shared_ptr<Entity>;
+#include "ecs/entity-fwd.h"
 
 // ----------------------------------------------------------------------------
 
