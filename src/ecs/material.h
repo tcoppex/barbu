@@ -98,7 +98,7 @@ class Material {
   }
 
   inline ProgramHandle program() {
-    return PROGRAM_ASSETS.get(program_id_);
+    return PROGRAM_ASSETS.get(program_id_); //
   }
 
   inline RenderMode render_mode() const {
@@ -124,7 +124,7 @@ class Material {
  protected:
   virtual void update_internals() = 0;
 
-  AssetId    program_id_;
+  AssetId    program_id_; //
   RenderMode render_mode_;
 
   EnumArray< uint32_t, SkinningMode > skinning_subroutines_; //

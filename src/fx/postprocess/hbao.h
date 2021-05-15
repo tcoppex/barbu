@@ -4,6 +4,7 @@
 #include <array>
 #include "glm/vec4.hpp"
 #include "core/graphics.h"
+#include "memory/assets/program.h"
 class Camera;
 
 // ----------------------------------------------------------------------------
@@ -61,12 +62,12 @@ class HBAO {
   void run_kernel_hbao(GLuint const tex_linear_depth);
   void run_kernel_blur_ao();
 
-  std::array<GLuint, kNumTextureName> textures_;
+  std::array<GLuint, kNumTextureName> textures_; //
 
   struct {
-    GLuint ssao = 0;
-    GLuint blur_x;
-    GLuint blur_y;
+    ProgramHandle ssao = nullptr;
+    ProgramHandle blur_x;
+    ProgramHandle blur_y;
   } pgm_;
 
   UIParameters_t ui_params_;

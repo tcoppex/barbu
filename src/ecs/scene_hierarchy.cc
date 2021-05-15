@@ -107,6 +107,8 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
   if (nullptr == entity) {
     return;
   }
+
+  // [todo] Make sure the assets are properly released when not used anymore.
   
   // Remove rig from loaded model. 
   if (entity->has<VisualComponent>()) {

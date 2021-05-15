@@ -35,12 +35,11 @@ void HBAO::init(Camera const& camera, float const scaling) {
 }
 
 void HBAO::deinit() {
-  if (0u == pgm_.ssao) {
+  if (nullptr == pgm_.ssao) {
     return;
   }
 
-  glDeleteTextures(((GLsizei)textures_.size()), textures_.data());
-  pgm_.ssao = 0u;
+  glDeleteTextures(((GLsizei)textures_.size()), textures_.data()); //
 }
 
 void HBAO::process(Camera const& camera, GLuint const tex_linear_depth, GLuint &tex_ao_out) {
@@ -72,12 +71,12 @@ void HBAO::init_textures() {
 }
 
 void HBAO::init_shaders() {
-  pgm_.ssao    = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_hbao.glsl" )->id;
-  pgm_.blur_x  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_x.glsl" )->id;
-  pgm_.blur_y  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_y.glsl" )->id;
+  pgm_.ssao    = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_hbao.glsl" );
+  pgm_.blur_x  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_x.glsl" );
+  pgm_.blur_y  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_y.glsl" );
 
   // check we found the subroutine location.
-  LOG_CHECK( glGetSubroutineUniformLocation(pgm_.ssao, GL_COMPUTE_SHADER, "suHBAO") > -1 ); //
+  LOG_CHECK( glGetSubroutineUniformLocation(pgm_.ssao->id, GL_COMPUTE_SHADER, "suHBAO") > -1 ); //
 
   CHECK_GX_ERROR();
 }
@@ -115,7 +114,7 @@ void HBAO::update_parameters(Camera const& camera) {
 }
 
 void HBAO::run_kernel_hbao(GLuint const tex_linear_depth) {
-  auto const pgm = pgm_.ssao; 
+  auto const pgm = pgm_.ssao->id; 
 
   uint32_t const width  = params_.ao_resolution.x; //
   uint32_t const height = params_.ao_resolution.y; //
@@ -190,9 +189,9 @@ void HBAO::run_kernel_blur_ao() {
   auto const height = params_.ao_resolution.y; //
 
   /// Horizontal blur pass.
-  gx::UseProgram(pgm_.blur_x);
+  gx::UseProgram(pgm_.blur_x->id);
   {
-    auto &pgm = pgm_.blur_x;
+    auto &pgm = pgm_.blur_x->id;
 
     gx::SetUniform(pgm, "uBlurFalloff",         params_.blur_falloff);
     gx::SetUniform(pgm, "uBlurDepthThreshold",  params_.blur_depth_threshold);
@@ -215,9 +214,9 @@ void HBAO::run_kernel_blur_ao() {
   // ---------------------------------------
 
   /// Vertical blur pass
-  gx::UseProgram(pgm_.blur_y);
+  gx::UseProgram(pgm_.blur_y->id);
   {
-    auto &pgm = pgm_.blur_y;
+    auto &pgm = pgm_.blur_y->id;
 
     gx::SetUniform(pgm, "uBlurFalloff",         params_.blur_falloff);
     gx::SetUniform(pgm, "uBlurDepthThreshold",  params_.blur_depth_threshold);

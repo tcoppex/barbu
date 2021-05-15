@@ -16,7 +16,7 @@ void Skybox::init() {
     "skybox",
     SHADERS_DIR "/skybox/vs_skybox.glsl",
     SHADERS_DIR "/skybox/fs_skybox.glsl"
-  )->id;
+  );
 
   // Cubemap.
   {
@@ -64,12 +64,12 @@ void Skybox::render(Camera const& camera) {
   auto const mvp = camera.proj()
                  * glm::scale(model, glm::vec3(camera.far()))
                  ;
-  gx::SetUniform( pgm_, "uMVP", mvp);
+  gx::SetUniform( pgm_->id, "uMVP", mvp);
 
   gx::BindTexture( skytex_->id );
-  gx::SetUniform( pgm_, "uCubemap", 0);
+  gx::SetUniform( pgm_->id, "uCubemap", 0);
 
-  gx::UseProgram(pgm_);
+  gx::UseProgram(pgm_->id);
   cubemesh_->draw();
   gx::UseProgram(0u);
   

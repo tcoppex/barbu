@@ -36,6 +36,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
       auto const nsubgeometry = mesh_->nsubgeometry();
       for (auto i = 0; i < nsubgeometry; ++i) {
         auto const mat = material(i);
+        assert(mat != nullptr);
 
         // Check the material render mode.
         if (render_mode != mat->render_mode()) {

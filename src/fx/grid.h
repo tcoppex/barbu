@@ -4,6 +4,7 @@
 #include "glm/mat4x4.hpp"
 
 #include "memory/assets/mesh.h"
+#include "memory/assets/program.h"
 class Camera;
 
 // ----------------------------------------------------------------------------
@@ -34,8 +35,7 @@ class Grid {
 
  private:
   MeshHandle mesh_;
-
-  uint32_t pgm_;
+  ProgramHandle pgm_;
 
   glm::mat4 matrix_;
   float alpha_;

@@ -36,6 +36,8 @@
 //  * Might be interesting to merge Asset and the factory - as static methods -
 //    in a future version.
 //
+//  * An asset should probably keeps its id internally, to ease a lot of things.
+//
 // ----------------------------------------------------------------------------
 
 using AssetId = HashId;
@@ -211,9 +213,19 @@ class AssetFactory {
 
   // Check if assets dependencies has been modified and update them accordingly.
   void update() {
+    std::vector<AssetId> release_ids;
+
     for (auto& tuple : assets_) {
       auto const id = tuple.first;
       auto handle   = tuple.second;
+      
+      // (The asset could be destroyed once its has a unique reference left.)
+      if ((handle.use_count()-1) == 1) {
+        release_ids.push_back(id);
+        //LOG_INFO(id.c_str());
+      }
+
+      // Update dependencies.
       for (auto & dep : handle->params.dependencies) {
         if (Resources::CheckVersion<Resource_t>(dep)) {
           setup(id, handle);
@@ -221,6 +233,12 @@ class AssetFactory {
         }
       }
     }
+
+    // Some code dont keep references, some assets are internals and dont have external references (eg. Default Material).
+    // So we avoid clearing assets with a unique reference will for now. 
+    // for (auto id : release_ids) {
+    //   release(id);
+    // }
   }
 
  private:

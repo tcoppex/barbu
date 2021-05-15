@@ -12,10 +12,10 @@ void Grid::init() {
 
   // Shader Program.  
   pgm_ = PROGRAM_ASSETS.createRender( 
-    "grid",
+    "Program::Grid",
     SHADERS_DIR "/grid/vs_grid.glsl",
     SHADERS_DIR "/grid/fs_grid.glsl"
-  )->id;
+  );
 
   CHECK_GX_ERROR();
 }
@@ -84,12 +84,13 @@ void Grid::render(Camera const& camera) {
 
   glm::vec4 const color(0.25f, 0.25f, 0.25f, alpha_);
 
-  gx::SetUniform( pgm_, "uModel",       matrix_);
-  gx::SetUniform( pgm_, "uViewproj",    camera.viewproj());
-  gx::SetUniform( pgm_, "uColor",       color);
-  gx::SetUniform( pgm_, "uScaleFactor", kGridSize);
+  auto const pgm = pgm_->id;
+  gx::SetUniform( pgm, "uModel",       matrix_);
+  gx::SetUniform( pgm, "uViewproj",    camera.viewproj());
+  gx::SetUniform( pgm, "uColor",       color);
+  gx::SetUniform( pgm, "uScaleFactor", kGridSize);
   
-  glUseProgram(pgm_);
+  glUseProgram(pgm);
     mesh_->draw();
   glUseProgram(0u);
 

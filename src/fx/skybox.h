@@ -5,6 +5,7 @@
 
 #include "memory/assets/mesh.h"
 #include "memory/assets/texture.h"
+#include "memory/assets/program.h"
 class Camera;
 
 // for IraddianceMatrices
@@ -26,8 +27,7 @@ class Skybox {
 
  private:
   MeshHandle cubemesh_;
-  
-  uint32_t pgm_;
+  ProgramHandle pgm_;
   TextureHandle skytex_;
 
   // Skybox irradiance spherical harmonics matrices.
