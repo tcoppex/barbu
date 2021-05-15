@@ -85,7 +85,7 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
 
     // Automatically open in-between nodes.
     if (!children.empty()) {
-      ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+      //ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     }
 
     auto node_open = ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, "%s", name);
