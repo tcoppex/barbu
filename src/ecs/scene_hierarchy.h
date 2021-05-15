@@ -80,8 +80,11 @@ class SceneHierarchy {
   glm::vec3 pivot(bool selected=true) const;
   glm::vec3 centroid(bool selected=true) const;
 
-  // [wip] Add a bounding model entity for physic collision.
-  EntityHandle add_bounding_sphere();
+  // Add a bounding model entity for physic collision.
+  EntityHandle add_bounding_sphere(); //
+
+  // Render availables rigs from the scene for debug display.
+  void render_debug_rigs(); //
 
  private:
   // Set of buffers modified each frame.
@@ -117,12 +120,16 @@ class SceneHierarchy {
   // Sort drawable entities front to back, relative to the camera.
   void sort_drawables(Camera const& camera);
 
+  // Return the entity's parent global matrix, or the identity if none exists.
   inline glm::mat4 const& parent_global_matrix(EntityHandle e) const { 
     if (auto index = e->parent()->index(); index >= 0) {
       return global_matrix(index);
     }
     return sIdentity; 
   }
+
+  // Render a node depending on its relations in hierarchy.
+  void render_debug_node(EntityHandle node);
 
   // Entry to the entity hierarchy.
   EntityHandle root_;

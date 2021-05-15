@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "glm/gtc/matrix_inverse.hpp"
+#include "im3d/im3d.h"  // (used for debug render)
 
 #include "core/camera.h"
 #include "ui/views/ecs/SceneHierarchyView.h"
@@ -13,6 +14,9 @@
 
 // Default name given to rig entity loaded from model.
 static constexpr char const* kDefaultRigEntityName{ "[rig]" };
+
+// Default name given to bounding sphere entities.
+static constexpr char const* kDefaultBoundingSphereEntityName{ "BSphere" };
 
 constexpr bool kEnableLoadRigHierarchy = true;
 
@@ -55,8 +59,30 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
 
   // Animate nodes with skinning (for now, suppose them all drawables).
   for (auto& e : frame_.drawables) {
-    if (e->has<SkinComponent>()) {
-      e->get<SkinComponent>().update(global_time);
+    if (!e->has<SkinComponent>()) {
+      continue;
+    }
+    
+    // Calculate skinning matrices.
+    auto &skin = e->get<SkinComponent>();
+    skin.update(global_time);
+
+    // Update rig entity global matrix from skinning.
+    // [ hence we might want to avoid computing their global uselessly beforehand ]
+    auto &visual = e->get<VisualComponent>();
+    if (auto rig = visual.rig(); rig) {
+      auto const& rig_global = global_matrix(rig->index());
+      auto const& controller = skin.controller();
+      auto const& global_pose_matrices = controller.global_pose_matrices();
+
+      // Map skeleton joint index to their rig entity.
+      auto &skeleton_map = skin.skeleton_map(); //
+
+      for (int32_t joint_id = 0; joint_id < controller.njoints(); ++joint_id) {
+        auto const& global_pose = global_pose_matrices[joint_id];
+        auto const entity_index = skeleton_map[joint_id]->index(); //
+        frame_.globals[entity_index] = rig_global * global_pose;
+      }
     }
   }
 }
@@ -115,9 +141,8 @@ void SceneHierarchy::remove_entity(EntityHandle entity, bool bRecursively) {
   // Remove entity from the list of entities.
   entities_.remove( entity );
 
-  // Children.
   if (bRecursively) {
-    // Remove them recursively.
+    // Remove children recursively.
     for (auto &child : entity->children_) {
       remove_entity(child, bRecursively);
     }
@@ -138,9 +163,8 @@ void SceneHierarchy::reset_entity(EntityHandle entity, bool bRecursively) {
     return;
   }
 
-  // Children.
+  // Remove children recursively.
   if (bRecursively) {
-    // Remove them recursively.
     for (auto &child : entity->children_) {
       reset_entity(child, bRecursively);
     }
@@ -168,56 +192,64 @@ EntityHandle SceneHierarchy::import_model(std::string_view filename) {
     // Handle skinned model.
     if (entity) {
       if (auto skl = entity->as<ModelEntity>().skeleton(); skl) {
-
         // ----------------------------
         // [ Work In Progress]
-        // Add a skin component to the entity.
-        {
-          auto& skin = entity->add<SkinComponent>();
-          skin.set_skeleton( skl );
 
-          // [it's important to use references, for pointer validity... XXX]
-          if (auto& clips = skl->clips; !clips.empty()) {
-            clips[0].bLoop = true; // [debug]
-            auto& sequence = skin.sequence();
-            sequence.push_back( SequenceClip_t(&clips[0]) );
-          } else {
-            LOG_WARNING( "no clips for skinned entity", basename );
-          }
+        // Add a skinning component.
+        auto& skin = entity->add<SkinComponent>();
+        skin.set_skeleton( skl );
+
+        // [debug]
+        // Set the first animation clips on loop.
+        if (auto& clips = skl->clips; !clips.empty()) {
+          auto& sequence = skin.sequence();
+          auto& first_clip = clips[0];
+          first_clip.bLoop = true;
+          sequence.push_back( SequenceClip_t(&first_clip) );
+        } else {
+          LOG_WARNING( "No clips were found for skinned entity", basename );
         }
-        // ----------------------------
 
-        // Add a mockup rig as sub hierarchy.  
+        // Add a mockup rig as the entity's sub-hierarchy.  
         if constexpr (kEnableLoadRigHierarchy) {
-  
           // Note : 
-          // This could disrupt the entity focus feature.
-
-          auto const njoints{ skl->njoints() };
-          std::vector<EntityHandle> rig( njoints );
+          // This disrupt the entity focus feature on select all / default mode.
 
           // Calculate the bones globals binds.
-          // ( costly as it inverts the inverse global binds )
+          // ( costly as it inverts the inverse global bind matrices )
           skl->calculate_global_bind_matrices();
 
           // Create an upper rig entity.
-          EntityHandle rig_root = std::make_shared<Entity>( kDefaultRigEntityName ); 
+          auto rig_root = std::make_shared<Entity>( kDefaultRigEntityName ); 
           add_entity( rig_root, entity);
 
           // Add the rig root to the visual component.
-          entity->get<VisualComponent>().set_rig( rig_root );
+          auto &visual = entity->get<VisualComponent>(); 
+          visual.set_rig( rig_root );
 
-          // Add hierarchy.
-          for (int i = 0; i < njoints; ++i) {
-            rig[i] = std::make_shared<Entity>( skl->names[i] );
+          // We use a map intern to the skin component to find entities from their
+          // joint index.
+          auto const njoints{ skl->njoints() };
+          auto &skeleton_map = skin.skeleton_map();  //
+          skeleton_map.resize( njoints );
+          
+          // Add joint entities to the hierarchy.
+          for (int32_t i = 0; i < njoints; ++i) {
+            auto joint_entity = std::make_shared<Entity>( skl->names[i] );
             
+            // Add the entity to its parent in the hierarchy.
             auto const parent_id = skl->parents[i];
-            add_entity( rig[i], (parent_id > -1) ? rig[parent_id] : rig_root);
+            add_entity( joint_entity, (parent_id > -1) ? skeleton_map[parent_id] : rig_root);
 
+            // Update the entity local matrix using skeleton matrices.
             auto const& parent_inv_matrix = (parent_id > -1) ? skl->inverse_bind_matrices[parent_id] : glm::mat4(1.0f);
-            rig[i]->local_matrix() = parent_inv_matrix * skl->global_bind_matrices[i];
+            joint_entity->local_matrix() = parent_inv_matrix * skl->global_bind_matrices[i];
+
+            // Add the entity to the skeleton map.
+            skeleton_map[i] = joint_entity;
           }
         }
+        // ----------------------------
       }
     }
     return entity;
@@ -246,7 +278,7 @@ void SceneHierarchy::update_selected_local_matrices() {
 }
 
 void SceneHierarchy::select_all(bool status) {
-  // [fixme] technically, using the UI as state holder is not great.
+  // [fixme] using the UI as state holder is not great.
   ((views::SceneHierarchyView*)ui_view)->select_all(status);
 }
 
@@ -291,9 +323,18 @@ glm::vec3 SceneHierarchy::centroid(bool selected) const {
 EntityHandle SceneHierarchy::add_bounding_sphere() {
   constexpr int32_t kDefaultRes = 16;
   if (auto mesh = MESH_ASSETS.createSphere(kDefaultRes, kDefaultRes); mesh) {
-    return create_model_entity("BSphere", mesh);
+    return create_model_entity( kDefaultBoundingSphereEntityName, mesh);
   }
   return nullptr;
+}
+
+void SceneHierarchy::render_debug_rigs() {
+  for (auto& e : frame_.drawables) {
+    auto &visual = e->get<VisualComponent>();
+    if (auto rig = visual.rig(); rig) {
+      render_debug_node(rig->child(0));
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -311,7 +352,7 @@ EntityHandle SceneHierarchy::create_model_entity(std::string const& basename, Me
 
 void SceneHierarchy::update_hierarchy(float const dt) {
   // (the root is used as a virtual entity and is hence not updated).
-  int index = -1;
+  int32_t index = -1;
 
   frame_.matrices_stack.push( glm::mat4(1.0f) );
   for (auto child : root_->children_) {
@@ -364,6 +405,41 @@ void SceneHierarchy::sort_drawables(Camera const& camera) {
       return dotproducts[A->index()] < dotproducts[B->index()];
     }
   );
+}
+
+void SceneHierarchy::render_debug_node(EntityHandle node) {
+  if (nullptr == node) {
+    return;
+  }
+
+  {
+    auto const n = node->nchildren();
+
+    // Color.
+    auto rgb = Im3d::Color((0 == n) ? glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) :    // leaf
+                           (1 == n) ? glm::vec4(0.5f, 1.0f, 0.5f, 1.0f) :    // joint
+                                      glm::vec4(1.0f, 1.0f, 0.9f, 1.0f) );   // node
+
+    // Position.
+    auto const start{ entity_global_position(node) };
+
+    // [fixme] the debug shapes should scale depending on some factors.
+    double constexpr scale = 0.02; //
+
+    Im3d::PushColor( rgb );
+    if (1 == n) {
+      auto const end{ entity_global_position( node->child(0) ) };
+      Im3d::DrawPrism( start, end, 1.0 * scale, 5);
+    } else {
+      Im3d::DrawSphere( start, 2.0 * scale, 16);
+    }
+    Im3d::PopColor();
+  }
+
+  // Recursively render sub hierarchy.
+  for (auto &child : node->children()) {
+    render_debug_node(child);
+  }
 }
 
 // ----------------------------------------------------------------------------

@@ -23,7 +23,7 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
-#if 1
+#if 0
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -299,79 +299,8 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
       scene_hierarchy_.update_selected_local_matrices();
     }
  
-#if 1
-    // --------------------------------
-    // XXX DEBUG XXX
-    // Display debug rig from entities skeleton structure.
-    //
-    // [ todo instead :
-    //   modify the globals matrices of rig's entities inside scene_hierarchy
-    //   and render debug shape using the entity structure.
-    // ]
-    //
-    for (auto const& e : scene_hierarchy_.drawables()) {
-      auto const& visual{ e->get<VisualComponent>() };
-
-      // [should otherwise probably use the rig entities]
-      SkeletonHandle const skl{ visual.mesh()->skeleton() };
-      
-      if (!skl) {
-        continue;
-      }
-      //LOG_INFO("rendering njoints :", skl->njoints());
-
-      // -----------
-           
-      // Global transform.
-      auto const& global_matrix = scene_hierarchy_.global_matrix(e->index());
-
-      // Count the number of children per parents for color marking.
-      std::vector<int32_t> nchildren(skl->njoints(), 0);
-      for (auto parent_id : skl->parents) {
-        if (parent_id > -1) {
-          nchildren[parent_id] += 1;
-        }
-      }
-
-      std::vector<glm::vec4> positions;
-      positions.reserve(skl->njoints());
-
-      auto const& global_bind_matrices = (e->has<SkinComponent>()) 
-        ? e->get<SkinComponent>().controller().global_pose_matrices()
-        : skl->global_bind_matrices
-      ;
-
-      for (auto const& global_bind_matrix : global_bind_matrices) {
-        auto const matrix{ global_matrix * global_bind_matrix };
-        positions.push_back( matrix * glm::vec4(0.0, 0.0, 0.0, 1.0));
-      }
-
-      std::vector<int32_t> unique_child_id(skl->njoints(), 0);
-      for (int i=0; i < skl->njoints(); ++i) {
-        auto parent_id = skl->parents[i];
-        if ((parent_id > -1) && (nchildren[parent_id] == 1)) {
-          unique_child_id[parent_id] = i;
-        }
-      }
-
-      for (int i = 0; i < skl->njoints(); ++i) {
-        auto const start = glm::vec3( positions[i] );
-        auto const end   = glm::vec3( positions[unique_child_id[i]] );
-
-        // (color)
-        auto const n = nchildren[i];
-        auto rgb = (n==0) ? Im3d::Color(glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)) :    // leaf
-                   (n==1) ? Im3d::Color(glm::vec4(0.5f, 1.0f, 0.5f, 1.0f)) :    // joint
-                            Im3d::Color(glm::vec4(1.0f, 1.0f, 0.9f, 1.0f)) ;    // node
-
-        Im3d::PushColor( rgb );
-        (n==1) ? Im3d::DrawPrism( start, end, 0.02, 5) : Im3d::DrawSphere( start, 0.04, 16);
-        Im3d::PopColor();
-      }
-    }
-    // --------------------------------
-#endif
-    
+    // Display rigs with debug shapes.
+    scene_hierarchy_.render_debug_rigs();
   }
 
   CHECK_GX_ERROR();
@@ -414,13 +343,13 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
 
     if (drawable->has<SkinComponent>()) {
       auto const& skin = drawable->get<SkinComponent>();
-      attributes.skinning_texid = skin.get_texture_id(); //
-      attributes.skinning_mode  = skin.skinning_mode();
+      attributes.skinning_texid    = skin.get_texture_id(); //
+      attributes.skinning_mode     = skin.skinning_mode();
     }
 
     // (fragment)
     attributes.irradiance_matrices = skybox_.irradiance_matrices();
-    attributes.eye_position        = camera.position(); //
+    attributes.eye_position        = camera.position();
     //attributes.tonemap_mode      = tonemap_mode;
 
     // Rendering.
