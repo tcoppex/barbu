@@ -1,11 +1,14 @@
 #ifndef BARBU_ECS_COMPONENTS_SKIN_H_
 #define BARBU_ECS_COMPONENTS_SKIN_H_
 
+#include <vector>
+
 #include "ecs/component.h"
 
 #include "animation/common.h"
 #include "animation/skeleton.h"
 #include "animation/skeleton_controller.h"
+#include "ecs/entity-fwd.h"
 
 // ----------------------------------------------------------------------------
 
@@ -13,6 +16,9 @@
 //  Apply skeleton animation for a mesh.
 //
 class SkinComponent final : public ComponentParams<Component::Skin> {
+ public:
+  using SkeletonMap_t = std::vector<EntityHandle>; //
+
  public:
   SkinComponent()
     : mode_{ SkinningMode::LinearBlending }
@@ -51,10 +57,14 @@ class SkinComponent final : public ComponentParams<Component::Skin> {
 
   inline uint32_t get_texture_id() const { return texture_id_; } // tmp
 
+  inline SkeletonMap_t& skeleton_map() { return skeleton_map_; } 
+
+
  private:
   // Inputs.
   SkinningMode    mode_       = SkinningMode::DualQuaternion;
   SkeletonHandle  skeleton_   = nullptr;
+  SkeletonMap_t   skeleton_map_; //
   Sequence_t      sequence_; //
 
   // Outputs.
