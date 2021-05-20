@@ -68,6 +68,7 @@ class SceneHierarchy {
   inline EntityList_t const& all() const { return entities_; }
   inline EntityList_t const& selected() const { return frame_.selected; }
   inline EntityList_t const& drawables() const { return frame_.drawables; }
+  inline EntityList_t const& colliders() const { return frame_.colliders; }
 
   // Select / Unselect all entities depending on status.
   void select_all(bool status);
@@ -81,10 +82,11 @@ class SceneHierarchy {
   glm::vec3 centroid(bool selected=true) const;
 
   // Add a bounding model entity for physic collision.
-  EntityHandle add_bounding_sphere(); //
+  EntityHandle add_bounding_sphere(float radius=1.0f); //
 
   // Render availables rigs from the scene for debug display.
   void render_debug_rigs(); //
+  void render_debug_colliders(); //
 
  private:
   // Set of buffers modified each frame.
@@ -101,12 +103,16 @@ class SceneHierarchy {
 
     // Camera-dependent entities to render.
     EntityList_t drawables;
+
+    // Entities with colliders.
+    EntityList_t colliders;
     
     void clear() {
       assert(matrices_stack.empty());
       globals.clear();
       selected.clear();
       drawables.clear();
+      colliders.clear();
     }
   };
 

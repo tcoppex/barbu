@@ -42,6 +42,8 @@ class Entity {
 
   virtual void update(float const dt) {}
 
+  // -- Getters.
+
   inline EntityHandle parent() const { return parent_; }
   
   inline int32_t nchildren() const { return static_cast<int32_t>(children_.size()); }

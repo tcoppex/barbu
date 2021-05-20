@@ -18,6 +18,9 @@ static constexpr char const* kDefaultRigEntityName{ "[rig]" };
 // Default name given to bounding sphere entities.
 static constexpr char const* kDefaultBoundingSphereEntityName{ "BSphere" };
 
+// Resolution used to render debug sphere.
+constexpr int32_t kDebugSphereResolution = 16;
+
 constexpr bool kEnableLoadRigHierarchy = true;
 
 // ----------------------------------------------------------------------------
@@ -52,6 +55,10 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
     if (e->has<VisualComponent>()) {
       frame_.drawables.push_back( e );
     }
+
+    if (e->has<SphereColliderComponent>()) {
+      frame_.colliders.push_back( e );
+    }
   }
 
   // Sort the drawables front to back.
@@ -77,10 +84,13 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
 
       // Map skeleton joint index to their rig entity.
       auto &skeleton_map = skin.skeleton_map(); //
+      assert(!skeleton_map.empty());
 
       for (int32_t joint_id = 0; joint_id < controller.njoints(); ++joint_id) {
         auto const& global_pose = global_pose_matrices[joint_id];
         auto const entity_index = skeleton_map[joint_id]->index(); //
+        assert( entity_index > -1 );
+
         frame_.globals[entity_index] = rig_global * global_pose;
       }
     }
@@ -322,21 +332,40 @@ glm::vec3 SceneHierarchy::centroid(bool selected) const {
   return center;
 }
 
-EntityHandle SceneHierarchy::add_bounding_sphere() {
-  constexpr int32_t kDefaultRes = 16;
-  if (auto mesh = MESH_ASSETS.createSphere(kDefaultRes, kDefaultRes); mesh) {
+EntityHandle SceneHierarchy::add_bounding_sphere(float radius) {
+#if 0
+  if (auto mesh = MESH_ASSETS.createSphere(kDebugSphereResolution, kDebugSphereResolution); mesh) {
     return create_model_entity( kDefaultBoundingSphereEntityName, mesh);
   }
+#else
+  auto entity = std::make_shared<Entity>(kDefaultBoundingSphereEntityName);
+  if (entity != nullptr) {
+    add_entity(entity);
+    auto &bsphere = entity->add<SphereColliderComponent>();
+    bsphere.set_radius(radius);
+  }
+#endif
+
   return nullptr;
 }
 
 void SceneHierarchy::render_debug_rigs() {
-  for (auto& e : frame_.drawables) {
+  for (auto e : frame_.drawables) {
     auto &visual = e->get<VisualComponent>();
     if (auto rig = visual.rig(); rig) {
       render_debug_node(rig->child(0));
     }
   }
+}
+
+void SceneHierarchy::render_debug_colliders() {
+  for (auto e : frame_.colliders) {
+    auto const& bsphere = e->get<SphereColliderComponent>();
+    auto pos = global_matrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
+    Im3d::PushColor( Im3d::Color(glm::vec4(0.0, 1.0, 1.0, 0.95)) );
+    Im3d::DrawSphere( glm::vec3(pos), bsphere.radius(), kDebugSphereResolution);
+    Im3d::PopColor();
+  } 
 }
 
 // ----------------------------------------------------------------------------
@@ -433,7 +462,7 @@ void SceneHierarchy::render_debug_node(EntityHandle node) {
       auto const end{ entity_global_position( node->child(0) ) };
       Im3d::DrawPrism( start, end, 1.0 * scale, 5);
     } else {
-      Im3d::DrawSphere( start, 2.0 * scale, 16);
+      Im3d::DrawSphere( start, 2.0 * scale, kDebugSphereResolution);
     }
     Im3d::PopColor();
   }

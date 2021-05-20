@@ -12,6 +12,7 @@ class Component {
     Transform,
     Visual,
     Skin,
+    SphereCollider,
     kNumComponentType,
     kUndefined
   };
