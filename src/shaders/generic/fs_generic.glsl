@@ -25,6 +25,7 @@ layout(location = 0) out vec4 fragColor;
 uniform int uToneMapMode = TONEMAPPING_NONE;
 uniform vec3 uEyePosWS;
 uniform mat4 uIrradianceMatrices[3];
+uniform samplerCube uEnvironmentMap;
 
 // Uniforms : Material.
 uniform int uColorMode;
@@ -34,17 +35,29 @@ uniform float uMetallic;
 uniform float uRoughness;
 
 uniform sampler2D uAlbedoTex;
-uniform sampler2D uMetalRoughTex;
+uniform sampler2D uRoughMetalTex;
 uniform sampler2D uAOTex;
 
 uniform bool uHasAlbedo;
-uniform bool uHasMetalRough;
+uniform bool uHasRoughMetal;
 uniform bool uHasAO;
 
 // ----------------------------------------------------------------------------
 
+vec3 compute_irradiance(in vec3 normalWS, in mat4 irradianceMatrices[3]) {
+  const vec4 n = vec4( normalWS, 1.0);
+  const vec3 irr = vec3(
+    dot( n, irradianceMatrices[0] * n),
+    dot( n, irradianceMatrices[1] * n),
+    dot( n, irradianceMatrices[2] * n)
+  );
+  return irr;
+}
+
+// ----------------------------------------------------------------------------
+
 // Extract material infos, also test for alpha coverage.
-Material_t get_material() {
+Material_t get_material(in FragInfo_t frag) {
   Material_t mat;
 
   const vec2 uv = inTexcoord.xy;
@@ -60,16 +73,21 @@ Material_t get_material() {
   // Ambient Occlusion.
   const float ao = (uHasAO) ? texture( uAOTex, uv).r : 1.0f;
 
-  // Metallic + Roughness.
-  const vec2 metal_rough = (uHasMetalRough) ? texture( uMetalRoughTex, uv).yz 
-                                            : vec2( uMetallic, uRoughness );
-  mat.metallic  = metal_rough.x;
-  mat.roughness = metal_rough.y;
+  // Roughness + Metallic.
+  const vec2 rough_metal = (uHasRoughMetal) ? texture( uRoughMetalTex, uv).yz // 
+                                            : vec2( uRoughness, uMetallic );
+  mat.roughness = rough_metal.x;
+  mat.metallic  = rough_metal.y;
 
-  // Ambient using environment map Irradiance from the Vertex Shader.
-  mat.ambient = mat.color.rgb;// * inIrradiance;
+  mat.ao = pow(ao, 2.0);
 
-  mat.ao = pow(ao, 1.0);
+  // --------
+
+  // [ fragment derivative materials ]
+
+  // Compose ambient with a fragment based irradiance color.
+  mat.irradiance = compute_irradiance( frag.N, uIrradianceMatrices);
+  mat.reflection = texture( uEnvironmentMap, frag.R).rgb; //
 
   return mat;
 }
@@ -81,6 +99,7 @@ FragInfo_t get_worldspace_fraginfo() {
   frag.P        = inPositionWS;
   frag.N        = normalize( inNormalWS );
   frag.V        = normalize( uEyePosWS - frag.P );
+  frag.R        = reflect( -frag.V, frag.N);
   frag.uv       = inTexcoord.xy;
   frag.n_dot_v  = max(dot(frag.N, frag.V), 0);
 
@@ -89,18 +108,6 @@ FragInfo_t get_worldspace_fraginfo() {
   // frag.N *= s;
 
   return frag;
-}
-
-// ----------------------------------------------------------------------------
-
-vec3 compute_irradiance(in vec3 normalWS, in mat4 irradianceMatrices[3]) {
-  const vec4 n = vec4( normalWS, 1.0);
-  const vec3 irr = vec3(
-    dot( n, irradianceMatrices[0] * n),
-    dot( n, irradianceMatrices[1] * n),
-    dot( n, irradianceMatrices[2] * n)
-  );
-  return irr;
 }
 
 // ----------------------------------------------------------------------------
@@ -129,7 +136,7 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
     break;
 
     case MATERIAL_GENERIC_COLOR_MODE_IRRADIANCE:
-      rgb = mat.ambient;
+      rgb = mat.irradiance;
     break;
     
     case MATERIAL_GENERIC_COLOR_MODE_AO:
@@ -157,11 +164,8 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
 // ----------------------------------------------------------------------------
 
 void main() {
-  Material_t material = get_material();
   FragInfo_t fraginfo = get_worldspace_fraginfo();
-
-  // [issue with linearization]
-  material.ambient *= compute_irradiance( fraginfo.N, uIrradianceMatrices);
+  Material_t material = get_material(fraginfo);
 
   fragColor = colorize( uColorMode, fraginfo, material);
 }

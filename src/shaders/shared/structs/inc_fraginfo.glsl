@@ -5,6 +5,7 @@ struct FragInfo_t {
   vec3 P;           // position
   vec3 N;           // normal
   vec3 V;           // viewdir
+  vec3 R;           // reflect( N, V)
   vec2 uv;          // texcoord
   float n_dot_v;    // saturate( dot(n, v) )
 };

@@ -24,7 +24,8 @@
 // Normal Distribution Function (Trowbridge-Reitz GGX).
 float ndf_GGX(in float n_dot_h, in float roughness_sqr) {
   const float d = n_dot_h * n_dot_h * (roughness_sqr - 1.0) + 1.0;
-  return roughness_sqr / (d * d * Pi());
+  const float den = d * d * Pi();
+  return roughness_sqr / max( den, Epsilon());
 }
 
 // ----------------------------------------------------------------------------
@@ -49,6 +50,12 @@ vec3 f_Schlick(in float cosTheta, in vec3 f0) {
   return mix( vec3(pow(1.0 - cosTheta, 5.0)), vec3(1.0), f0);
 }
 
+// Fresnel Function with roughness attenuation for prefiltered cubemap.
+// As described by Sebastien Lagarde (cf. https://seblagarde.wordpress.com/2011/08/17/hello-world/)
+vec3 f_SchlickRoughness(in float cosTheta, in vec3 f0, in float roughness) {
+  return f0 + pow(1.0 - cosTheta, 5.0) * (max(vec3(roughness), f0) - f0);
+}
+
 // ----------------------------------------------------------------------------
 
 vec3 brdf_CookTorranceSpecular(in FragLight_t light, in float n_dot_v, in vec3 F, in float roughness_sqr) {
@@ -57,7 +64,7 @@ vec3 brdf_CookTorranceSpecular(in FragLight_t light, in float n_dot_v, in vec3 F
   const vec3 num  = NDF * G * F;
   const float den = 4.0f * n_dot_v * light.n_dot_l;
   
-  return num / max(den, Epsilon());
+  return num / max(den, Epsilon()); //
 }
 
 // ----------------------------------------------------------------------------
@@ -77,7 +84,9 @@ BRDFMaterial_t get_brdf_material(in Material_t mat) {
   BRDFMaterial_t brdf_mat;
 
   // Corrected albedo component of the reflectance equation.
-  brdf_mat.albedo = (1.0 - mat.metallic) * (color / Pi());
+  //brdf_mat.albedo = (1.0 - mat.metallic) * color;
+  brdf_mat.albedo = mix( color, mat.reflection, mat.metallic * (1.0-mat.roughness));
+  
   // Fresnel parameter.
   brdf_mat.F0 = mix( kF0, color, mat.metallic);
   // Squared roughness.
@@ -91,12 +100,12 @@ BRDFMaterial_t get_brdf_material(in Material_t mat) {
 vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   //-----------
   LightInfo_t uLightInfos[4];
-  int uNumLights = 1;
+  const int uNumLights = 1;
 
   LightInfo_t dirlight;
   dirlight.position       = vec4(-5.0, 10.0, 10.0, LIGHT_TYPE_DIRECTIONAL);
   dirlight.direction      = vec4(-normalize(dirlight.position.xyz), 1.0);
-  dirlight.color          = vec4(1.0, 1.0, 1.0, 2.0);
+  dirlight.color          = vec4(1.0, 1.0, 1.0, 1.0);
 
   LightInfo_t keylight;
   keylight.position       = vec4(0.0, 0.0, 0.0, LIGHT_TYPE_POINT);
@@ -131,25 +140,29 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
     const FragLight_t light = get_fraglight_params( uLightInfos[i], frag_info );
     
     // Choose between reflection angles.
-    const float cosTheta = max(dot( light.H, frag_info.V), 0); // light.n_dot_l
+    const float cosTheta = max(dot( light.H, frag_info.V), 0); 
+                         // light.n_dot_l;
 
     // Fresnel term.
     const vec3 F = f_Schlick( cosTheta, brdf_mat.F0);
  
     // Deduct the diffuse term from it.
-    const vec3 kD = (1.0 - F) * brdf_mat.albedo;
+    const vec3 kD = (1.0 - F) * brdf_mat.albedo / Pi();
 
     // Calculate the BRDF specular term.
     const vec3 kS = brdf_CookTorranceSpecular( light, frag_info.n_dot_v, F, brdf_mat.roughness_sqr);
 
     // Add contribution.
     L0 += (kD + kS) * light.radiance.rgb * light.n_dot_l;
-
-    //L0 = 0.5*light.H + 0.5;
   }
 
+  // Ambient factor.
+  //const vec3 albedo = (1.0 - mat.metallic) * mat.color.rgb;
+  const vec3 kD = (1.0 - f_SchlickRoughness( frag_info.n_dot_v, brdf_mat.F0, mat.roughness)) * brdf_mat.albedo; //
+  const vec3 ambient = mat.irradiance * kD * mat.ao;
+
   // Final light color.
-  const vec3 color = (L0 + 0.25*mat.ambient) * mat.ao;
+  const vec3 color = (L0 + ambient);
 
   return color;
 }
