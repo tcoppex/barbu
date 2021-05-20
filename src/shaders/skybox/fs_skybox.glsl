@@ -10,11 +10,12 @@ layout(location = 0) out vec4 fragColor;
 
 // Uniforms.
 uniform samplerCube uCubemap;
+uniform vec4 uFactors = vec4(1.0);
 
 // ----------------------------------------------------------------------------
 
 void main() {
-  fragColor = texture(uCubemap, inTexcoord, 2);
+  fragColor = uFactors*texture(uCubemap, inTexcoord, 0);
 }
 
 // ----------------------------------------------------------------------------

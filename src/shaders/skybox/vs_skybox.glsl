@@ -14,11 +14,14 @@ uniform mat4  uMVP;
 // ----------------------------------------------------------------------------
 
 void main() {
-  vec4 pos = vec4(inPosition, 1.0);
-  gl_Position = uMVP * pos;
+  const vec4 pos = vec4(inPosition, 1.0);
+  const vec4 clip_pos = uMVP * pos;
 
   // Use the box object coordinates in [-1, 1] as texture coordinates.
   outTexcoord = inPosition;
+
+  // Assure depth value is always at 1.0.
+  gl_Position = clip_pos.xyww;
 }
 
 // ----------------------------------------------------------------------------
