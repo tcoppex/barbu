@@ -18,17 +18,17 @@ void Mesh::draw_submesh(int32_t index, MeshData::PrimitiveType primitive) const 
   if (!vgroups_.empty()) {
     auto const& vg = vgroups_.at(index);
     glDrawElements( mode, vg.nelems(), GL_UNSIGNED_INT, reinterpret_cast<void*>(vg.start_index*sizeof(uint32_t)));
-    
     //glDrawRangeElements(mode, vg.start_index, vg.end_index, vg.nelems() * sizeof(uint32_t), GL_UNSIGNED_INT, nullptr); // XXX    
     //glDrawArrays( mode, vg.start_index, vg.nelems());
 
   } else if (nelems_ <= 0) {
     glDrawArrays(mode, 0u, nvertices_);
   } else if (index <= 0) {
-    glDrawElements(mode, nelems_, GL_UNSIGNED_INT, nullptr);  
+    glDrawElements(mode, nelems_, GL_UNSIGNED_INT, nullptr);
   } else {
     LOG_WARNING( __FUNCTION__, ": invalid parameters." );
-  }
+  }  
+  CHECK_GX_ERROR();
 
   glBindVertexArray(0u);
 }
