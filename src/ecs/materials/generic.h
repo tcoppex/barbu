@@ -17,8 +17,8 @@ class GenericMaterial : public Material {
     TexCoord      = MATERIAL_GENERIC_COLOR_MODE_TEXCOORD,
     Irradiance    = MATERIAL_GENERIC_COLOR_MODE_IRRADIANCE,
     AO            = MATERIAL_GENERIC_COLOR_MODE_AO,
-    Metallic      = MATERIAL_GENERIC_COLOR_MODE_METALLIC,
     Roughness     = MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS,
+    Metallic      = MATERIAL_GENERIC_COLOR_MODE_METALLIC,
     kCount,
     kInternal,
   };
@@ -35,7 +35,7 @@ class GenericMaterial : public Material {
     , metallic_(0.0f)
     , roughness_(0.4f)
     , tex_albedo_(nullptr)
-    , tex_metal_rough_(nullptr)
+    , tex_rough_metal_(nullptr)
     , tex_ao_(nullptr)
   {
     PROGRAM_ASSETS.create( program_id_, { 
@@ -52,15 +52,15 @@ class GenericMaterial : public Material {
     
     color_        = info.diffuse_color;
     alpha_cutoff_ = info.alpha_cutoff;
-    metallic_     = info.metallic;
     roughness_    = info.roughness;
+    metallic_     = info.metallic;
 
     auto get_texture = [](auto const& str) {
       return (!str.empty()) ? TEXTURE_ASSETS.create2d( AssetId(str) ) : nullptr;
     };  
 
     tex_albedo_      = get_texture(info.diffuse_map);
-    tex_metal_rough_ = get_texture(info.metallic_rough_map);
+    tex_rough_metal_ = get_texture(info.metallic_rough_map);
     tex_ao_          = get_texture(info.ao_map);
 
     // Switch mode depending on parameters.
@@ -83,14 +83,14 @@ class GenericMaterial : public Material {
     //(color_mode == ColorMode::kInternal) ? color_mode_ : color_mode;
     
     bool const hasAlbedo      = static_cast<bool>(tex_albedo_);
-    bool const hasMetalRough  = static_cast<bool>(tex_metal_rough_);
+    bool const hasRoughMetal  = static_cast<bool>(tex_rough_metal_);
     bool const hasAO          = static_cast<bool>(tex_ao_);
     
     auto bind_texture = [this, &pgm](auto const& name, TextureHandle tex) {
       if (nullptr != tex) {
-        gx::BindTexture( tex->id, image_unit_ /*, material_sampler*/);
-        gx::SetUniform( pgm, name,  image_unit_);
-        ++image_unit_;
+        gx::BindTexture( tex->id, texture_unit_ /*, material_sampler*/);
+        gx::SetUniform( pgm, name,  texture_unit_);
+        ++texture_unit_;
       }
     };
 
@@ -101,11 +101,11 @@ class GenericMaterial : public Material {
     gx::SetUniform( pgm, "uRoughness",      roughness_);
 
     gx::SetUniform( pgm, "uHasAlbedo",      hasAlbedo);
-    gx::SetUniform( pgm, "uHasMetalRough",  hasMetalRough);
+    gx::SetUniform( pgm, "uHasRoughMetal",  hasRoughMetal);
     gx::SetUniform( pgm, "uHasAO",          hasAO);
   
     bind_texture( "uAlbedoTex",     tex_albedo_);
-    bind_texture( "uMetalRoughTex", tex_metal_rough_);
+    bind_texture( "uRoughMetalTex", tex_rough_metal_);
     bind_texture( "uAOTex",         tex_ao_);
 
     CHECK_GX_ERROR();
@@ -120,7 +120,7 @@ class GenericMaterial : public Material {
   float         roughness_;
   
   TextureHandle tex_albedo_;
-  TextureHandle tex_metal_rough_;
+  TextureHandle tex_rough_metal_;
   TextureHandle tex_ao_;
 };
 

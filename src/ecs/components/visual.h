@@ -32,6 +32,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
       // Keep tracks of previous program to avoid useless uniform setup mesh wised.
       uint32_t last_pgm = 0u;
+      int32_t texture_unit = 0;
 
       auto const nsubgeometry = mesh_->nsubgeometry();
       for (auto i = 0; i < nsubgeometry; ++i) {
@@ -45,7 +46,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
         // Set material parameters when needed.
         uint32_t const pgm = mat->program()->id;
-        mat->update_uniforms(attributes, last_pgm == pgm);
+        texture_unit = mat->update_uniforms(attributes, (last_pgm == pgm) ? texture_unit : 0);
         last_pgm = pgm;
 
         // Force double-sided rendering when requested.

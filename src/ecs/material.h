@@ -19,12 +19,16 @@ enum class RenderMode {
 
 // Attributes shared by all materials.
 struct RenderAttributes {
+  // (vertex)
   glm::mat4 world_matrix;
   glm::mat4 mvp_matrix;
 
+  // (vertex skinning)
   uint32_t skinning_texid = 0u;
   SkinningMode skinning_mode;
 
+  // (fragment)
+  uint32_t envmap_texid = 0u;
   glm::mat4 const* irradiance_matrices = nullptr;
   glm::vec3 eye_position;
   //int32_t tonemap_mode;
@@ -39,9 +43,8 @@ class Material {
   Material(AssetId program_id, RenderMode render_mode = RenderMode::kDefault)
     : program_id_(program_id)
     , render_mode_(render_mode)
-    , image_unit_(0u)
+    , texture_unit_(0u)
     , bDoubleSided_(false)
-    , last_image_unit_(0u)
   {}
 
   virtual ~Material() {
@@ -55,8 +58,12 @@ class Material {
   virtual void setup(MaterialInfo const& info) = 0;
 
   // Update commons uniforms for the material before rendering.
-  void update_uniforms(RenderAttributes const& attributes, bool bUseSameProgram = false) {
-    if (!bUseSameProgram) {
+  int32_t update_uniforms(RenderAttributes const& attributes, int32_t default_unit = 0) {
+    texture_unit_ = default_unit; //
+
+    bool const use_new_program{ texture_unit_ == 0 };
+    
+    if (use_new_program) {
       auto pgm_handle = program();
       if (!pgm_handle) {
         LOG_FATAL_ERROR( "Material program \"", program_id_.c_str(), "\" not found." );
@@ -64,8 +71,6 @@ class Material {
 
       auto const pgm = pgm_handle->id;
       gx::UseProgram( pgm );
-      
-      last_image_unit_ = 0;
 
       // (vertex)
       gx::SetUniform( pgm, "uModelMatrix",        attributes.world_matrix);
@@ -73,11 +78,11 @@ class Material {
 
       // (vertex skinning)
       if (attributes.skinning_texid > 0u) {
-        gx::BindTexture( attributes.skinning_texid, last_image_unit_);
-        gx::SetUniform( pgm, "uSkinningDatas",      last_image_unit_);    
-        ++last_image_unit_;
+        gx::BindTexture( attributes.skinning_texid, texture_unit_);
+        gx::SetUniform( pgm, "uSkinningDatas",      texture_unit_);
+        ++texture_unit_;
 
-        // [clean]
+        // [clean?]
         skinning_subroutines_[ SkinningMode::LinearBlending ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_LBS");
         skinning_subroutines_[ SkinningMode::DualQuaternion ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_DQBS");
         auto const& su_index = skinning_subroutines_[ attributes.skinning_mode ];
@@ -90,11 +95,17 @@ class Material {
       gx::SetUniform( pgm, "uEyePosWS",           attributes.eye_position);
       //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
     
-      CHECK_GX_ERROR();
+      if (attributes.envmap_texid > 0u) {
+        gx::BindTexture( attributes.envmap_texid, texture_unit_);
+        gx::SetUniform( pgm, "uEnvironmentMap",   texture_unit_);
+        ++texture_unit_;
+      }
     }
-    image_unit_ = last_image_unit_;
+    CHECK_GX_ERROR();
 
     update_internals();
+
+    return texture_unit_;
   }
 
   inline ProgramHandle program() {
@@ -128,11 +139,8 @@ class Material {
   RenderMode render_mode_;
 
   EnumArray< uint32_t, SkinningMode > skinning_subroutines_; //
-  int32_t image_unit_; //
+  int32_t texture_unit_; //
   bool bDoubleSided_; //
-
- private:
-  int32_t last_image_unit_;
 
  public:
   UIView *ui_view_ = nullptr; // [not used yet]
