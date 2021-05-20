@@ -185,7 +185,7 @@ void App::frame() {
 
 void App::update_time() {
   auto constexpr kMaxFPS = 90.0;
-  auto constexpr fps_time = std::chrono::duration<double>(1.0 / (1.005 * kMaxFPS));
+  auto constexpr fps_time = std::chrono::duration<double>(1.0 / (1.015 * kMaxFPS));
 
   // Regulate FPS.
   auto local_update_time = [this]() {
