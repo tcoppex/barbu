@@ -40,6 +40,8 @@ uniform float uTimeStep;
 uniform float uMaxVelocity = 100.0f;
 uniform float uScaleFactor = 1.0f;    // (just for fun)
 
+uniform vec4 uBoundingSphere = vec4( 0.0, 0.0, 0.0, 1.0);
+
 // ----------------------------------------------------------------------------
 
 struct Particle_t {
@@ -66,7 +68,11 @@ void PackParticle(uint index, in Particle_t p) {
 // ----------------------------------------------------------------------------
 
 vec3 CalculateForces(in Particle_t p) {
-  vec3 force = vec3(0.0f, -9.81f, 0.0f);
+  const vec3 gravity = vec3(0.0f, -9.81f, 0.0f);
+  const float kForceCoeff = 20.0;
+
+  vec3 force = kForceCoeff * gravity;
+
   return force;
 }
 
@@ -84,9 +90,10 @@ shared Particle_t s_particles[HAIR_MAX_PARTICLE_PER_STRAND];
 
 // ----------------------------------------------------------------------------
 
-void SatisfyConstraints(uint index, inout Particle_t p) {
+void DistanceConstraint(uint index, inout Particle_t p) {
   // Solve the strand dynamics using the DFTL algorithm.
   // ref. "Fast Simulation of Inextensible Hair and Fur" - M. Müller & al. [2012]
+  // ----
   
   // @note the paper suggest a general damp scale closer to one.
   // This one is highly dependent on the underlying number of strands (here '5').
@@ -94,18 +101,22 @@ void SatisfyConstraints(uint index, inout Particle_t p) {
         di = smoothstep(0.0, 1.0, di)*di;
   const float dftl_damp_scale = mix( 0.80, 0.94, di); 
 
+  // Share the particle with its local group (ie. rest of the strands).
+  s_particles[index] = p; 
+  memoryBarrierShared();
+
   // Only the first thread run the iterative pass.
   if (0 == index) {  
-    for (int i=1; i<HAIR_MAX_PARTICLE_PER_STRAND; ++i) {
+    for (int i=1; i < HAIR_MAX_PARTICLE_PER_STRAND; ++i) {
       const vec3 p0 = s_particles[i-1].position;
       const vec3 p1 = s_particles[i].position;
       const vec3 vdiff = p1 - p0;
       const vec3 p1_bis = p0 + (uScaleFactor * s_particles[i].restlength) * normalize(vdiff);
       s_particles[i].position = p1_bis;
-      s_particles[i].velocity = p1_bis - p1; 
+      s_particles[i].velocity = (p1_bis - p1); 
     }
 
-    for (int i=1; i<HAIR_MAX_PARTICLE_PER_STRAND-1; ++i) {
+    for (int i=1; i < HAIR_MAX_PARTICLE_PER_STRAND-1; ++i) {
       s_particles[i].velocity = s_particles[i+1].velocity * dftl_damp_scale;
     }
   }
@@ -113,7 +124,40 @@ void SatisfyConstraints(uint index, inout Particle_t p) {
 
   // Update the local copy of the particle.
   p = s_particles[index];
-  memoryBarrierShared();
+}
+
+void CollideSphere(float dp_sign, in vec3 center, float radius, inout Particle_t p) {
+  const vec3 pt = p.position - center;
+  const float dp = dot(pt, pt);
+
+  if ((dp_sign * dp) < (radius * radius)) {
+    const vec3 n = dp_sign * pt * inversesqrt(dp);
+
+    p.position = center + radius * n;
+    p.velocity = reflect(p.velocity, n);
+  }
+}
+
+void CollideSphereExternal(in vec3 center, float radius, inout Particle_t p) {
+  CollideSphere(+1.0, center, radius, p);
+}
+
+void CollideSphereInternal(in vec3 center, float radius, inout Particle_t p) {
+  CollideSphere(-1.0, center, radius, p);
+}
+
+void CollisionConstraint(uint index, inout Particle_t p) {
+  if (index > 0) {
+    CollideSphereExternal( uBoundingSphere.xyz, uBoundingSphere.w, p);
+  }
+}
+
+void SatisfyConstraints(int num_constraints_iterations, uint index, inout Particle_t p) {
+  for (int i=0; i < num_constraints_iterations; ++i) {
+    DistanceConstraint(index, p);
+    CollisionConstraint(index, p);
+  }
+  groupMemoryBarrier();
 }
 
 // ----------------------------------------------------------------------------
@@ -147,19 +191,17 @@ void main() {
     p.position = vec3(model * vec4(lastPosition, 1.0));
     p.velocity = p.position - lastPosition;
   }
+  groupMemoryBarrier(); //
 
-  // Share the particle with its local group (ie. rest of the strands).
-  s_particles[gl_LocalInvocationIndex] = p; 
-  memoryBarrierShared();
-  
   // Satisfy constraints.
-  SatisfyConstraints(gl_LocalInvocationIndex, p);
+  const int kNumContraintsIteration = 8; //
+  SatisfyConstraints( kNumContraintsIteration, gl_LocalInvocationIndex, p);
 
   // Update velocity (cf DFTL paper, Eq. 9).
-  p.velocity = ((p.position - lastPosition) - p.velocity) / dt;
+  // p.velocity = ((p.position - lastPosition) - p.velocity) / dt;
 
-  // Velocity control.
-  VelocityControl(p.velocity, uMaxVelocity);
+  // // Velocity control.
+  // VelocityControl(p.velocity, uMaxVelocity);
 
   // Save back particles to global memory.
   PackParticle(gid, p);

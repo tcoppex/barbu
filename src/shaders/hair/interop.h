@@ -5,7 +5,7 @@
 
 // Determine the number of control points per strands and the size
 // of the simulation kernel.
-#define HAIR_MAX_PARTICLE_PER_STRAND          3
+#define HAIR_MAX_PARTICLE_PER_STRAND          4
 
 // ----------------------------------------------------------------------------
 // SIMULATION

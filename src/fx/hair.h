@@ -60,6 +60,10 @@ class Hair {
   void update(float const dt);
   void render(Camera const& camera);
 
+  void set_bounding_sphere(glm::vec4 const& bsphere) {
+    boundingsphere_ = bsphere;
+  }
+
   UIView* view() const;
 
  private:
@@ -81,6 +85,8 @@ class Hair {
                                     //  shading reflectance model.
   
   glm::mat4 model_; //
+
+  glm::vec4 boundingsphere_;
 
   struct {
     GLuint vao;

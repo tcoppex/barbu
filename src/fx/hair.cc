@@ -84,6 +84,8 @@ void Hair::update(float const dt) {
       gx::SetUniform( pgm, "uTimeStep",     dt);
       gx::SetUniform( pgm, "uScaleFactor",  params_.render.lengthScale);
       gx::SetUniform( pgm, "uModel",        model_); 
+      gx::SetUniform( pgm, "uBoundingSphere", boundingsphere_);
+
       gx::DispatchCompute(nroots_);
       //DispatchCompute<HAIR_MAX_PARTICLE_PER_STRAND>(pbuffer_.size());  //<=> glDispatchCompute(nroots_, 1u, 1u);
     gx::UseProgram();
