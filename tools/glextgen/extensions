@@ -102,7 +102,9 @@ glTexSubImage3D
 glTextureBuffer
 glTextureParameteri
 glTextureStorage2D
+glTextureStorage3D
 glTextureSubImage2D
+glTextureSubImage3D
 glTransformFeedbackBufferBase
 glTransformFeedbackVaryings
 glUniform1f
