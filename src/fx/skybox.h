@@ -23,12 +23,16 @@ class Skybox {
 
   void render(Camera const& camera);
 
+  uint32_t get_texture_id() const { return skytex_ ? skytex_->id : 0u; } //
+
   inline glm::mat4 const* irradiance_matrices() const { return shMatrices_.data(); }
 
  private:
   MeshHandle cubemesh_;
   ProgramHandle pgm_;
   TextureHandle skytex_;
+
+  ProgramHandle pgm_transform_;
 
   // Skybox irradiance spherical harmonics matrices.
   IrradianceMatrices_t shMatrices_;
