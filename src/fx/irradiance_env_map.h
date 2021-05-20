@@ -2,6 +2,7 @@
 #define BARBU_FX_IRRADIANCE_ENV_MAP_H_
 
 #include <array>
+#include <functional>
 
 #include "glm/gtc/constants.hpp"
 #include "glm/vec3.hpp"
@@ -36,7 +37,7 @@ class IrradianceEnvMap {
    */
   template<typename T>
   static
-  void Prefilter(CubemapData_t<T> const& cubemap, float const dColor, int const w, int const h, int const nchannels, IrradianceMatrices_t &M)
+  void Prefilter(CubemapData_t<T> const& cubemap, std::function<float(float)> const& dColor, int const w, int const h, int const nchannels, IrradianceMatrices_t &M)
   {
     float const texelSize  = 1.0f / static_cast<float>(w);
 
@@ -62,7 +63,8 @@ class IrradianceEnvMap {
           float const solidAngle = attribs.w;
 
           for (int k = 0; k < kSHCoeffSize; ++k) {
-            float const lambda = powf(pixels[k] * dColor, kGammaCorrection) * solidAngle;
+            float const pixel = static_cast<float>(pixels[k]);
+            float const lambda = dColor(pixel) * solidAngle;
             
             auto &shc = shCoeff[k];
             shc[0] += lambda * Y0( direction );
@@ -107,35 +109,27 @@ class IrradianceEnvMap {
       channels = img->channels;
       cubemap[++index] = (uint8_t*)img->pixels;
     }
-    float constexpr dColor = 1.0f / static_cast<float>(std::numeric_limits<uint8_t>::max()-1);
+
+    // Gamma correct a uint 8 value.
+    auto const dColor = [](float x) { 
+      return powf(x / static_cast<float>(std::numeric_limits<uint8_t>::max()-1), kGammaCorrection);
+    };
     Prefilter<uint8_t>( cubemap, dColor, w, h, channels, M);
   }
 
-  // [ nope ]
-  // static
-  // void PrefilterHDR( ResourceInfo const& resource, glm::mat4 M[3]) {
-  //   CubemapData_t<float> cubemap{nullptr};
+  static
+  void PrefilterHDR( ResourceInfo const& resource, IrradianceMatrices_t &M) {
+    CubemapData_t<float> cubemap{nullptr};
 
-  //   auto img = Resources::Get<Image>( resource.id ).data;
-  //   for (int i=0; i<img->depth; ++i) {
-  //     cubemap[i] = ((float*)img->pixels) + img->width * img->height * img->channels;
-  //   }
+    auto img = Resources::Get<Image>( resource.id ).data;
+    for (int i=0; i<img->depth; ++i) {
+      cubemap[i] = ((float*)img->pixels) + i * img->width * img->height * img->channels;
+    }
 
-    
-  //   int const size = img->width * img->height * img->depth * img->channels; 
-  //   float maxf = -std::numeric_limits<float>::max();
-  //   float minf = std::numeric_limits<float>::max();
-    
-  //   for (int i=0; i<size; i++) {
-  //     maxf = std::max( ((float*)img->pixels)[i], maxf);
-  //     minf = std::min( ((float*)img->pixels)[i], minf);
-  //   }
-
-
-  //   float dColor = 10.0f / maxf; //
-
-  //   Prefilter<float>( cubemap, dColor, img->width, img->height, img->channels, M);
-  // }
+    // Small scale down of the floating point value.
+    auto const dColor = [](float x) { return 0.1f*x; };
+    Prefilter<float>( cubemap, dColor, img->width, img->height, img->channels, M);
+  }
 
  private:
   static constexpr int32_t kNumSHCoeff  = 9;
