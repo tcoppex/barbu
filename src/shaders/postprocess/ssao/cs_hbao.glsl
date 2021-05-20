@@ -121,7 +121,6 @@ float computeHBAO(vec2 p, vec2 t, int centerId) {
 // Compute view-space coordinates from the depth texture
 //------------------------------------------------------------------------------
 vec2 fetchVSfromDepth(in ivec2 xy, in vec2 sel) {
-  
   const vec2 uv = (vec2(xy) + 0.5f) * uAOResolution.zw;
   const float z_eye = texture(uTexLinearDepth, uv).r;
 
