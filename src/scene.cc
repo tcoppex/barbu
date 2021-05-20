@@ -32,14 +32,15 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
     // Scalp.
     // [todo: extract from the GLTF model directly]
     auto const scalpId = AssetId( 
-      ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" 
+      ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj"
     );
     hair_.init( scalpId ); //
 
+    scene_hierarchy_.add_bounding_sphere(0.25f);
 #else
     auto e = scene_hierarchy_.import_model(
-      // ASSETS_DIR "/models//gltf_samples/RiggedFigure.glb" 
-      ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
+      //ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
+      ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
     );
 
     params_.enable_hair = false;
@@ -130,7 +131,19 @@ void Scene::update(float const dt, Camera &camera) {
   if (params_.enable_particle) {
     particle_.update(dt, camera);
   }
+
   if (params_.enable_hair) {
+    // ------------
+    if (auto const&colliders = scene_hierarchy_.colliders(); !colliders.empty()) {
+      auto const& e = colliders.front();
+      auto const& bsphere = e->get<SphereColliderComponent>();
+
+      auto data = scene_hierarchy_.global_matrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
+      data.w = bsphere.radius();
+      hair_.set_bounding_sphere( data );  
+    }
+    // ------------
+
     hair_.update(dt);
   }
 }
@@ -143,6 +156,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
   gx::DepthMask( true );
   gx::Enable( gx::State::CullFace );
   gx::CullFace( gx::Face::Back );
+  gx::Enable( gx::State::CubeMapSeamless );
 
   // -------------------------
   // -- SKYBOX
@@ -153,7 +167,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
     // first rendered object, which is supposed to, but it depends on the pass.
     gx::Disable( gx::State::DepthTest );
     gx::CullFace( gx::Face::Front );
-    gx::Enable( gx::State::CubeMapSeamless );
+    //gx::Enable( gx::State::CubeMapSeamless );
     gx::DepthMask( false );
 
     if (params_.show_skybox) {
@@ -161,7 +175,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
     }
 
     gx::DepthMask( true );
-    gx::Disable( gx::State::CubeMapSeamless );
+    //gx::Disable( gx::State::CubeMapSeamless );
     gx::CullFace( gx::Face::Back );
     gx::Enable( gx::State::DepthTest );
   }
@@ -301,6 +315,9 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
  
     // Display rigs with debug shapes.
     scene_hierarchy_.render_debug_rigs();
+
+    // Display colliders with debug shapes.
+    scene_hierarchy_.render_debug_colliders();
   }
 
   CHECK_GX_ERROR();
@@ -348,6 +365,7 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
     }
 
     // (fragment)
+    attributes.envmap_texid        = skybox_.get_texture_id();
     attributes.irradiance_matrices = skybox_.irradiance_matrices();
     attributes.eye_position        = camera.position();
     //attributes.tonemap_mode      = tonemap_mode;
