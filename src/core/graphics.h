@@ -116,11 +116,11 @@ uint32_t Get(uint32_t pname);
 
 // Texture  -------------------------------------------------------------------
 
-void BindSampler(int image_unit, SamplerName name = SamplerName::kDefaultSampler);
-void UnbindSampler(int image_unit);
+void BindSampler(int unit, SamplerName name = SamplerName::kDefaultSampler);
+void UnbindSampler(int unit);
 
-void BindTexture(uint32_t tex, int image_unit = 0, SamplerName name = SamplerName::kDefaultSampler);
-void UnbindTexture(int image_unit = 0);
+void BindTexture(uint32_t tex, int unit = 0, SamplerName name = SamplerName::kDefaultSampler);
+void UnbindTexture(int unit = 0);
 
 // Program --------------------------------------------------------------------
 
@@ -131,10 +131,10 @@ int32_t UniformLocation(uint32_t pgm, std::string_view name);
 int32_t AttribLocation(uint32_t pgm, std::string_view name);
 
 template<typename T>
-void SetUniform( uint32_t pgm, int32_t loc, T const& value);
+void SetUniform(uint32_t pgm, int32_t loc, T const& value);
 
 template<typename T>
-void SetUniform( uint32_t pgm, std::string_view name, T const& value) {
+void SetUniform(uint32_t pgm, std::string_view name, T const& value) {
   int32_t const loc = UniformLocation( pgm, name);
   if (loc > -1) {
     SetUniform<T>( pgm, loc, value);
@@ -142,10 +142,10 @@ void SetUniform( uint32_t pgm, std::string_view name, T const& value) {
 }
 
 template<typename T>
-void SetUniform( uint32_t pgm, int32_t loc, T const* value, int32_t n);
+void SetUniform(uint32_t pgm, int32_t loc, T const* value, int32_t n);
 
 template<typename T>
-void SetUniform( uint32_t pgm, std::string_view name, T const* value, int32_t n) {
+void SetUniform(uint32_t pgm, std::string_view name, T const* value, int32_t n) {
   int32_t const loc = UniformLocation( pgm, name);
   if (loc > -1) {
     SetUniform<T>( pgm, loc, value, n);

@@ -269,22 +269,22 @@ uint32_t Get(uint32_t pname) {
   return static_cast<uint32_t>(v);
 }
 
-void BindSampler(int image_unit, SamplerName name) {
-  glBindSampler(image_unit, sSamplers[name]);
+void BindSampler(int unit, SamplerName name) {
+  glBindSampler(unit, sSamplers[name]);
 }
 
-void UnbindSampler(int image_unit) {
-  glBindSampler(image_unit, 0);
+void UnbindSampler(int unit) {
+  glBindSampler(unit, 0);
 }
 
-void BindTexture(uint32_t tex, int image_unit, SamplerName name) {
-  glBindTextureUnit(image_unit, tex);
-  BindSampler(image_unit, name);
+void BindTexture(uint32_t tex, int unit, SamplerName name) {
+  glBindTextureUnit(unit, tex);
+  BindSampler(unit, name);
 }
 
-void UnbindTexture(int image_unit) {
-  glBindTextureUnit(image_unit, 0);
-  UnbindSampler(image_unit);
+void UnbindTexture(int unit) {
+  glBindTextureUnit(unit, 0);
+  UnbindSampler(unit);
 }
 
 void UseProgram(uint32_t pgm) {
