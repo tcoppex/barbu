@@ -131,6 +131,10 @@ void GetTextureInfo(int32_t internalFormat, int32_t &format, int32_t &type) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
+int32_t Texture::GetMaxMipMapLevel(int32_t w, int32_t h) {
+  return static_cast<int32_t>(glm::log(glm::min(w, h)) * 1.4426950408889634);
+}
+
 void Texture::allocate() {
   assert( params.target > 0 );
   if (!loaded()) {
@@ -186,13 +190,16 @@ bool Texture::setup() {
       z = img->depth;
       pixels = img->pixels;
 
-      // Force format consistency..
-      format = (img->channels == 4) ? GL_RGBA : (img->channels == 3) ? GL_RGBA : (img->channels == 2) ? GL_RG : GL_RED;
+      // [fixme] Force format consistency.. 
+      format = (img->channels == 4) ? GL_RGBA : 
+               (img->channels == 3) ? GL_RGBA : //
+               (img->channels == 2) ? GL_RG : 
+                                      GL_RED;
     }
     bool const resolution_changed = (w != params.w) || (h != params.h);
     
-    // Fix incorect levels. [improve?]
-    int32_t const max_levels = static_cast<int32_t>(glm::log(glm::min(w, h)) * 1.4426950408889634);
+    // Fix incorrect levels. [improve?]
+    int32_t const max_levels = GetMaxMipMapLevel(w, h);
     params.levels = glm::min(params.levels, max_levels);  
 
     // [ somes cases might have been missed ]
@@ -214,40 +221,47 @@ bool Texture::setup() {
   else if (GL_TEXTURE_CUBE_MAP == params.target) 
   {
     constexpr int kCubeFaces = 6;
-    assert((nresources == kCubeFaces) || (nresources == 1));
-
-    glBindTextureUnit(0, id);
     
-    for (int i = 0; i < nresources; ++i) {
-      auto img = Resources::GetUpdated<Resource_t>( resources[i] ).data;
-      if (nullptr == img) {
-        return false;
-      }
+    if ((nresources == kCubeFaces) || (nresources == 1)) {
+      // Individual faces or crossed HDR image.
 
-      w = img->width;
-      h = img->height;
-      z = img->depth;
-      pixels = img->pixels;
+      for (int i = 0; i < nresources; ++i) {
+        auto img = Resources::GetUpdated<Resource_t>( resources[i] ).data;
+        if (nullptr == img) {
+          return false;
+        }
 
-      // Defines storage only on first pass. 
-      // [should also check the resolution has not changed !]
-      if ((0 == i) && (resources[0].version <= 0)) {
-        glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
-      }
-      
-      if (nresources == kCubeFaces) {
-        // (multiple rgb8 images)
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, 0, 0, w, h, format, type, pixels);
-      } else if ((nresources == 1) && (z == kCubeFaces)) {
-        // crossed HDR (array of rgb floating point image)
-        int32_t const face_size = w * h * img->channels;
-        for (int j = 0; j<z; ++j) {
-          glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + j, 0, 0, 0, w, h, format, type, (float*)pixels + j * face_size);
+        w = img->width;
+        h = img->height;
+        z = img->depth;
+        pixels = img->pixels;
+
+        // Defines storage only on first pass. 
+        // [should also check the resolution has not changed !]
+        if ((0 == i) && (resources[0].version <= 0)) {
+          glTextureStorage2D(id, params.levels, params.internalFormat, w, h); //
+        }
+        
+        if (nresources == kCubeFaces) {
+          // (multiple rgb8 images)
+          glTextureSubImage3D(  id, 0,  0, 0, i, w, h, 1, format, type, pixels);
+
+        } else if ((nresources == 1) && (z == kCubeFaces)) {
+          // crossed HDR (array of rgb floating point image)
+          int32_t const face_size = w * h * img->channels;
+
+          for (int j = 0; j < z; ++j) {
+            void *data = (float*)pixels + j * face_size;
+            glTextureSubImage3D(  id, 0,  0, 0, j,  w, h, 1,  format, type, data);
+          }
         }
       }
+    } else if (nresources == 0) {
+      // Empty cubemap.
+      glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
+    } else {
+      LOG_ERROR( "Cubemap format not implemented." );
     }
-    
-    glBindTextureUnit(0, 0);
   }
   else
   {
@@ -279,6 +293,7 @@ bool Texture::setup() {
 // ----------------------------------------------------------------------------
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, int internalFormat, ResourceId const& resource) {
+  assert(levels >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_2D;
   params.levels         = levels;
@@ -288,12 +303,13 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, i
 }
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, ResourceId const& resource) {
-  int32_t const levels = 4; //
+  int32_t const levels  = 4; //
   int32_t const internalFormat = GL_RGBA8; //
   return create2d(id, levels, internalFormat, resource);
 }
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels) {
+  assert(levels >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_2D;
   params.levels         = levels;
@@ -307,6 +323,7 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, i
 // ----------------------------------------------------------------------------
 
 TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, int levels, int internalFormat, ResourceInfoList const& dependencies) {
+  assert(levels >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_CUBE_MAP;
   params.levels         = levels;
@@ -316,16 +333,30 @@ TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, int leve
 }
 
 TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, ResourceInfoList const& dependencies) {
-  int32_t const levels = 1;
+  int32_t const levels  = 1;
   int32_t const internalFormat = GL_RGBA8;
   return createCubemap(id, levels, internalFormat, dependencies);  
 }
+
+TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels) {
+  assert(levels >= 1);
+  Parameters_t params;
+  params.target         = GL_TEXTURE_CUBE_MAP;
+  params.levels         = levels;
+  params.internalFormat = internalFormat;
+  params.w              = w;
+  params.h              = h;
+  params.pixels         = pixels;
+  return create(id, params);
+}
+
+// ----------------------------------------------------------------------------
 
 TextureFactory::Handle TextureFactory::createCubemapHDR(AssetId const& id, ResourceId const& resource) {
   Parameters_t params;
   params.target         = GL_TEXTURE_CUBE_MAP;
   params.levels         = 1;
-  params.internalFormat = GL_RGBA16F;
+  params.internalFormat = GL_RGBA16F; //
   params.dependencies.add_resource( (resource.h == 0) ? id : resource );
   return create(id, params);
 }

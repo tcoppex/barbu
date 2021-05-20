@@ -25,6 +25,9 @@ struct Texture : Asset<TextureParameters, Image> {
   // Otherwhise the texture is reloaded only when the resolution has not changed.
   static constexpr bool kImmutableResolution = false;
 
+  // Return the maximum mip map level for a 2d texture.
+  static int32_t GetMaxMipMapLevel(int32_t w, int32_t h);
+
  public:
   Texture(Parameters_t const& _params)
     : Asset(_params)
@@ -64,6 +67,7 @@ class TextureFactory : public AssetFactory<Texture> {
   // Cubemap.
   Handle createCubemap(AssetId const& id, int levels, int internalFormat, ResourceInfoList const& dependencies);
   Handle createCubemap(AssetId const& id, ResourceInfoList const& dependencies);
+  Handle createCubemap(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels = nullptr);
   // Crossed HDR Cubemap.
   Handle createCubemapHDR(AssetId const& id, ResourceId const& resource = nullptr);
 };

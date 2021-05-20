@@ -32,33 +32,36 @@ ImageManager::Handle ImageManager::_load(ResourceId const& id) {
   auto img = h.data;
   char const* filename = id.path.c_str();
 
+  stbi_set_flip_vertically_on_load(false);
+
   if (stbi_is_hdr(filename)) {
-    // We only accept HDR file containing "crossed" cubemap (detected by filename).
-    if (id.path.find("cross") == std::string::npos) {
-      LOG_ERROR( "Only cross cubemap HDR image are accepted." );
-      return h;
-    }
     img->hdr = true;
     img->pixels = stbi_loadf(filename, &img->width, &img->height, &img->channels, kDefaultNumChannels); //
-
-    // Reorganized cubemap data as an array of faces.
-    if (img->pixels != nullptr) {
-      setup_crossed_hdr(*img);
-    }
   } else {
     img->hdr = false;
     img->pixels = stbi_load( filename, &img->width, &img->height, &img->channels, kDefaultNumChannels); //
-    img->depth = 1;
   }
 
-  // Force the number of channels to what we've required.
+  // Force the number of channels to maximum.
+  // [ this could be overkill but it more or less assure stability across the pipeline ]
   img->channels = kDefaultNumChannels;
+  img->depth = 1;
 
   if (nullptr == img->pixels) {
     LOG_WARNING( "Image Resource load failed for :", id.c_str());
     h.data.reset();
     h.data = nullptr;
+  } else if (img->hdr) {
+    // Reorganized HDR data to fit inside a cubemap.
+    bool const is_crossed{id.path.find("cross") != std::string::npos};
+    if (is_crossed) {
+      setup_crossed_hdr(*img);
+    } else {
+      // [ transform equirectangular to cubemap here ? ]
+    }
   }
+
+
   LOG_DEBUG_INFO(__FUNCTION__, id.c_str());
 
   return h;
@@ -134,6 +137,7 @@ void ImageManager::setup_crossed_hdr(Image &img) {
       data[dst + 0] = ((float*)img.pixels)[src + 0];
       data[dst + 1] = ((float*)img.pixels)[src + 1];
       data[dst + 2] = ((float*)img.pixels)[src + 2];
+      data[dst + 3] = ((float*)img.pixels)[src + 3]; //
     }
   }
 
