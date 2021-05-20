@@ -9,7 +9,7 @@ list(APPEND Sources
   scene.cc
 
   animation/skeleton.cc
-  animation/blend_tree.cc
+  # animation/blend_tree.cc
   animation/skeleton_controller.cc
 
   core/graphics.cc
@@ -25,6 +25,7 @@ list(APPEND Sources
   fx/hair.cc
   fx/marschner.cc
   fx/skybox.cc
+  fx/probe.cc
   fx/postprocess/postprocess.cc
   fx/postprocess/hbao.cc
 
@@ -56,8 +57,8 @@ list(APPEND Headers
   animation/skeleton.h
   animation/skeleton_controller.h
   animation/common.h
-  animation/blend_tree.h
-  animation/blend_node.h
+  # animation/blend_tree.h
+  # animation/blend_node.h
 
   core/app.h
   core/events.h
