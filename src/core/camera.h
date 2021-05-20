@@ -30,13 +30,19 @@ class Camera {
   };
 
  public:
-  Camera(ViewController *controller) 
-    : controller_(controller)
+  Camera()
+    : controller_(nullptr)
     , width_(kDefaultSize)
     , height_(kDefaultSize)
     , fov_(1.0f)
-    , linear_params_{0.f} 
+    , linear_params_{0.0f} 
   {}
+
+  Camera(ViewController *controller) 
+    : Camera()
+  {
+    controller_ = controller;
+  }
 
   void set_perspective(float fov, int w, int h, float near, float far) {
     fov_    = fov;
@@ -59,14 +65,15 @@ class Camera {
   // }
 
   void update(float dt) {
-    controller_->update(dt);
-    controller_->get_view_matrix(glm::value_ptr(view_));
-    world_    = glm::inverse(view_);
-    viewproj_ = proj_ * view_;
+    if (controller_) {
+      controller_->update(dt);
+      controller_->get_view_matrix(glm::value_ptr(view_));
+      world_    = glm::inverse(view_);
+      viewproj_ = proj_ * view_;
+    }
   }
 
   inline ViewController *controller() { return controller_; }
-
   inline ViewController const* controller() const { return controller_; }
 
   inline float fov() const noexcept { return fov_; }
