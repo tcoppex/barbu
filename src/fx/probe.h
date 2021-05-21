@@ -59,7 +59,7 @@ class Probe {
 
   // Update all 6 faces of the cubemap by providing a draw callback expecting 
   // a view projection matrix. 
-  void process(DrawCallback_t draw_cb);
+  void capture(DrawCallback_t draw_cb);
 
   inline int32_t resolution() const { return resolution_; }
   inline TextureHandle texture() const { return texture_; }
