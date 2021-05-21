@@ -30,6 +30,7 @@ glCreateBuffers
 glCreateFramebuffers
 glCreateProgram
 glCreateQueries
+glCreateRenderbuffers
 glCreateSamplers
 glCreateShader
 glCreateShaderProgramv
@@ -40,6 +41,7 @@ glDeleteBuffers
 glDeleteFramebuffers
 glDeleteProgram
 glDeleteQueries
+glDeleteRenderbuffers
 glDeleteSamplers
 glDeleteShader
 glDeleteTransformFeedbacks
@@ -58,6 +60,7 @@ glEnableVertexAttribArray
 glEndQuery
 glEndTransformFeedback
 glFramebufferTexture
+glFramebufferTexture2D
 glGenBuffers
 glGenerateMipmap
 glGenerateTextureMipmap
@@ -82,10 +85,12 @@ glMemoryBarrier
 glNamedBufferData
 glNamedBufferStorage
 glNamedBufferSubData
+glNamedFramebufferRenderbuffer
 glNamedFramebufferTexture
+glNamedRenderbufferStorage
 glPatchParameteri
-glProgramUniform1i
 glProgramUniform1f
+glProgramUniform1i
 glProgramUniform1ui
 glProgramUniform2fv
 glProgramUniform3fv
