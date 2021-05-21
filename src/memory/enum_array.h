@@ -8,7 +8,7 @@
 // Wrap an array to accept enum class as indexer.
 // Original code from Daniel P. Wright.
 template<typename T, typename Indexer>
-class EnumArray : std::array<T, static_cast<size_t>(Indexer::kCount)> {
+class EnumArray : public std::array<T, static_cast<size_t>(Indexer::kCount)> {
   using super = std::array<T, static_cast<size_t>(Indexer::kCount)>;
 
  public:
@@ -19,8 +19,6 @@ class EnumArray : std::array<T, static_cast<size_t>(Indexer::kCount)> {
 
   T&       operator[](Indexer i)       { return super::at((size_t)i); }
   const T& operator[](Indexer i) const { return super::at((size_t)i); }
-
-  //T* data() { return super::data(); }
 
   EnumArray() : super() {}
   using super::operator[];
