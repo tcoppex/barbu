@@ -23,7 +23,7 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
-#if 0
+#if 1
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -39,8 +39,8 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
     scene_hierarchy_.add_bounding_sphere(0.25f);
 #else
     auto e = scene_hierarchy_.import_model(
-      //ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
-      ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
+      ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
+      //ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
     );
 
     params_.enable_hair = false;
@@ -115,15 +115,19 @@ void Scene::update(float const dt, Camera &camera) {
   }
 
   // Import drag-n-dropped objects & center them to camera target.
-  for (auto &fn : eventData.dragFilenames) {
-    auto const ext = fn.substr(fn.find_last_of(".") + 1);
-    if (MeshDataManager::CheckExtension(ext)) {
-      if (auto e = scene_hierarchy_.import_model(fn); e) {
-        e->set_position( camera.target() );
+  {
+    // constexpr float kDragNDropDistance = 2.0f;
+    // auto const dnd_target = camera.position() + kDragNDropDistance * camera.direction();
+    for (auto &fn : eventData.dragFilenames) {
+      auto const ext = fn.substr(fn.find_last_of(".") + 1);
+      if (MeshDataManager::CheckExtension(ext)) {
+        if (auto e = scene_hierarchy_.import_model(fn); e) {
+          e->set_position( camera.target() );
+        }
       }
     }
   }
-
+  
   // Update sub-systems.
   scene_hierarchy_.update(dt, camera);
   grid_.update(dt, camera);

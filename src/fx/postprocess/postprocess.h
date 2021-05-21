@@ -79,7 +79,7 @@ class Postprocess {
   bool bEnable_;
 
   // Input buffers.
-  GLuint fbos_[kNumBuffers];
+  GLuint fbos_[kNumBuffers];  //
   InternalBuffers_t buffers_[kNumBuffers];
   int current_buffer_;
 

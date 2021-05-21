@@ -192,7 +192,7 @@ void App::update_time() {
     auto const tick      = std::chrono::steady_clock::now();
     auto const time_span = std::chrono::duration_cast<std::chrono::duration<double>>(tick - time_);
     time_      = tick;
-    deltatime_ = static_cast<float>(time_span.count()); // [overwritten]
+    //deltatime_ = static_cast<float>(time_span.count()); // [overwritten]
     return time_span;
   };
 
