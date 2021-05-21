@@ -93,6 +93,9 @@ void Disable(State cap);
 
 bool IsEnabled(State cap);
 
+void Viewport(float x, float y, float w, float h);
+void Viewport(float w, float h);
+
 void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor);
 
 void ClearColor(float r, float g, float b, float a = 1.0f);

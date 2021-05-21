@@ -229,6 +229,15 @@ bool IsEnabled(State cap) {
   return glIsEnabled( gl_capability[cap] );
 }
 
+
+void Viewport(float x, float y, float w, float h) {
+  glViewport( x, y, w, h);
+}
+
+void Viewport(float w, float h) {
+  Viewport( 0.0f, 0.0f, w, h);
+}
+
 void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor) {
   glBlendFunc( gl_blendfactor[src_factor], gl_blendfactor[dst_factor] );
 }
