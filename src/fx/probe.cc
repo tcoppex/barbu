@@ -73,6 +73,17 @@ void Probe::release() {
   // [todo : release texture asset]
 }
 
+void Probe::capture(DrawCallback_t draw_cb) {
+  begin();
+  for (auto const& face : kIterFaces) {
+    setup_face(face);
+    draw_cb(sCamera);
+  }
+  end();
+}
+
+// ----------------------------------------------------------------------------
+
 void Probe::begin() {
   sCamera.set_controller(&view_controller_);
   gx::Viewport(resolution_, resolution_);
@@ -94,15 +105,6 @@ Camera const& Probe::setup_face(CubeFace face) {
   sCamera.rebuild();
 
   return sCamera;
-}
-
-void Probe::process(DrawCallback_t draw_cb) {
-  begin();
-  for (auto const& face : kIterFaces) {
-    setup_face(face);
-    draw_cb(sCamera);
-  }
-  end();
 }
 
 // ----------------------------------------------------------------------------

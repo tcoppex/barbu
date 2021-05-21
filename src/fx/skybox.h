@@ -8,8 +8,8 @@
 #include "memory/assets/program.h"
 class Camera;
 
-// for IraddianceMatrices
 #include "fx/irradiance_env_map.h"
+#include "fx/probe.h"
 
 // ----------------------------------------------------------------------------
 
@@ -18,7 +18,6 @@ class Skybox {
   Skybox() = default;
 
   void init();
-  
   void deinit();
 
   void render(Camera const& camera);
@@ -34,8 +33,8 @@ class Skybox {
 
   ProgramHandle pgm_transform_;
 
-  // Skybox irradiance spherical harmonics matrices.
   IrradianceMatrices_t shMatrices_;
+  Probe probe_;
 };
 
 // ----------------------------------------------------------------------------

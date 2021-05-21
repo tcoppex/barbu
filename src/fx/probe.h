@@ -10,7 +10,7 @@
 
 // ----------------------------------------------------------------------------
 
-// Enum to face indices of a cube map.
+// Enum to face indices of a cubemap.
 enum class CubeFace {
   PosX = 0,
   NegX,
@@ -25,7 +25,7 @@ enum class CubeFace {
 // ----------------------------------------------------------------------------
 
 //
-// Capture HDR cubemap. [Work in Progress]
+// Capture HDR environment cubemap.
 //
 class Probe {
  public:
@@ -51,20 +51,22 @@ class Probe {
   void init(int32_t const resolution = kDefaultCubemapResolution);
   void release();
 
-  void begin();
-  void end();
-
-  // Prepare the face to render and return its view matrices.
-  Camera const& setup_face(CubeFace face);
-
   // Update all 6 faces of the cubemap by providing a draw callback expecting 
-  // a view projection matrix. 
+  // a view projection matrix.
   void capture(DrawCallback_t draw_cb);
 
   inline int32_t resolution() const { return resolution_; }
   inline TextureHandle texture() const { return texture_; }
 
  private:
+  // Intialize the internal framebuffer for capture.
+  void begin();
+  void end();
+
+  // Prepare the face to render and return its view matrices.
+  // Should be called between begin() / end().
+  Camera const& setup_face(CubeFace face);
+
   // Probe camera view controller.
   class ViewController final : public Camera::ViewController {
    public:

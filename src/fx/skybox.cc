@@ -96,12 +96,16 @@ void Skybox::init() {
   glBindImageTexture( image_unit, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA16F);
 #endif
 
+  // probe_.init();
+  // probe_.capture([this](Camera const& camera) { this->render(camera); });
+
   CHECK_GX_ERROR();
 }
 
 void Skybox::deinit() {
-  cubemesh_.reset();
-  skytex_.reset();
+  cubemesh_.reset(); //
+  skytex_.reset(); //
+  probe_.release();
 }
 
 void Skybox::render(Camera const& camera) {
