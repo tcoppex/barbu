@@ -76,7 +76,7 @@ list(APPEND Headers
   fx/gpu_particle.h
   fx/grid.h
   fx/hair.h
-  fx/irradiance_env_map.h
+  fx/irradiance.h
   fx/marschner.h
   fx/skybox.h
   fx/postprocess/postprocess.h
