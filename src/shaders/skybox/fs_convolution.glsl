@@ -16,7 +16,7 @@ layout(location = 0) out vec4 fragColor;
 
 // Uniforms.
 uniform samplerCube uCubemap;
-uniform int uNumLongSamples = 200;
+uniform int uNumLongSamples = 256;
 
 // ----------------------------------------------------------------------------
 
