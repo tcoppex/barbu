@@ -8,7 +8,6 @@
 layout(location = 0) in vec3 inPositionWS;
 layout(location = 1) in vec2 inTexcoord;
 layout(location = 2) in vec3 inNormalWS;
-// layout(location = 3) in vec4 inDebugColor;
 
 // Outputs.
 layout(location = 0) out vec4 fragColor;
@@ -20,7 +19,7 @@ layout(location = 0) out vec4 fragColor;
 #include "shared/structs/inc_material.glsl"
 #include "shared/inc_tonemapping.glsl"
 
-// Uniforms : Generic.
+// Uniforms : Default Material.
 uniform vec3 uEyePosWS;
 uniform samplerCube uEnvironmentMap;
 uniform samplerCube uIrradianceMap;
@@ -28,7 +27,7 @@ uniform mat4 uIrradianceMatrices[3];
 uniform bool uHasIrradianceMatrices;
 uniform int uToneMapMode = TONEMAPPING_NONE;
 
-// Uniforms : Material.
+// Uniforms : Generic Material.
 uniform int uColorMode;
 uniform vec4 uColor;
 uniform float uAlphaCutOff;
@@ -56,7 +55,8 @@ vec3 get_irradiance(in vec3 normalWS) {
       dot( n, uIrradianceMatrices[2] * n)
     );
   } else {
-    irradiance = texture( uIrradianceMap, normalWS).rgb;
+    const float irr_factor = 0.85; //
+    irradiance = irr_factor * texture( uIrradianceMap, normalWS).rgb;
   }
 
   return irradiance;
@@ -151,13 +151,13 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
       rgb = vec3(mat.ao);
     break;
 
-    case MATERIAL_GENERIC_COLOR_MODE_METALLIC:
-      rgb = vec3(mat.metallic);
+    case MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS:
+      rgb = vec3(mat.roughness);
       rgb = gamma_uncorrect(rgb);
     break;
 
-    case MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS:
-      rgb = vec3(mat.roughness);
+    case MATERIAL_GENERIC_COLOR_MODE_METALLIC:
+      rgb = vec3(mat.metallic);
       rgb = gamma_uncorrect(rgb);
     break;
   }
