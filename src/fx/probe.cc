@@ -18,7 +18,7 @@ EnumArray<CubeFace, CubeFace> const Probe::kIterFaces{
 
 // Probe::ViewController face view matrices.
 // [this could be reduced to 3x3 matrices]
-EnumArray<glm::mat4, CubeFace> const Probe::ViewController::kViewMatrices{
+EnumArray<glm::mat4, CubeFace> const Probe::kViewMatrices{
   glm::lookAt(glm::vec3(0.0f), glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
   glm::lookAt(glm::vec3(0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
   glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
@@ -27,36 +27,34 @@ EnumArray<glm::mat4, CubeFace> const Probe::ViewController::kViewMatrices{
   glm::lookAt(glm::vec3(0.0f), glm::vec3( 0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
 };
 
-// Shared probe camera [does not handle concurrency].
+// Shared probe camera.
 Camera Probe::sCamera;
 
 // ----------------------------------------------------------------------------
 
-void Probe::init(int32_t const resolution) {
+void Probe::init(int32_t const resolution, bool bUseDepth) {
   resolution_ = resolution;
 
   // Initialize the shared camera if needed.
-  if (sCamera.fov() <= 0.0f) {
-    sCamera.set_perspective(90.0f, 1, 1, 0.1f, 500.0f); //
+  if (!sCamera.initialized()) {
+    LOG_DEBUG_INFO( "Setup the probe shared camera." );
+    sCamera.set_default();
   }
 
   glCreateFramebuffers( 1, &fbo_);
 
   // Attach a renderbuffer for depth testing.
-  glCreateRenderbuffers( 1, &renderbuffer_);
-  glNamedRenderbufferStorage( renderbuffer_, GL_DEPTH_COMPONENT24, resolution_, resolution_);
-  glNamedFramebufferRenderbuffer( fbo_, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer_);
+  if (bUseDepth) {
+    glCreateRenderbuffers( 1, &renderbuffer_);
+    glNamedRenderbufferStorage( renderbuffer_, GL_DEPTH_COMPONENT24, resolution_, resolution_);
+    glNamedFramebufferRenderbuffer( fbo_, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer_);
+  }
 
   // Create a HDR cubemap texture.
   texture_ = TEXTURE_ASSETS.createCubemap( 
     kDefaultProbeName, 1, kProbeInternalFormat, resolution_, resolution_
   );
-  assert( texture_ != nullptr );
-  glNamedFramebufferTexture(fbo_, GL_COLOR_ATTACHMENT0, texture_->id, 0);
-  
-  if (!gx::CheckFramebufferStatus()) {
-    LOG_ERROR( "Probe framebuffer completion has failed." );
-  }
+  LOG_CHECK( texture_ != nullptr );
 
   CHECK_GX_ERROR();
 }
@@ -65,12 +63,12 @@ void Probe::release() {
   if (fbo_ != 0u) {
     glDeleteFramebuffers( 1, &fbo_);
     fbo_ = 0u;
+  }
 
+  if (renderbuffer_ != 0u) {
     glDeleteRenderbuffers( 1, &renderbuffer_);
     renderbuffer_ = 0u;
   }
-
-  // [todo : release texture asset]
 }
 
 void Probe::capture(DrawCallback_t draw_cb) {
@@ -93,18 +91,23 @@ void Probe::begin() {
 void Probe::end() {
   sCamera.set_controller(nullptr);
   glBindFramebuffer(GL_FRAMEBUFFER, 0u);
+  glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
+
+  CHECK_GX_ERROR();
 }
 
-Camera const& Probe::setup_face(CubeFace face) {
-  auto const target{ GL_TEXTURE_CUBE_MAP_POSITIVE_X + static_cast<int32_t>(face) };
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, texture_->id, 0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //
+void Probe::setup_face(CubeFace face) {
+  // Attach the cubemap face to the framebuffer color output.
+  auto const face_id{ static_cast<int32_t>(face) };
+  glNamedFramebufferTextureLayer( fbo_, GL_COLOR_ATTACHMENT0, texture_->id, 0, face_id);
+  LOG_CHECK( gx::CheckFramebufferStatus() );
+
+  // [ the user is responsible to clear the framebuffer when needed ]
+  //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
   
   // Update camera internal matrices.
   view_controller_.set_face(face);
   sCamera.rebuild();
-
-  return sCamera;
 }
 
 // ----------------------------------------------------------------------------

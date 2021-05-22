@@ -34,6 +34,9 @@ class Probe {
   // Array to iter over cubeface enums.
   static EnumArray<CubeFace, CubeFace> const kIterFaces;
 
+  // View matrices for each faces of an axis aligned cube.
+  static EnumArray<glm::mat4, CubeFace> const kViewMatrices;
+
  public:
   using DrawCallback_t = std::function<void(Camera const&)>;
 
@@ -48,7 +51,7 @@ class Probe {
     release();
   }
 
-  void init(int32_t const resolution = kDefaultCubemapResolution);
+  void init(int32_t const resolution = kDefaultCubemapResolution, bool bUseDepth = true);
   void release();
 
   // Update all 6 faces of the cubemap by providing a draw callback expecting 
@@ -59,39 +62,32 @@ class Probe {
   inline TextureHandle texture() const { return texture_; }
 
  private:
-  // Intialize the internal framebuffer for capture.
+  // Setup the internal framebuffer for capture.
   void begin();
   void end();
 
-  // Prepare the face to render and return its view matrices.
-  // Should be called between begin() / end().
-  Camera const& setup_face(CubeFace face);
+  // Prepare the face to render, shall be called between begin() / end().
+  void setup_face(CubeFace face);
 
   // Probe camera view controller.
   class ViewController final : public Camera::ViewController {
    public:
-    // View matrices for each faces of an axis aligned cube.
-    static EnumArray<glm::mat4, CubeFace> const kViewMatrices;
-
     virtual ~ViewController() {}
 
     inline void set_face(CubeFace face) { face_ = face; }
-    inline void get_view_matrix(float *m) final { memcpy(m, glm::value_ptr(kViewMatrices[face_]), 16 * sizeof(float)); } 
-    inline glm::vec3 target() const final { return glm::vec3(0.0f); }
+    inline void get_view_matrix(float *m) final { memcpy(m, glm::value_ptr(Probe::kViewMatrices[face_]), 16 * sizeof(float)); } 
+    inline glm::vec3 target() const final { return glm::vec3(0.0f); } //
 
    private:
     CubeFace face_ = CubeFace::PosX;
   } view_controller_;
-  
-  // Shared probe camera. 
-  static Camera sCamera;
+   
+  static Camera sCamera;                                //< Shared probe camera.
 
-  int32_t resolution_;
-
-  // [todo : use generic objects]
-  uint32_t fbo_;
-  uint32_t renderbuffer_;
-  TextureHandle texture_;
+  int32_t resolution_;                                  //< Framebuffer resolution.
+  uint32_t fbo_; //                                     //< Framebuffer object.
+  uint32_t renderbuffer_; //                            //< Renderbuffer (for depth).
+  TextureHandle texture_;                               //< Environment map.
 };
 
 // ----------------------------------------------------------------------------
