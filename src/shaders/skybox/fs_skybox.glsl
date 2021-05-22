@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 
 // Inputs.
-layout(location = 0) in vec3 inTexcoord;
+layout(location = 0) in vec3 inView;
 
 // Outputs.
 layout(location = 0) out vec4 fragColor;
@@ -15,7 +15,7 @@ uniform vec4 uFactors = vec4(1.0);
 // ----------------------------------------------------------------------------
 
 void main() {
-  fragColor = uFactors*texture(uCubemap, inTexcoord, 0);
+  fragColor = uFactors * texture(uCubemap, inView, 0);
 }
 
 // ----------------------------------------------------------------------------

@@ -9,10 +9,12 @@
 class Camera;
 
 #include "fx/irradiance_env_map.h"
-#include "fx/probe.h"
 
 // ----------------------------------------------------------------------------
 
+//
+//
+//
 class Skybox {
  public:
   Skybox() = default;
@@ -22,19 +24,32 @@ class Skybox {
 
   void render(Camera const& camera);
 
-  uint32_t get_texture_id() const { return skytex_ ? skytex_->id : 0u; } //
+  TextureHandle texture() { return sky_map_; }
+  TextureHandle irradiance_map() { return irradiance_map_; }
 
-  inline glm::mat4 const* irradiance_matrices() const { return shMatrices_.data(); }
+  inline glm::mat4 const* irradiance_matrices() const { return sh_matrices_.data(); }
 
  private:
-  MeshHandle cubemesh_;
-  ProgramHandle pgm_;
-  TextureHandle skytex_;
+  void setup_texture(/*ResourceInfo info*/);
 
-  ProgramHandle pgm_transform_;
+  enum class RenderMode {
+    Sky,
+    Convolution,
+  };
+  void render(RenderMode mode, Camera const& camera);
 
-  IrradianceMatrices_t shMatrices_;
-  Probe probe_;
+  struct {
+    ProgramHandle cs_transform;             //< transform spherical map to cube map.  
+    ProgramHandle render;                   //< render skybox.
+    ProgramHandle convolution;              //< convolute irradiance map.  
+  } pgm_;
+
+  MeshHandle cube_mesh_; //
+
+  TextureHandle sky_map_;                   //< sky cubemap.
+  TextureHandle irradiance_map_;            //< irradiance envmap.
+
+  IrradianceMatrices_t sh_matrices_;        //< irradiances spherical harmonics matrices.
 };
 
 // ----------------------------------------------------------------------------
