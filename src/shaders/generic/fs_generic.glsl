@@ -55,7 +55,7 @@ vec3 get_irradiance(in vec3 normalWS) {
       dot( n, uIrradianceMatrices[2] * n)
     );
   } else {
-    const float irr_factor = 0.85; //
+    const float irr_factor = 0.5; //
     irradiance = irr_factor * texture( uIrradianceMap, normalWS).rgb;
   }
 

@@ -4,8 +4,8 @@
 
 #include "core/glfw.h"
 #include "core/events.h"
-#include "core/logger.h"
 #include "core/global_clock.h"
+#include "core/logger.h"
 #include "memory/assets/assets.h"
 #include "ui/views/Main.h"
 
@@ -15,20 +15,20 @@ bool App::init(char const* title, AppScene *scene) {
   // System parameters.
   std::setbuf(stderr, nullptr);
   rand_seed_ = static_cast<uint32_t>(std::time(nullptr));
-  std::srand(rand_seed_);
+  std::srand(rand_seed_); //
 
   // Init singletons.
-  Logger::Initialize();
   GlobalClock::Initialize();
+  Logger::Initialize();
 
   if (!scene) {
-    LOG_ERROR( "no scene was specified.");
+    LOG_ERROR( "no scene was specified." );
     return false;
   }
 
   // Initialize Window Management API.
   if (!glfwInit()) {
-    LOG_ERROR( "failed to initialize GLFW.");
+    LOG_ERROR( "failed to initialize GLFW." );
     return false;
   }
 
@@ -50,7 +50,7 @@ bool App::init(char const* title, AppScene *scene) {
   // Create the window and OpenGL context.
   window_ = glfwCreateWindow(w, h, title, nullptr, nullptr);
   if (!window_) {
-    LOG_ERROR( "failed to create the window.");
+    LOG_ERROR( "failed to create the window." );
     glfwTerminate();
     return false;
   }
@@ -60,7 +60,7 @@ bool App::init(char const* title, AppScene *scene) {
   glfwSwapInterval(0);
   
   // Init the event manager.
-  InitEvents(window_); //
+  InitEvents(window_);
 
   // Initialize the Graphics API.
   gx::Initialize();
@@ -70,7 +70,6 @@ bool App::init(char const* title, AppScene *scene) {
     gx::Viewport(w, h);
     glClearColor(0.25, 0.27, 0.23, 1.0f); //
     glClear(GL_COLOR_BUFFER_BIT); //
-
     glfwSwapBuffers(window_);
   }
 
@@ -90,7 +89,7 @@ bool App::init(char const* title, AppScene *scene) {
 
   // User Interface init.
   ui_controller_.init(window_);
-  ui_mainview_ = new views::Main(params_);
+  ui_mainview_ = new views::Main(params_); //
   ui_controller_.set_mainview(ui_mainview_);
 
   // Initialize the scene.
@@ -98,7 +97,10 @@ bool App::init(char const* title, AppScene *scene) {
   scene_->init(camera_, *ui_mainview_);
 
   // Start the FPS chrono.
+  // (the framerate is regulated through a local timer)
   time_ = std::chrono::steady_clock::now(); //
+
+  // Resume the clock post-initialization (to skip overhead). 
   GlobalClock::Get().resume();
 
   return true;
@@ -142,10 +144,10 @@ void App::frame() {
   // Update UI.
   ui_controller_.update();
 
-  // Time tracker.
+  // Time tracker and framerate regulation.
   update_time();
 
-  // Resources watchers for live update.
+  // Resources watchers for hot-reloads.
   Resources::WatchUpdate(deltatime_, Assets::UpdateAll);
 
   // Generic updates.
@@ -212,7 +214,7 @@ void App::update_time() {
 
     // The first few clock updates can occurs a very long time after the app initialization.
     // Therefore we stabilize the dt the first frames. [ improve ? ]
-    if (gc.framecount_total() < 2) {
+    if (gc.framecount_total() < 1) {
       gc.stabilize_delta_time( 1000.0 / kMaxFPS );
     }
     gc.update();

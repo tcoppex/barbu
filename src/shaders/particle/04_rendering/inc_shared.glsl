@@ -1,29 +1,28 @@
 #ifndef SHADERS_PARTICLE_RENDERING_SHARED_GLSL_
 #define SHADERS_PARTICLE_RENDERING_SHARED_GLSL_
 
-uniform sampler2D uSpriteSampler2d;
+#include "shared/inc_tonemapping.glsl" // [tmp]
+
 uniform float uFadeCoefficient = 0.25f;
-uniform bool uDebugDaw = false;
+//uniform sampler2D uSpriteSampler2d;
 
 vec4 compute_color(in vec3 base_color, in float decay, in vec2 texcoord) {
-  if (uDebugDaw) {
-    return vec4(1.0f);
-  }
-
   vec4 color = vec4(base_color, 1.0f);
 
   // Centered coordinates.
   const vec2 p = 2.0f * (texcoord - 0.5f);
+  
   // Pixel intensity depends on its distance from center.
-  float d = 1.0f - abs(dot(p, p));
+  const float d = 1.0f - abs(dot(p, p));
 
   // Alpha coefficient.
-  float alpha = smoothstep(0.0f, 1.0f, d);
+  float alpha = smoothstep(0.0f, 1.0f, d) * decay * uFadeCoefficient;
 
   //color = texture(uSpriteSampler2d, texcoord).rrrr;
-  //color *= alpha * decay * uFadeCoefficient;
+  //color *= alpha;
 
-  color.a = alpha * decay * uFadeCoefficient;
+  color.rgb = toneMapping( TONEMAPPING_ROMBINDAHOUSE, color.rgb); //
+  color.a = alpha;
 
   return color;
 }
