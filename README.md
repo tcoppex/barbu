@@ -37,7 +37,7 @@ The following third parties are used :
 * [stb_image 2.26](https://github.com/nothings/stb) : image loader.
 * [cgltf 1.10](https://github.com/jkuhlmann/cgltf) : gltf 2.0 loader.
 
-Some of them are shipped directly, others must be retrieve as submodule :
+Some of them are shipped directly, others must be retrieved as submodule :
 ```bash
 git submodule init
 git submodule update
