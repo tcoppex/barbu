@@ -3,6 +3,8 @@
 #include "shared/inc_maths.glsl"
 #include "shared/lighting/inc_classical.glsl"
 
+#include "shared/inc_tonemapping.glsl" // [tmp]
+
 // ----------------------------------------------------------------------------
 
 // Inputs.
@@ -75,9 +77,6 @@ void main() {
   
   //-------
 
-  // Ambient.
-  const float ambient_factor = 0.1; //
-
   // Marschner Reflectance.
   const vec3 light_dir = normalize(vec3(0.0, 0.0, 1.0));
   const vec3 eye_dir   = normalize(inPosition.xyz); //
@@ -95,12 +94,18 @@ void main() {
     diffuse = apply_light( inNormal, -light_dir, albedo); // XXX
   }
 
+  // Ambient.
+  const float ambient_factor = 0.1; //
+
   //-------
 
   const vec3 lighting = ambient_factor + reflectance * diffuse;
 
-  fragColor.rgb = lighting * albedo;
-  fragColor.a = 1.0;
+  // [ Tonemapping should be done in a final postprocess stage ]
+  vec3 rgb = lighting * albedo;
+  rgb = toneMapping( TONEMAPPING_ROMBINDAHOUSE, rgb); //
+
+  fragColor = vec4( rgb, 1.0);
 }
 
 // ----------------------------------------------------------------------------
