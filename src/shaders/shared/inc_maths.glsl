@@ -51,6 +51,37 @@ mat3 rotationZ(float radians) {
 
 // ----------------------------------------------------------------------------
 
+mat3 basis_from_view(in vec3 z_axis) {
+  vec3 y_axis = vec3(0.0, 1.0, 0.0);
+  vec3 x_axis = normalize(cross(y_axis, z_axis));
+       y_axis = normalize(cross(z_axis, x_axis));
+       z_axis = normalize(z_axis);
+  return mat3(x_axis, y_axis, z_axis); 
+}
+
+// ----------------------------------------------------------------------------
+
+vec2 trig_angle(float radians) {
+  return vec2( cos(radians), sin(radians));
+}
+
+vec2 update_trig_angle(in vec2 base, in vec2 delta, float s) {
+  return vec2(
+    base.x * delta.x - s * base.y * delta.y,
+    base.y * delta.x + s * base.x * delta.y 
+  );
+}
+
+vec2 inc_trig_angle(in vec2 base, in vec2 delta) {
+  return update_trig_angle(base, delta, +1.0);
+}
+
+vec2 dec_trig_angle(in vec2 base, in vec2 delta) {
+  return update_trig_angle(base, delta, -1.0);
+}
+
+// ----------------------------------------------------------------------------
+
 float triangle_area(in vec3 A, in vec3 B, in vec3 C) {
   const vec3 AB = B - A;
   const vec3 AC = C - A;
