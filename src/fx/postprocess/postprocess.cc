@@ -61,13 +61,8 @@ void Postprocess::begin() {
     return;
   }
 
-  // Sometimes, but rarely, the app crash when it begans with postprocessing enabled.
-  // (unless run with GDB ofcourse ...)
-
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbos_[current_buffer_]);
+  glBindFramebuffer(GL_FRAMEBUFFER, fbos_[current_buffer_]);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-  CHECK_GX_ERROR();
 }
 
 void Postprocess::end(Camera const& camera) {
@@ -75,14 +70,14 @@ void Postprocess::end(Camera const& camera) {
     return;
   }
 
-  glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
 
   // Filters input buffers.
   if (bEnable_) {
     post_effects(camera);
   } else {
-    // clear ao buffer (todo)
+    // clear ao buffer (todo ?)
     //glClearNamedFramebufferfv();
   }
 
@@ -91,13 +86,15 @@ void Postprocess::end(Camera const& camera) {
 
   // Copy the depth buffer to the main one to continue forward rendering.
   // (we might as well do this in the CS render_screen pass)
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, fbos_[current_buffer_]);
-  {
-    auto const w = camera.width();
-    auto const h = camera.height();
-    glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-  }
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+  auto const w = camera.width();
+  auto const h = camera.height();
+  glBlitNamedFramebuffer(
+    fbos_[current_buffer_], 0u, 
+    0, 0, w, h, 
+    0, 0, w, h, 
+    GL_DEPTH_BUFFER_BIT, 
+    GL_NEAREST
+  );
 
   // Swap internal buffers.
   current_buffer_ = (current_buffer_ + 1) % kNumBuffers;
@@ -176,9 +173,12 @@ void Postprocess::render_screen() {
       gx::SetUniform(pgm, "uAO", image_unit);
     }
 
-    glBindVertexArray(vao_);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    glBindVertexArray(0);
+    // [ wrap inside gx ]
+    {
+      glBindVertexArray(vao_);
+      glDrawArrays(GL_TRIANGLES, 0, 3);
+      glBindVertexArray(0);
+    }
 
     for (int i = 0; i < image_unit; ++i) {
       gx::UnbindTexture(i);
