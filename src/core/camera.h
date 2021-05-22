@@ -19,7 +19,10 @@
 
 class Camera {
  public:
+  static constexpr float kDefaultFOV    = glm::radians(90.0f);
   static constexpr int32_t kDefaultSize = 512;
+  static constexpr float kDefaultNear   = 0.1f;
+  static constexpr float kDefaultFar    = 500.0f;
 
   class ViewController {
    public:
@@ -32,9 +35,9 @@ class Camera {
  public:
   Camera()
     : controller_(nullptr)
-    , width_(kDefaultSize)
-    , height_(kDefaultSize)
-    , fov_(1.0f)
+    , fov_(0.0f)
+    , width_(0)
+    , height_(0)
     , linear_params_{0.0f} 
   {}
 
@@ -44,7 +47,15 @@ class Camera {
     controller_ = controller;
   }
 
+  inline bool initialized() const {
+    return (fov_ > 0.0f) && (width_ > 0) && (height_ > 0);
+  }
+
   void set_perspective(float fov, int32_t w, int32_t h, float near, float far) {
+    assert( fov > 0.0f );
+    assert( (w > 0) && (h > 0) );
+    assert( (far - near) > 0.0f );
+
     fov_    = fov;
     width_  = w;
     height_ = h;
@@ -55,6 +66,10 @@ class Camera {
     // Linearization parameters.
     float const A  = far / (far - near);
     linear_params_ = glm::vec4( near, far, A, - near * A);
+  }
+
+  void set_default() {
+    set_perspective( kDefaultFOV, kDefaultSize, kDefaultSize, kDefaultNear, kDefaultFar);
   }
 
   // Update controller and rebuild all matrices.
@@ -109,9 +124,9 @@ class Camera {
  private:
   ViewController *controller_;
 
+  float fov_;
   int32_t width_; //
   int32_t height_; //
-  float fov_;
   glm::vec4 linear_params_;
 
   glm::mat4 view_;
