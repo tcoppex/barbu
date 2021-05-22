@@ -2,9 +2,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![screenshot](https://i.imgur.com/qOxWtyo.png)
+![screenshot](https://i.imgur.com/3gtP0iJ.png)
 
-Barbü is a *work in progress*, fairly GPU-based, prototyping framework for real-time 3D graphics, aimed at simulating hair & stuffs.
+Barbü is a prototyping framework for real-time 3D graphics aimed at simulating hair & stuffs.
 
 It is written in **C++ 17** and **OpenGL 4.6**.
 
