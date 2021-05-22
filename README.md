@@ -30,12 +30,12 @@ We will be using the command-line on Unix and [Git Bash](https://git-for-windows
 
 The following third parties are used :
 
-* [GLFW 3.4.0](https://github.com/glfw/glfw) : window management,
-* [GLM 0.9.9.8](https://github.com/g-truc/glm/releases/tag/0.9.9.8) : linear algebra.
-* [imgui 1.83](https://github.com/ocornut/imgui) : user interface.
-* [im3d 1.16](https://github.com/john-chapman/im3d/) : gizmo controller.
-* [stb_image 2.26](https://github.com/nothings/stb) : image loader.
-* [cgltf 1.10](https://github.com/jkuhlmann/cgltf) : gltf 2.0 loader.
+* [GLFW (3.3.4)](https://github.com/glfw/glfw/tree/3.3.4) : window management,
+* [GLM (0.9.9.8)](https://github.com/g-truc/glm/releases/tag/0.9.9.8) : linear algebra.
+* [imgui (1.82)](https://github.com/ocornut/imgui/tree/v1.82) : user interface.
+* [im3d (1.16)](https://github.com/john-chapman/im3d/) : gizmo controller.
+* [stb_image (2.26)](https://github.com/nothings/stb) : image loader.
+* [cgltf (1.10)](https://github.com/jkuhlmann/cgltf) : gltf 2.0 loader.
 
 Some of them are shipped directly, others must be retrieved as submodule :
 ```bash
