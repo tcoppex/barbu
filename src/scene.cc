@@ -364,12 +364,12 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
 
     if (drawable->has<SkinComponent>()) {
       auto const& skin = drawable->get<SkinComponent>();
-      attributes.skinning_texid    = skin.get_texture_id(); //
+      attributes.skinning_texid    = skin.texture_id(); //
       attributes.skinning_mode     = skin.skinning_mode();
     }
 
     // (fragment)
-    attributes.envmap_texid        = skybox_.get_texture_id();
+    attributes.envmap_texid        = skybox_.texture() ? skybox_.texture()->id : 0u;
     attributes.irradiance_matrices = skybox_.irradiance_matrices();
     attributes.eye_position        = camera.position();
     //attributes.tonemap_mode      = tonemap_mode;

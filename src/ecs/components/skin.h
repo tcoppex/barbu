@@ -55,7 +55,7 @@ class SkinComponent final : public ComponentParams<Component::Skin> {
     return controller_;
   }
 
-  inline uint32_t get_texture_id() const { return texture_id_; } // tmp
+  inline uint32_t texture_id() const { return texture_id_; } //
 
   inline SkeletonMap_t& skeleton_map() { return skeleton_map_; } 
 

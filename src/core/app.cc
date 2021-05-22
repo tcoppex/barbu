@@ -33,16 +33,16 @@ bool App::init(char const* title, AppScene *scene) {
   }
 
   // Initialize OpenGL context flags.
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-  glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-  glfwWindowHint(GLFW_SAMPLES, GLFW_DONT_CARE);
+  glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR,  4);
+  glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR,  6);
+  glfwWindowHint( GLFW_OPENGL_PROFILE,         GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT,  GLFW_TRUE);
+  glfwWindowHint( GLFW_DOUBLEBUFFER,           GLFW_TRUE);
+  glfwWindowHint( GLFW_SAMPLES,                GLFW_DONT_CARE);
+  glfwWindowHint( GLFW_RESIZABLE,              GLFW_FALSE);
 
   // Compute window resolution from the main monitor's.
-  float constexpr screenScale = 4.0f / 5.0f;
+  float constexpr screenScale = 0.82f;
   GLFWvidmode const* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
   int const w = static_cast<int>(screenScale * mode->width);
   int const h = static_cast<int>(screenScale * mode->height);
@@ -67,9 +67,10 @@ bool App::init(char const* title, AppScene *scene) {
 
   // Preclean the screen.
   {
-    glViewport(0, 0, w, h);
-    glClearColor(0.25, 0.27, 0.23, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    gx::Viewport(w, h);
+    glClearColor(0.25, 0.27, 0.23, 1.0f); //
+    glClear(GL_COLOR_BUFFER_BIT); //
+
     glfwSwapBuffers(window_);
   }
 
@@ -164,7 +165,7 @@ void App::frame() {
   // Camera specific rendering.
   gizmo_.begin_frame(deltatime_, camera_);
   {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //
 
     // 'Deffered'-pass, post-process the solid objects.
     postprocess_.begin();
@@ -172,9 +173,9 @@ void App::frame() {
     postprocess_.end(camera_);
 
     // Forward-pass, render the special effects.
-    scene_->render(camera_, SceneFilterBit::PASS_FORWARD);
+    scene_->render(camera_, SceneFilterBit::PASS_FORWARD); // [not tonemapped !]
 
-    // (todo : have a final composition pass here).
+    // [ should have a final composition pass here to tonemap the forwards ].
   }
   gizmo_.end_frame(camera_);
   //------------------------------------------
