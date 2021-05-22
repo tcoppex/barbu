@@ -32,6 +32,8 @@ class Skybox {
 
   inline glm::mat4 const* irradiance_matrices() const { return sh_matrices_.data(); }
 
+  inline bool has_irradiance_matrice() const { return has_sh_matrices_; }
+
  private:
   void setup_texture(/*ResourceInfo info*/);
 
@@ -53,6 +55,7 @@ class Skybox {
   TextureHandle irradiance_map_;            //< irradiance envmap.
 
   Irradiance::SHMatrices_t sh_matrices_;    //< irradiances spherical harmonics matrices.
+  bool has_sh_matrices_ = false;
 };
 
 // ----------------------------------------------------------------------------

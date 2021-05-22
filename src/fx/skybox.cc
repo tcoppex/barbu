@@ -8,7 +8,7 @@
 // ----------------------------------------------------------------------------
 
 // Used to debug visualize the convolution pass output.
-static bool constexpr kVisualizeIrradianceMap = true;
+static bool constexpr kVisualizeIrradianceMap = false;
 
 // ----------------------------------------------------------------------------
 
@@ -93,6 +93,7 @@ void Skybox::setup_texture(/*ResourceInfo info*/) {
 
     if (sky_map_ && sky_map_->loaded()) {
       Irradiance::PrefilterHDR( resource_info, sh_matrices_);
+      has_sh_matrices_ = true;
     }
   } else {
     // Spherical HDR.
@@ -137,8 +138,8 @@ void Skybox::setup_texture(/*ResourceInfo info*/) {
     }
   }
 
-  // Create the irradiance envmap.
-  if constexpr(true) {
+  // Create the irradiance envmap when needed.
+  if (!has_sh_matrices_) {
     constexpr int32_t kIrradianceMapResolution = 64;
     
     // ---
@@ -153,6 +154,10 @@ void Skybox::setup_texture(/*ResourceInfo info*/) {
     });
 
     irradiance_map_ = probe.texture();
+
+    LOG_DEBUG_INFO( "Skybox irradiance map has been generated (instead of SH matrices)." );
+  } else {
+    LOG_DEBUG_INFO( "Skybox SH matrices has been generated (instead of irradiance map)." );
   }
 }
 

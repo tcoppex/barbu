@@ -20,12 +20,13 @@ layout(location = 0) out vec4 fragColor;
 #include "shared/structs/inc_material.glsl"
 #include "shared/inc_tonemapping.glsl"
 
-
 // Uniforms : Generic.
-uniform int uToneMapMode = TONEMAPPING_NONE;
 uniform vec3 uEyePosWS;
-uniform mat4 uIrradianceMatrices[3];
 uniform samplerCube uEnvironmentMap;
+uniform samplerCube uIrradianceMap;
+uniform mat4 uIrradianceMatrices[3];
+uniform bool uHasIrradianceMatrices;
+uniform int uToneMapMode = TONEMAPPING_NONE;
 
 // Uniforms : Material.
 uniform int uColorMode;
@@ -44,14 +45,21 @@ uniform bool uHasAO;
 
 // ----------------------------------------------------------------------------
 
-vec3 compute_irradiance(in vec3 normalWS, in mat4 irradianceMatrices[3]) {
-  const vec4 n = vec4( normalWS, 1.0);
-  const vec3 irr = vec3(
-    dot( n, irradianceMatrices[0] * n),
-    dot( n, irradianceMatrices[1] * n),
-    dot( n, irradianceMatrices[2] * n)
-  );
-  return irr;
+vec3 get_irradiance(in vec3 normalWS) {
+  vec3 irradiance = vec3(0.0);
+
+  if (uHasIrradianceMatrices) {
+    const vec4 n = vec4( normalWS, 1.0);
+    irradiance = vec3(
+      dot( n, uIrradianceMatrices[0] * n),
+      dot( n, uIrradianceMatrices[1] * n),
+      dot( n, uIrradianceMatrices[2] * n)
+    );
+  } else {
+    irradiance = texture( uIrradianceMap, normalWS).rgb;
+  }
+
+  return irradiance;
 }
 
 // ----------------------------------------------------------------------------
@@ -86,7 +94,7 @@ Material_t get_material(in FragInfo_t frag) {
   // [ fragment derivative materials ]
 
   // Compose ambient with a fragment based irradiance color.
-  mat.irradiance = compute_irradiance( frag.N, uIrradianceMatrices);
+  mat.irradiance = get_irradiance( frag.N );
   mat.reflection = texture( uEnvironmentMap, frag.R).rgb; //
 
   return mat;

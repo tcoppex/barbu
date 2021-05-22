@@ -370,7 +370,8 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
 
     // (fragment)
     attributes.envmap_texid        = skybox_.texture() ? skybox_.texture()->id : 0u;
-    attributes.irradiance_matrices = skybox_.irradiance_matrices();
+    attributes.envmap_texid        = skybox_.irradiance_map() ? skybox_.irradiance_map()->id : 0u;
+    attributes.irradiance_matrices = skybox_.has_irradiance_matrice() ? skybox_.irradiance_matrices() : nullptr;
     attributes.eye_position        = camera.position();
     //attributes.tonemap_mode      = tonemap_mode;
 

@@ -29,6 +29,7 @@ struct RenderAttributes {
 
   // (fragment)
   uint32_t envmap_texid = 0u;
+  uint32_t irradiance_texid = 0u;
   glm::mat4 const* irradiance_matrices = nullptr;
   glm::vec3 eye_position;
   //int32_t tonemap_mode;
@@ -72,17 +73,23 @@ class Material {
       auto const pgm = pgm_handle->id;
       gx::UseProgram( pgm );
 
+      auto bind_texture = [this, &pgm](auto const& name, uint32_t id) {
+        if (id > 0u) {
+          gx::BindTexture( id, texture_unit_);
+          gx::SetUniform( pgm, name, texture_unit_);
+          ++texture_unit_;  
+        }
+      };
+
       // (vertex)
-      gx::SetUniform( pgm, "uModelMatrix",        attributes.world_matrix);
-      gx::SetUniform( pgm, "uMVP",                attributes.mvp_matrix);
+      gx::SetUniform( pgm, "uModelMatrix", attributes.world_matrix);
+      gx::SetUniform( pgm, "uMVP",         attributes.mvp_matrix);
 
       // (vertex skinning)
       if (attributes.skinning_texid > 0u) {
-        gx::BindTexture( attributes.skinning_texid, texture_unit_);
-        gx::SetUniform( pgm, "uSkinningDatas",      texture_unit_);
-        ++texture_unit_;
-
-        // [clean?]
+        bind_texture( "uSkinningDatas", attributes.skinning_texid);
+        
+        // [ improve ]
         skinning_subroutines_[ SkinningMode::LinearBlending ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_LBS");
         skinning_subroutines_[ SkinningMode::DualQuaternion ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_DQBS");
         auto const& su_index = skinning_subroutines_[ attributes.skinning_mode ];
@@ -91,15 +98,17 @@ class Material {
       }
 
       // (fragment)
-      gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
-      gx::SetUniform( pgm, "uEyePosWS",           attributes.eye_position);
-      //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
-    
-      if (attributes.envmap_texid > 0u) {
-        gx::BindTexture( attributes.envmap_texid, texture_unit_);
-        gx::SetUniform( pgm, "uEnvironmentMap",   texture_unit_);
-        ++texture_unit_;
+      bind_texture( "uEnvironmentMap", attributes.envmap_texid);
+      bind_texture( "uIrradianceMap",  attributes.irradiance_texid);
+
+      gx::SetUniform( pgm, "uEyePosWS", attributes.eye_position);
+
+      bool const has_irradiance_matrices = (nullptr != attributes.irradiance_matrices);
+      gx::SetUniform( pgm, "uHasIrradianceMatrices", has_irradiance_matrices);
+      if (has_irradiance_matrices) {
+        gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
       }
+      //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
     }
     CHECK_GX_ERROR();
 
