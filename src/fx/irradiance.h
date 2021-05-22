@@ -1,5 +1,5 @@
-#ifndef BARBU_FX_IRRADIANCE_SH_H_
-#define BARBU_FX_IRRADIANCE_SH_H_
+#ifndef BARBU_FX_IRRADIANCE_H_
+#define BARBU_FX_IRRADIANCE_H_
 
 #include <array>
 #include <functional>
@@ -16,9 +16,9 @@
   Implement Ravi Ramamoorthi & Pat Hanrahan's technique as described in their 2001 paper :
     "An Efficient Representation for Irradiance Environment Maps" 
 */
-class IrradianceSH {
+class Irradiance {
  public:
-  using Matrices_t = std::array<glm::mat4, 3>;
+  using SHMatrices_t = std::array<glm::mat4, 3>;
 
   template<typename T>
   using CubemapData_t = std::array<T*, 6>;
@@ -37,7 +37,7 @@ class IrradianceSH {
    */
   template<typename T>
   static
-  void Prefilter(CubemapData_t<T> const& cubemap, std::function<float(float)> const& dColor, int const w, int const h, int const nchannels, Matrices_t &M)
+  void Prefilter(CubemapData_t<T> const& cubemap, std::function<float(float)> const& dColor, int const w, int const h, int const nchannels, SHMatrices_t &M)
   {
     float const texelSize  = 1.0f / static_cast<float>(w);
 
@@ -95,7 +95,7 @@ class IrradianceSH {
   }
 
   static
-  void PrefilterU8( ResourceInfoList const& resource_infos, Matrices_t &M) {
+  void PrefilterU8( ResourceInfoList const& resource_infos, SHMatrices_t &M) {
     assert( !resource_infos.empty() );
 
     CubemapData_t<uint8_t> cubemap{nullptr};
@@ -118,7 +118,7 @@ class IrradianceSH {
   }
 
   static
-  void PrefilterHDR( ResourceInfo const& resource, Matrices_t &M) {
+  void PrefilterHDR( ResourceInfo const& resource, SHMatrices_t &M) {
     CubemapData_t<float> cubemap{nullptr};
 
     auto img = Resources::Get<Image>( resource.id ).data;
@@ -182,7 +182,7 @@ class IrradianceSH {
 
 
   static
-  void SetIrradianceMatrices( SHCoeff_t const& shCoeff, Matrices_t &M) {
+  void SetIrradianceMatrices( SHCoeff_t const& shCoeff, SHMatrices_t &M) {
     /** cf equation 12 */
     float constexpr c1 = 0.429043f;
     float constexpr c2 = 0.511664f;
@@ -217,10 +217,10 @@ class IrradianceSH {
   }
 
  private:
-  IrradianceSH(IrradianceSH const&) = delete;
-  IrradianceSH(IrradianceSH&&) = delete;
+  Irradiance(Irradiance const&) = delete;
+  Irradiance(Irradiance&&) = delete;
 };
 
 // ----------------------------------------------------------------------------
 
-#endif // BARBU_FX_IRRADIANCE_SH_H_
+#endif // BARBU_FX_IRRADIANCE_H_

@@ -8,7 +8,7 @@
 #include "memory/assets/program.h"
 class Camera;
 
-#include "fx/irradiance_sh.h"
+#include "fx/irradiance.h"
 
 // ----------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ class Skybox {
   TextureHandle sky_map_;                   //< sky cubemap.
   TextureHandle irradiance_map_;            //< irradiance envmap.
 
-  IrradianceSH::Matrices_t sh_matrices_;    //< irradiances spherical harmonics matrices.
+  Irradiance::SHMatrices_t sh_matrices_;    //< irradiances spherical harmonics matrices.
 };
 
 // ----------------------------------------------------------------------------

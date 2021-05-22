@@ -92,7 +92,7 @@ void Skybox::setup_texture(/*ResourceInfo info*/) {
     sky_map_ = TEXTURE_ASSETS.createCubemapHDR( resource_info.id );
 
     if (sky_map_ && sky_map_->loaded()) {
-      IrradianceSH::PrefilterHDR( resource_info, sh_matrices_);
+      Irradiance::PrefilterHDR( resource_info, sh_matrices_);
     }
   } else {
     // Spherical HDR.
