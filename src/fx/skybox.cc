@@ -2,14 +2,13 @@
 
 #include "core/graphics.h"
 #include "core/camera.h"
-#include "fx/irradiance_env_map.h"
 #include "fx/probe.h"
 #include "memory/assets/assets.h"    
 
 // ----------------------------------------------------------------------------
 
 // Used to debug visualize the convolution pass output.
-static bool constexpr kVisualizeIrradianceMap = false;
+static bool constexpr kVisualizeIrradianceMap = true;
 
 // ----------------------------------------------------------------------------
 
@@ -93,7 +92,7 @@ void Skybox::setup_texture(/*ResourceInfo info*/) {
     sky_map_ = TEXTURE_ASSETS.createCubemapHDR( resource_info.id );
 
     if (sky_map_ && sky_map_->loaded()) {
-      IrradianceEnvMap::PrefilterHDR( resource_info, sh_matrices_);
+      IrradianceSH::PrefilterHDR( resource_info, sh_matrices_);
     }
   } else {
     // Spherical HDR.

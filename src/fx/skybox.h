@@ -8,12 +8,15 @@
 #include "memory/assets/program.h"
 class Camera;
 
-#include "fx/irradiance_env_map.h"
+#include "fx/irradiance_sh.h"
 
 // ----------------------------------------------------------------------------
 
 //
+// Manages HDR environment maps and their irradiance contribution.
 //
+// Irradiance contributions are stored in both spherical harmonics
+// matrices and as cubemap. 
 //
 class Skybox {
  public:
@@ -49,7 +52,7 @@ class Skybox {
   TextureHandle sky_map_;                   //< sky cubemap.
   TextureHandle irradiance_map_;            //< irradiance envmap.
 
-  IrradianceMatrices_t sh_matrices_;        //< irradiances spherical harmonics matrices.
+  IrradianceSH::Matrices_t sh_matrices_;    //< irradiances spherical harmonics matrices.
 };
 
 // ----------------------------------------------------------------------------
