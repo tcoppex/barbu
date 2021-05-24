@@ -70,7 +70,8 @@ class SceneHierarchy {
   inline EntityList_t const& drawables() const { return frame_.drawables; }
   inline EntityList_t const& colliders() const { return frame_.colliders; }
 
-  // Select / Unselect all entities depending on status.
+  // Select / Unselect entities depending on status.
+  void select(EntityHandle entity, bool status);
   void select_all(bool status);
 
   // Return true when the entity is selected.
@@ -81,12 +82,18 @@ class SceneHierarchy {
   glm::vec3 pivot(bool selected=true) const;
   glm::vec3 centroid(bool selected=true) const;
 
+  // ----------------------
+
+  EntityHandle next(EntityHandle entity, int32_t step=1) const;
+
   // Add a bounding model entity for physic collision.
   EntityHandle add_bounding_sphere(float radius=1.0f); //
 
   // Render availables rigs from the scene for debug display.
   void render_debug_rigs(); //
   void render_debug_colliders(); //
+
+  // ----------------------
 
  private:
   // Set of buffers modified each frame.

@@ -289,8 +289,12 @@ void SceneHierarchy::update_selected_local_matrices() {
   }
 }
 
-void SceneHierarchy::select_all(bool status) {
+void SceneHierarchy::select(EntityHandle entity, bool status) {
   // [fixme] using the UI as state holder is not great.
+  ((views::SceneHierarchyView*)ui_view)->select(entity->index(), status);
+}
+
+void SceneHierarchy::select_all(bool status) {
   ((views::SceneHierarchyView*)ui_view)->select_all(status);
 }
 
@@ -330,6 +334,22 @@ glm::vec3 SceneHierarchy::centroid(bool selected) const {
   }
 
   return center;
+}
+
+
+EntityHandle SceneHierarchy::next(EntityHandle entity, int32_t step) const {
+  int32_t next_id = static_cast<int32_t>((entity->index()+step));
+  int32_t const nentities = static_cast<int32_t>(entities_.size());
+
+  next_id = (next_id < 0) ? nentities + next_id : next_id % nentities; //
+
+  // O(n) complexity..
+  for (auto e : entities_) {
+    if (next_id-- == 0) {
+      return e;
+    }
+  }
+  return nullptr;
 }
 
 EntityHandle SceneHierarchy::add_bounding_sphere(float radius) {

@@ -53,10 +53,16 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
     ImGui::TreePop();
   }
 
+
   inline bool is_selected(int32_t index) const {
     return (index < static_cast<int32_t>(selected_.size())) ? selected_[index] : false;
   }
 
+  inline void select(int32_t index, bool status) {
+    assert(index < static_cast<int32_t>(selected_.size()));
+    selected_[index] = status;
+  }
+  
   inline void select_all(bool status) {
     std::fill(selected_.begin(), selected_.end(), status);
   }

@@ -55,6 +55,8 @@ void Main::render() {
     ImGui::Text("View control : ");
     ImGui::BulletText("[c] to focus on centroid.");
     ImGui::BulletText("[C] to focus on pivot.");
+    ImGui::BulletText("[j] focus on next entity.");
+    ImGui::BulletText("[k] focus on previous entity.");
     ImGui::BulletText("Keypad 0 to reset view.");
     ImGui::BulletText("Keypad 1/3/7 to side view.");
     ImGui::BulletText("Keypad 2/4/6/8 to quick orbit.");
