@@ -8,14 +8,14 @@ list(APPEND Sources
   main.cc
   scene.cc
 
-  animation/skeleton.cc
   # animation/blend_tree.cc
+  animation/skeleton.cc
   animation/skeleton_controller.cc
 
-  core/graphics.cc
   core/app.cc
   core/events.cc
   core/global_clock.cc
+  core/graphics.cc
 
   ecs/scene_hierarchy.cc
   ecs/components/skin.cc
@@ -24,16 +24,16 @@ list(APPEND Sources
   fx/grid.cc
   fx/hair.cc
   fx/marschner.cc
-  fx/skybox.cc
   fx/probe.cc
-  fx/postprocess/postprocess.cc
+  fx/skybox.cc
   fx/postprocess/hbao.cc
+  fx/postprocess/postprocess.cc
 
   memory/assets/assets.cc
-  memory/assets/mesh.cc
-  memory/assets/texture.cc
-  memory/assets/program.cc
   memory/assets/material_asset.cc
+  memory/assets/mesh.cc
+  memory/assets/program.cc
+  memory/assets/texture.cc
   memory/resources/image.cc
   memory/resources/mesh_data.cc
   memory/resources/mesh_data_manager.cc
@@ -43,6 +43,7 @@ list(APPEND Sources
   memory/random_buffer.cc
 
   utils/gizmo.cc
+  utils/raw_mesh_file.cc
 
   ui/ui_controller.cc
 
@@ -54,16 +55,16 @@ list(APPEND Sources
 list(APPEND Headers
   scene.h
 
+  # animation/blend_tree.h
+  # animation/blend_node.h
   animation/skeleton.h
   animation/skeleton_controller.h
   animation/common.h
-  # animation/blend_tree.h
-  # animation/blend_node.h
 
   core/app.h
   core/events.h
-  core/graphics.h
   core/global_clock.h
+  core/graphics.h
 
   ecs/ecs.h
   ecs/entity.h

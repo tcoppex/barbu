@@ -358,7 +358,7 @@ set(GLFW_BUILD_DOCS     OFF CACHE BOOL "Do not build GLFW documentation.")
 set(GLFW_INSTALL        OFF CACHE BOOL "Do not generate install targets.")
 add_subdirectory(${GLFW_ROOT} glfw EXCLUDE_FROM_ALL)
 
-# imgui : user interface.
+# dear imgui : user interface.
 set(IMGUI_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/imgui)
 set(IM3D_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/im3d)
 list(APPEND IMGUI_SOURCES 
@@ -370,7 +370,7 @@ list(APPEND IMGUI_SOURCES
   # ${IM3D_INCLUDE_DIR}/im3d.h
 )
 
-# build imgui as a static library (rather than internally).
+# Build dear imgui as a static library (rather than internally).
 if(1)
   set(IMGUI_LIB imgui)
   add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
@@ -387,9 +387,32 @@ if(1)
   endif()
 endif()
 
+# MikkTSpace.
+set(MIKKTSPACE_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/MikkTSpace)
+list(APPEND MIKKTSPACE_SOURCES
+  ${MIKKTSPACE_INCLUDE_DIR}/mikktspace.c
+  ${MIKKTSPACE_INCLUDE_DIR}/mikktspace.h
+)
+if(1)
+  set(MIKKTSPACE_LIB MikkTSpace)
+  add_library(${MIKKTSPACE_LIB} STATIC ${MIKKTSPACE_SOURCES})
+  target_compile_options(
+    ${MIKKTSPACE_LIB}
+    PRIVATE
+      ""
+      "$<$<CONFIG:Debug>:>"
+      "$<$<CONFIG:Release>:>"
+      "$<$<CONFIG:DebugWithRelInfo>:>"
+  )
+  if (NOT ("${CustomLinkFlags}" MATCHES ""))
+    set_target_properties(${MIKKTSPACE_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
+  endif()
+endif()
+
 # Add Library dependencies.
 list(APPEND CustomLibs
   ${IMGUI_LIB}
+  ${MIKKTSPACE_LIB}
   ${GLFW_LIBRARY}
   ${STD_CXX_FILESYSTEM_LIB}
 )
@@ -399,7 +422,6 @@ list(APPEND CustomLibs
 list(APPEND Thirdparties
   ${IM3D_INCLUDE_DIR}/im3d.cpp
   ${IM3D_INCLUDE_DIR}/im3d.h
-  #${IMGUI_SOURCES}
 )
 
 # -----------------------------------------------------------------------------
