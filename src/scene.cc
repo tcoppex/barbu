@@ -7,6 +7,11 @@
 
 // ----------------------------------------------------------------------------
 
+static constexpr bool bDisplayUI_Hair     = true;
+static constexpr bool bDisplayUI_Particle = true;
+
+// ----------------------------------------------------------------------------
+
 void Scene::init(Camera &camera, views::Main &ui_mainview) {
   // OpenGL rendering parameters.
   gx::ClearColor(0.0165f, 0.0165f, 0.0160f, 1.0f);
@@ -23,7 +28,7 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
-#if 1
+#if 0
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
@@ -39,8 +44,9 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
     scene_hierarchy_.add_bounding_sphere(0.25f);
 #else
     auto e = scene_hierarchy_.import_model(
-      ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
-      //ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
+      //ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
+      // ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
+      ASSETS_DIR "/models/glb-heads/DigitalIra.glb"
     );
 
     params_.enable_hair = false;
@@ -72,12 +78,7 @@ UIView* Scene::view() const {
 void Scene::update(float const dt, Camera &camera) {
   auto const& eventData{ GetEventData() };
 
-  // Display opaque materials wireframe.
-  if ('w' == eventData.lastChar) {
-    params_.show_wireframe ^= true;
-  }
-
-  auto const& selected = scene_hierarchy_.selected();
+  auto const& selected = scene_hierarchy_.selected();  
   if (!selected.empty()) {
     // Reset.
     if ('x' == eventData.lastChar) {
@@ -92,6 +93,23 @@ void Scene::update(float const dt, Camera &camera) {
       }
       scene_hierarchy_.select_all(false);
     }
+
+    // -----------------------
+    // [Work In Progress]
+    EntityHandle focus = nullptr;
+    if ('j' == eventData.lastChar) {
+      //auto nx = std::next(it, 1);
+      focus = scene_hierarchy_.next(selected.front(), +1);
+    } else if ('k' == eventData.lastChar) {
+      focus = scene_hierarchy_.next(selected.front(), -1);
+    }
+    if (focus) {
+      scene_hierarchy_.select_all(false);
+      scene_hierarchy_.select(focus, true);
+      auto const& target = scene_hierarchy_.entity_global_position(focus); // scene_hierarchy_.pivot();
+      ((ArcBallController*)camera.controller())->set_target(target); 
+    }
+    // -----------------------
   }
   
   switch (eventData.lastChar) {
@@ -111,6 +129,19 @@ void Scene::update(float const dt, Camera &camera) {
     case GLFW_KEY_3:
     case GLFW_KEY_7:
       ((ArcBallController*)camera.controller())->set_target(scene_hierarchy_.centroid(), true);
+    break;
+
+    // case 'j':
+    // break;
+    // case 'k':
+    // break;
+
+    // Display opaque materials wireframe.
+    case 'w':
+      params_.show_wireframe ^= true;
+    break;
+
+    default:
     break;
   }
 
@@ -340,12 +371,16 @@ void Scene::setup_ui_views(views::Main &ui_mainview) {
     params_.ui_view_ptr = scene_hierarchy_.ui_view;
   }
 
-  if (nullptr != hair_.view()) {
-    ui_mainview.push_view( hair_.view() );
+  if constexpr (bDisplayUI_Hair) {
+    if (nullptr != hair_.view()) {
+      ui_mainview.push_view( hair_.view() );
+    }
   }
 
-  if (nullptr != particle_.view()) {
-    //ui_mainview.push_view( particle_.view() );
+  if constexpr (bDisplayUI_Particle) {
+    if (nullptr != particle_.view()) {
+      ui_mainview.push_view( particle_.view() );
+    }
   }
 }
 
