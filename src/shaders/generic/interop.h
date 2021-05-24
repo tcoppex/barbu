@@ -15,8 +15,9 @@
 #define VERTEX_ATTRIB_POSITION                    0
 #define VERTEX_ATTRIB_TEXCOORD                    1
 #define VERTEX_ATTRIB_NORMAL                      2
-#define VERTEX_ATTRIB_JOINT_INDICES               3
-#define VERTEX_ATTRIB_JOINT_WEIGHTS               4
+#define VERTEX_ATTRIB_TANGENT                     3 //
+#define VERTEX_ATTRIB_JOINT_INDICES               4
+#define VERTEX_ATTRIB_JOINT_WEIGHTS               5
 
 // ----------------------------------------------------------------------------
 

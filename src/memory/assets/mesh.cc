@@ -108,8 +108,7 @@ bool Mesh::setup() {
   // Calculate the mesh AABB.
   meshdata.calculate_bounds( centroid_, bounds_);
 
-  // Recenter the mesh to its pivot.
-  // [todo ?]
+  // [Recenter the mesh to its pivot ?]
   // at least horizontally / XZ plane, or alternatively suggest a default transform.
 
   // Reallocate buffers if the data are reuploads.
@@ -145,6 +144,12 @@ bool Mesh::setup() {
       attrib_index = Mesh::ATTRIB_NORMAL;
       num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::normal) / sizeof(MeshData::Vertex_t::normal[0u]));
       glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, normal));
+      glVertexAttribBinding(attrib_index, binding_index);
+      glEnableVertexAttribArray(attrib_index);
+
+      attrib_index = Mesh::ATTRIB_TANGENT;
+      num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::tangent) / sizeof(MeshData::Vertex_t::tangent[0u]));
+      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, tangent));
       glVertexAttribBinding(attrib_index, binding_index);
       glEnableVertexAttribArray(attrib_index);
     }

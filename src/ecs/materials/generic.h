@@ -32,9 +32,10 @@ class GenericMaterial : public Material {
     , color_mode_(kDefaultColorMode)
     , color_{kDefaultColor}
     , alpha_cutoff_(kDefaultAlphaCutOff)
-    , metallic_(0.0f)
-    , roughness_(0.4f)
+    , roughness_(0.0f) //
+    , metallic_(0.0f) //
     , tex_albedo_(nullptr)
+    , tex_normal_(nullptr)
     , tex_rough_metal_(nullptr)
     , tex_ao_(nullptr)
   {
@@ -60,6 +61,7 @@ class GenericMaterial : public Material {
     };  
 
     tex_albedo_      = get_texture(info.diffuse_map);
+    tex_normal_      = get_texture(info.bump_map);
     tex_rough_metal_ = get_texture(info.metallic_rough_map);
     tex_ao_          = get_texture(info.ao_map);
 
@@ -83,12 +85,13 @@ class GenericMaterial : public Material {
     //(color_mode == ColorMode::kInternal) ? color_mode_ : color_mode;
     
     bool const hasAlbedo      = static_cast<bool>(tex_albedo_);
+    bool const hasNormal      = static_cast<bool>(tex_normal_);
     bool const hasRoughMetal  = static_cast<bool>(tex_rough_metal_);
     bool const hasAO          = static_cast<bool>(tex_ao_);
     
-    auto bind_texture = [this, &pgm](auto const& name, TextureHandle tex) {
+    auto bind_texture = [this, &pgm](auto const& name, TextureHandle tex, gx::SamplerName sampler = gx::kDefaultSampler) {
       if (nullptr != tex) {
-        gx::BindTexture( tex->id, texture_unit_ /*, material_sampler*/);
+        gx::BindTexture( tex->id, texture_unit_, sampler);
         gx::SetUniform( pgm, name,  texture_unit_);
         ++texture_unit_;
       }
@@ -101,10 +104,12 @@ class GenericMaterial : public Material {
     gx::SetUniform( pgm, "uRoughness",      roughness_);
 
     gx::SetUniform( pgm, "uHasAlbedo",      hasAlbedo);
+    gx::SetUniform( pgm, "uHasNormal",      hasNormal);
     gx::SetUniform( pgm, "uHasRoughMetal",  hasRoughMetal);
     gx::SetUniform( pgm, "uHasAO",          hasAO);
   
     bind_texture( "uAlbedoTex",     tex_albedo_);
+    bind_texture( "uNormalTex",     tex_normal_);
     bind_texture( "uRoughMetalTex", tex_rough_metal_);
     bind_texture( "uAOTex",         tex_ao_);
 
@@ -116,10 +121,11 @@ class GenericMaterial : public Material {
   
   glm::vec4     color_;
   float         alpha_cutoff_;
-  float         metallic_;
   float         roughness_;
+  float         metallic_;
   
   TextureHandle tex_albedo_;
+  TextureHandle tex_normal_;
   TextureHandle tex_rough_metal_;
   TextureHandle tex_ao_;
 };

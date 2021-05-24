@@ -1,17 +1,16 @@
 #ifndef BARBU_UTILS_RAW_MESH_FILE_H_
 #define BARBU_UTILS_RAW_MESH_FILE_H_
 
+// ----------------------------------------------------------------------------
+// Basic data structure for loading meshes with sparse attributes.
+// ----------------------------------------------------------------------------
+
 #include <string>
 #include <vector>
 
-#include "glm/glm.hpp" // glm::normalize
-// #include "glm/vec2.hpp"
-// #include "glm/vec3.hpp"
-// #include "glm/vec4.hpp"
-
-// ----------------------------------------------------------------------------
-
-// Basic data structure for loading meshes with sparse attributes.
+#include "glm/vec2.hpp"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
 
 // ----------------------------------------------------------------------------
 
@@ -42,6 +41,11 @@ struct RawMeshData {
   std::vector<glm::vec3> vertices;
   std::vector<glm::vec2> texcoords;
   std::vector<glm::vec3> normals;
+
+  // Tangents are indexed as elementsAttribs. 
+  // (the W component contains the sign of the binormal)
+  std::vector<glm::vec4> tangents; //
+
   std::vector<glm::uvec4> joints;
   std::vector<glm::vec4> weights;
 
@@ -50,64 +54,32 @@ struct RawMeshData {
   std::vector<glm::ivec3> elementsAttribs;
 
   // Sub-geometry description.
-  VertexGroups_t vgroups;
+  VertexGroups_t vgroups;  
 
-  static constexpr size_t kDefaultTriangleCapacity = 256;
+  static constexpr size_t kDefaultTriangleCapacity = 512;
   static constexpr size_t kDefaultCapacity = 3 * kDefaultTriangleCapacity;
+  
   RawMeshData(size_t capacity = kDefaultCapacity) {
     vertices.reserve(capacity);
     texcoords.reserve(capacity);
     normals.reserve(capacity);
+    tangents.reserve(capacity); //
     elementsAttribs.reserve(capacity);
   }
 
   // Use elementsAttribs & vertices to fill the normals attributes.
-  void recalculate_normals() {
-    int const numfaces = nfaces();
-    std::vector<glm::vec3> vnormals(nvertices(), glm::vec3(0.0f));
-    
-    for (int i = 0; i < numfaces; ++i) {
-      int const i1 = elementsAttribs[3*i + 0].x;
-      int const i2 = elementsAttribs[3*i + 1].x;
-      int const i3 = elementsAttribs[3*i + 2].x;
+  void recalculate_normals();
 
-      auto const& v1 = vertices[i1];
-      auto const& v2 = vertices[i2];
-      auto const& v3 = vertices[i3];
+  // Calculate tangent space based on vertices position, texcoords & normals,
+  // and index them on elementsAttribs.
+  void recalculate_tangents(); //
 
-      glm::vec3 const u{ v2.x - v1.x, v2.y - v1.y, v2.z - v1.z };
-      glm::vec3 const v{ v3.x - v2.x, v3.y - v2.y, v3.z - v2.z };
-      glm::vec3 const n{ glm::normalize(glm::cross(u, v)) };
-
-      vnormals[i1] += n;
-      vnormals[i2] += n;
-      vnormals[i3] += n;
-    }
-
-    for (auto &n : vnormals) {
-      n = glm::normalize(n);
-    }
-
-    normals.clear();
-    for (int i = 0; i < numfaces; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        auto& face = elementsAttribs[3*i + j];
-        int const vertex_id = face.x;
-        auto const& vnormal = vnormals[vertex_id];
-
-        // TODO : use a hashmap to avoid reusing the same normals.
-        face.z = static_cast<uint32_t>(normals.size());
-        normals.push_back( glm::vec3(vnormal.x, vnormal.y, vnormal.z) );
-      }
-    }
-  }
-
-  inline int32_t nvertices() const { 
-    return static_cast<int32_t>(vertices.size());
-  }
+  // inline int32_t nvertices() const {
+  //   return static_cast<int32_t>(vertices.size()); //
+  // }
   
   inline int32_t nfaces() const { 
-    return elementsAttribs.empty() ? 0 : static_cast<int32_t>(elementsAttribs.size()/3); 
+    return static_cast<int32_t>(elementsAttribs.size()/3); // 
   }
 
   bool has_vertex_groups() const { 
@@ -157,6 +129,15 @@ struct MaterialFile {
   inline MaterialInfo const& get(size_t index) const {
     return infos.at(index);
   }
+
+  // bool has_normal_map() const {
+  //   for (auto const& mat : infos) {
+  //     if (!mat.bump_map.empty()) {
+  //       return true;
+  //     }
+  //   }
+  //   return false;
+  // }
 };
 
 // ----------------------------------------------------------------------------

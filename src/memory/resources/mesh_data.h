@@ -63,6 +63,7 @@ struct MeshData : public Resource {
     glm::vec3 position;
     glm::vec2 texcoord;
     glm::vec3 normal;
+    glm::vec4 tangent; //
   };
 
   struct Skinning_t {

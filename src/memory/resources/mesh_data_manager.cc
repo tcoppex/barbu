@@ -929,6 +929,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         }
 
         // Miscs.
+        info.bump_map     = SetupTextureGLTF( mat.normal_texture.texture, dirname, info.name + "_normal");
         info.ao_map       = SetupTextureGLTF( mat.occlusion_texture.texture, dirname, info.name + "_occlusion");
         info.alpha_cutoff = mat.alpha_cutoff;
         info.bDoubleSided = mat.double_sided;

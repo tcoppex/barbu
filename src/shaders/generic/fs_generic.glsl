@@ -8,6 +8,7 @@
 layout(location = 0) in vec3 inPositionWS;
 layout(location = 1) in vec2 inTexcoord;
 layout(location = 2) in vec3 inNormalWS;
+layout(location = 3) in vec4 inTangentWS;
 
 // Outputs.
 layout(location = 0) out vec4 fragColor;
@@ -35,12 +36,65 @@ uniform float uMetallic;
 uniform float uRoughness;
 
 uniform sampler2D uAlbedoTex;
+uniform sampler2D uNormalTex;
 uniform sampler2D uRoughMetalTex;
 uniform sampler2D uAOTex;
 
 uniform bool uHasAlbedo;
+uniform bool uHasNormal;
 uniform bool uHasRoughMetal;
 uniform bool uHasAO;
+
+// ----------------------------------------------------------------------------
+
+vec3 get_normal() {
+  vec3 N = normalize(inNormalWS);
+
+  // Retrieve the bump normal in tangent space using mikktspace decoding.
+  if (uHasNormal) {
+    // [still got weird seams on UVs, probably due to wrong mikktspace indexing]
+
+    // TBN basis to transform from tangent-space to world-space.
+    // (we should not normalized this interpolated vectors to get the TBN).
+    const float sign = inTangentWS.w;
+    const vec3 T     = inTangentWS.xyz;
+    const vec3 B     = sign * cross( N, T);
+    const mat3 TBN = mat3( T, B, N);
+    
+    // Tangent-space normal.
+    vec3 Nt = texture( uNormalTex, inTexcoord.xy).xyz;
+    Nt = gamma_uncorrect(Nt); //
+
+    // World-space bump normal.
+    const vec3 bump = normalize(TBN * Nt);
+
+    // Contribute to the main normal.
+    N = bump;
+    
+    // [ show seams problems ]
+    //N = normalize(mix(N, bump, 10.5)); //
+  }
+
+  return N;
+}
+
+// Extract fragment geometry infos.
+FragInfo_t get_worldspace_fraginfo() {
+  FragInfo_t frag;
+  
+  frag.P        = inPositionWS;
+  frag.N        = get_normal();
+  frag.V        = normalize( uEyePosWS - frag.P );
+  frag.R        = reflect( -frag.V, frag.N);
+  frag.uv       = inTexcoord.xy;
+  frag.n_dot_v  = max(dot(frag.N, frag.V), 0);
+
+  // [fixme] Deal with double sided plane.
+  // const float s = sign(frag.n_dot_v);
+  // frag.N *= s;
+
+  return frag;
+}
 
 // ----------------------------------------------------------------------------
 
@@ -100,24 +154,6 @@ Material_t get_material(in FragInfo_t frag) {
   return mat;
 }
 
-// Extract fragment geometry infos.
-FragInfo_t get_worldspace_fraginfo() {
-  FragInfo_t frag;
-  
-  frag.P        = inPositionWS;
-  frag.N        = normalize( inNormalWS );
-  frag.V        = normalize( uEyePosWS - frag.P );
-  frag.R        = reflect( -frag.V, frag.N);
-  frag.uv       = inTexcoord.xy;
-  frag.n_dot_v  = max(dot(frag.N, frag.V), 0);
-
-  // [fixme] Deal with double sided plane.
-  // const float s = sign(frag.n_dot_v);
-  // frag.N *= s;
-
-  return frag;
-}
-
 // ----------------------------------------------------------------------------
 
 vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
@@ -175,7 +211,15 @@ void main() {
   FragInfo_t fraginfo = get_worldspace_fraginfo();
   Material_t material = get_material(fraginfo);
 
-  fragColor = colorize( uColorMode, fraginfo, material);
+  fragColor = colorize( 
+    //MATERIAL_GENERIC_COLOR_MODE_UNLIT,
+    //MATERIAL_GENERIC_COLOR_MODE_NORMAL,
+    //MATERIAL_GENERIC_COLOR_MODE_TEXCOORD, 
+    uColorMode, 
+  fraginfo, material);
+
+  // [Test tangent output]
+  //fragColor.rgb = (inTangentWS.xyz + 1.0) / 2.0;
 }
 
 // ----------------------------------------------------------------------------

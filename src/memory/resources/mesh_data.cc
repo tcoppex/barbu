@@ -315,29 +315,46 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
         vertices[i].normal = _raw.normals[i];
       }
     }
+
+    // if (!_raw.tangents.empty()) {
+    //   for (int i = 0; i < nvertices; ++i) {
+    //     //vertices[i].tangent = _raw.tangents[i]; // TODO ?
+    //   }
+    // }
   }
   else 
   {
-    // Recalculate normals when none exists.
-    if (_raw.normals.empty() && !_raw.elementsAttribs.empty()) {
-      _raw.recalculate_normals();
+    bool has_tangent = false;
+
+    // Recalculate normals / tangents when none exists.
+    if (!_raw.elementsAttribs.empty()) { 
+      if (_raw.normals.empty()) {
+        _raw.recalculate_normals();
+      }
+
+      // [only recalculate tangent when the material contains normal map ?]
+      if (_raw.tangents.empty()) {
+        _raw.recalculate_tangents();
+      }
+      has_tangent = true;
     }
 
     // Reindexing vertices from sparse input.
-    std::vector<glm::ivec3> attribIndices;
+    std::vector<glm::ivec4> attribIndices;
     attribIndices.reserve(_raw.vertices.size());
     indices.reserve(_raw.elementsAttribs.size());
     {
-      std::map<glm::ivec3, size_t, vec3_ordering<glm::ivec3>> mapVertices;
+      MapVec3<glm::ivec3, size_t> mapVertices;
       
-      for (auto const& elem : _raw.elementsAttribs) {
-        glm::vec3 key(elem.x, elem.y, elem.z);
-        auto it = mapVertices.find(key);
+      int32_t tangent_index = -1; //
+      for (auto const& key : _raw.elementsAttribs) {
+        auto const& it = mapVertices.find(key);
+        ++tangent_index;
 
         int index = static_cast<int>(attribIndices.size());
-        if (it == mapVertices.end()) {
+        if (it == mapVertices.cend()) {
           mapVertices[key] = index;
-          attribIndices.push_back(key);
+          attribIndices.push_back( glm::ivec4(key, tangent_index) );
         } else {
           index = it->second;
         }
@@ -362,6 +379,10 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
       if (index.z >= 0) {
         vertices[i].normal = _raw.normals[index.z];
       }
+      // (tangents)
+      if (has_tangent) {
+        vertices[i].tangent = _raw.tangents[index.w]; //
+      }
     }
   
     // (skinning)
@@ -378,8 +399,8 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
 }
 
 bool MeshData::setup(RawMeshFile &meshfile) {
-  // DEVNOTE : for now we process only a single mesh, but in the future we will
-  //           handle all sub objects from a file.
+  // Note : for now we process only a single mesh, but in the future we shall
+  //        handle all sub objects from a file.
 
   auto &raw = meshfile.meshes[0]; //
   MeshData::PrimitiveType primtype = raw.elementsAttribs.empty() ? MeshData::POINTS
