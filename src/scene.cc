@@ -28,7 +28,7 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
 
   // Sample scene.
   {
-#if 0
+#if 1
     // Model.
     scene_hierarchy_.import_model( 
       ASSETS_DIR "/models/InfiniteScan/Head.glb" 
