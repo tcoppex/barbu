@@ -8,18 +8,19 @@
 namespace {
 
 void UseLinearInternalFormat(std::string const& filename, int32_t &internalFormat, bool bForce = false) {
-  std::string fn(filename);
+  std::string fn(Resource::TrimFilename(filename));
 
   // Transform filename to lowercase to test matches.
   std::transform( fn.begin(), fn.end(), fn.begin(), ::tolower);
   
   // Find token for non linear texture.
   std::string const kLinearToken[]{
-    "bump", "normal", "alpha", "mask",
+    //"bump", "normal", 
+    "alpha", "mask",
   };
   for (auto const& s : kLinearToken) {
     if (fn.find(s) != fn.npos) {
-      LOG_DEBUG_INFO(__FUNCTION__, ": Token", s, "was found in", filename);
+      LOG_DEBUG_INFO(__FUNCTION__, ": Token", s, "was found in", fn);
       return;
     }
   }
