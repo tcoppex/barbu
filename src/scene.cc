@@ -8,7 +8,7 @@
 // ----------------------------------------------------------------------------
 
 static constexpr bool bDisplayUI_Hair     = true;
-static constexpr bool bDisplayUI_Particle = true;
+static constexpr bool bDisplayUI_Particle = false;
 
 // ----------------------------------------------------------------------------
 
@@ -387,7 +387,7 @@ void Scene::setup_ui_views(views::Main &ui_mainview) {
 // ----------------------------------------------------------------------------
 
 void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
-  auto render_drawables = [this, render_mode, &camera](EntityHandle &drawable) {
+  auto render_drawables = [this, render_mode, &camera](EntityHandle drawable) {
     // global matrix of the entity.
     auto const& world = scene_hierarchy_.global_matrix( drawable->index() );
 
@@ -397,6 +397,7 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
     attributes.world_matrix        = world;
     attributes.mvp_matrix          = camera.viewproj() * world;
 
+    // (vertex skinning)
     if (drawable->has<SkinComponent>()) {
       auto const& skin = drawable->get<SkinComponent>();
       attributes.skinning_texid    = skin.texture_id(); //
@@ -408,7 +409,7 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
     attributes.irradiance_texid    = skybox_.irradiance_map() ? skybox_.irradiance_map()->id : 0u;
     attributes.irradiance_matrices = skybox_.has_irradiance_matrice() ? skybox_.irradiance_matrices() : nullptr;
     attributes.eye_position        = camera.position();
-    //attributes.tonemap_mode      = tonemap_mode;
+    //attributes.tonemap_mode      = tonemap_mode; // [todo]
 
     // Rendering.
     auto &visual = drawable->get<VisualComponent>();
