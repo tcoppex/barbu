@@ -36,6 +36,7 @@ The following third parties are used :
 * [im3d (1.16)](https://github.com/john-chapman/im3d/) : gizmo controller.
 * [stb_image (2.26)](https://github.com/nothings/stb) : image loader.
 * [cgltf (1.10)](https://github.com/jkuhlmann/cgltf) : gltf 2.0 loader.
+* [MikkTSpace](https://github.com/mmikk/MikkTSpace) : tangent space computation.
 
 Some of them are shipped directly, others must be retrieved as submodule :
 ```bash
