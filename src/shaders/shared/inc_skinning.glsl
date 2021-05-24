@@ -57,7 +57,7 @@ void skinning_DQBS(in uvec4 _indices, in vec4 _weights, inout vec3 v, inout vec3
   ///   "Geometric Skinning with Approximate Dual Quaternion Blending"
   ///   - Kavan et al 2008
 
-  // Retrieve the dual quaternions
+  // Retrieve the dual quaternions.
   mat4 Ma, Mb;
   get_dual_quaternions_matrices(_indices, Ma, Mb);
 
@@ -73,11 +73,11 @@ void skinning_DQBS(in uvec4 _indices, in vec4 _weights, inout vec3 v, inout vec3
   A *= invNormA;
   B *= invNormA;
 
-  // Position.
+  // Transform position.
   v += 2.0f * cross(A.xyz, cross(A.xyz, v) + A.w*v);              // rotate
   v += 2.0f * (A.w * B.xyz - B.w * A.xyz + cross(A.xyz, B.xyz));  // translate
 
-  // Normal.
+  // Transform normal.
   n += 2.0f * cross(A.xyz, cross(A.xyz, n) + A.w*n);
 }
 
@@ -98,37 +98,34 @@ void get_skinning_matrix(in uint jointId, out mat3x4 skMatrix) {
   skMatrix[2] = texelFetch(uSkinningDatas, matrixId + 2);
 }
 
-subroutine(skinning_subroutine)
-void skinning_LBS(in uvec4 _indices, in vec4 _weights, inout vec3 v, inout vec3 n) {
+void get_skinning_matrices(in uvec4 _indices, out mat3x4 matrices[4]) {
+  get_skinning_matrix(_indices.x, matrices[0]);
+  get_skinning_matrix(_indices.y, matrices[1]);
+  get_skinning_matrix(_indices.z, matrices[2]);
+  get_skinning_matrix(_indices.w, matrices[3]);
+}
+
+vec3 apply_skinning_matrices(in vec4 _vertex, in mat3x4 _matrices[4], in vec4 _weights) {
   /// To allow less texture fetching, and thus better memory bandwith, skinning
   /// matrices are setup as 3x4 on the host (ie. transposed and last column removed)
   /// Hence, matrix / vector multiplications are "reversed".
-
-  // Retrieve skinning matrices
-  mat3x4 jointMatrix[4];
-  get_skinning_matrix(_indices.x, jointMatrix[0]);
-  get_skinning_matrix(_indices.y, jointMatrix[1]);
-  get_skinning_matrix(_indices.z, jointMatrix[2]);
-  get_skinning_matrix(_indices.w, jointMatrix[3]);
-
   mat4x3 M;
-  vec4 x_;
+  M[0] = _vertex * _matrices[0];
+  M[1] = _vertex * _matrices[1];
+  M[2] = _vertex * _matrices[2];
+  M[3] = _vertex * _matrices[3];
+  return (M * _weights).xyz;
+}
 
-  // Position
-  x_ = vec4(v, 1.0f);
-  M[0] = x_ * jointMatrix[0];
-  M[1] = x_ * jointMatrix[1];
-  M[2] = x_ * jointMatrix[2];
-  M[3] = x_ * jointMatrix[3];
-  v = M * _weights;
+subroutine(skinning_subroutine)
+void skinning_LBS(in uvec4 _indices, in vec4 _weights, inout vec3 v, inout vec3 n) {
+  // Retrieve skinning matrices.
+  mat3x4 jointMatrices[4];
+  get_skinning_matrices( _indices, jointMatrices);
 
-  // Normal
-  x_ = vec4(n, 0.0f);
-  M[0] = x_ * jointMatrix[0];
-  M[1] = x_ * jointMatrix[1];
-  M[2] = x_ * jointMatrix[2];
-  M[3] = x_ * jointMatrix[3];
-  n = M * _weights;
+  // Transforms.
+  v = apply_skinning_matrices( vec4(v, 1.0), jointMatrices, _weights);
+  n = apply_skinning_matrices( vec4(n, 0.0), jointMatrices, _weights);
 }
 
 // ----------------------------------------------------------------------------
