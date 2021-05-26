@@ -3,7 +3,7 @@
 
 #include "shared/lighting/inc_common.glsl"
 #include "shared/structs/inc_material.glsl"
-#include "shared/inc_constants.glsl"          // Pi()
+#include "shared/inc_constants.glsl"
 
 // ----------------------------------------------------------------------------
 //
@@ -78,14 +78,13 @@ struct BRDFMaterial_t {
 BRDFMaterial_t get_brdf_material(in Material_t mat) {
   // Surface reflection at zero incidence.
   const vec3 kF0 = vec3(0.04);
-
   const vec3 color = mat.color.rgb;
   
   BRDFMaterial_t brdf_mat;
 
   // Corrected albedo component of the reflectance equation.
   //brdf_mat.albedo = (1.0 - mat.metallic) * color;
-  brdf_mat.albedo = mix( color, mat.reflection, mat.metallic * (1.0-mat.roughness));
+  brdf_mat.albedo = mix( color, mat.reflection, mat.metallic); //
   
   // Fresnel parameter.
   brdf_mat.F0 = mix( kF0, color, mat.metallic);
@@ -157,12 +156,13 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   }
 
   // Ambient factor.
-  //const vec3 albedo = (1.0 - mat.metallic) * mat.color.rgb;
-  const vec3 kD = (1.0 - f_SchlickRoughness( frag_info.n_dot_v, brdf_mat.F0, mat.roughness)) * brdf_mat.albedo; //
+  const vec3 albedo = brdf_mat.albedo;
+
+  const vec3 kD = (1.0 - f_SchlickRoughness( frag_info.n_dot_v, brdf_mat.F0, mat.roughness)) * albedo; //
   const vec3 ambient = mat.irradiance * kD * mat.ao;
 
   // Final light color.
-  const vec3 color = (L0 + ambient);
+  const vec3 color = L0 + ambient + mat.emissive;
 
   return color;
 }

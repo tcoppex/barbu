@@ -5,16 +5,16 @@
 // ----------------------------------------------------------------------------
 
 // Inputs.
-layout(location = VERTEX_ATTRIB_POSITION) in vec3 inPosition;
-layout(location = VERTEX_ATTRIB_TEXCOORD) in vec2 inTexcoord;
-layout(location = VERTEX_ATTRIB_NORMAL) in vec3 inNormal;
-layout(location = VERTEX_ATTRIB_TANGENT) in vec4 inTangent;
-layout(location = VERTEX_ATTRIB_JOINT_INDICES) in uvec4 inJointIndices;
-layout(location = VERTEX_ATTRIB_JOINT_WEIGHTS) in vec4 inJointWeights;
+layout(location = VERTEX_ATTRIB_POSITION)       in vec3 inPosition;
+layout(location = VERTEX_ATTRIB_TEXCOORD)       in vec2 inTexcoord;
+layout(location = VERTEX_ATTRIB_NORMAL)         in vec3 inNormal;
+layout(location = VERTEX_ATTRIB_TANGENT)        in vec4 inTangent;
+layout(location = VERTEX_ATTRIB_JOINT_INDICES)  in uvec4 inJointIndices;
+layout(location = VERTEX_ATTRIB_JOINT_WEIGHTS)  in vec4 inJointWeights;
 
 // Outputs.
-layout(location = 0) out vec3 outPositionWS;
-layout(location = 1) out vec2 outTexcoord;
+layout(location = 0) out vec2 outTexcoord;
+layout(location = 1) out vec3 outPositionWS;
 layout(location = 2) out vec3 outNormalWS;
 layout(location = 3) out vec4 outTangentWS;
 
@@ -22,26 +22,31 @@ layout(location = 3) out vec4 outTangentWS;
 
 #include "shared/inc_skinning.glsl"
 
-// Uniforms [ use uniform block ].
-uniform mat4 uMVP;
+// Uniforms.
+uniform mat4 uMVP; // [use viewProj instead ?]
 uniform mat4 uModelMatrix;
 
 // ----------------------------------------------------------------------------
 
 void main() {
-  vec3 position = inPosition;
+  vec4 position = vec4(inPosition, 1.0);
   vec3 normal   = inNormal;
   vec3 tangent  = inTangent.xyz;
 
-  // [should transform tangent too]
-  apply_skinning( inJointIndices, inJointWeights, position, normal); //
+  // [should transform the tangent too]
+  apply_skinning( inJointIndices, inJointWeights, position.xyz, normal); //
   
-  const mat3 modelMatrix = mat3(uModelMatrix); //
-  gl_Position   = uMVP * vec4(position, 1.0);
-  outPositionWS = modelMatrix * position;
+  // Transform vectors.
+  const mat3 normalMatrix = mat3(uModelMatrix);
+  normal  = normalize(normalMatrix * normal);
+  tangent = normalize(normalMatrix * tangent);
+
+  // Outputs.
+  gl_Position   = uMVP * position;
   outTexcoord   = inTexcoord;
-  outNormalWS   = normalize(modelMatrix * normal);
-  outTangentWS  = vec4(normalize(modelMatrix * tangent), inTangent.w);
+  outPositionWS = (uModelMatrix * position).xyz;
+  outNormalWS   = normal;
+  outTangentWS  = vec4(tangent, inTangent.w);
 }
 
 // ----------------------------------------------------------------------------

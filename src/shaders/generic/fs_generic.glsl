@@ -5,8 +5,8 @@
 // ----------------------------------------------------------------------------
 
 // Inputs.
-layout(location = 0) in vec3 inPositionWS;
-layout(location = 1) in vec2 inTexcoord;
+layout(location = 0) in vec2 inTexcoord;
+layout(location = 1) in vec3 inPositionWS;
 layout(location = 2) in vec3 inNormalWS;
 layout(location = 3) in vec4 inTangentWS;
 
@@ -34,16 +34,19 @@ uniform vec4 uColor;
 uniform float uAlphaCutOff;
 uniform float uMetallic;
 uniform float uRoughness;
+uniform vec3 uEmissiveFactor;
 
 uniform sampler2D uAlbedoTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uRoughMetalTex;
 uniform sampler2D uAOTex;
+uniform sampler2D uEmissiveTex;
 
 uniform bool uHasAlbedo;
 uniform bool uHasNormal;
 uniform bool uHasRoughMetal;
 uniform bool uHasAO;
+uniform bool uHasEmissive;
 
 // ----------------------------------------------------------------------------
 
@@ -70,9 +73,9 @@ vec3 get_normal() {
 
     // Contribute to the main normal.
     N = bump;
-    
-    // [ show seams problems ]
-    //N = normalize(mix(N, bump, 10.5)); //
+
+    // [ show the seams issue ]
+    //N = normalize(mix(N, bump, 10.75)); //
   }
 
   return N;
@@ -122,34 +125,37 @@ vec3 get_irradiance(in vec3 normalWS) {
 Material_t get_material(in FragInfo_t frag) {
   Material_t mat;
 
-  const vec2 uv = inTexcoord.xy;
-
   // Diffuse / Albedo.
-  mat.color = (uHasAlbedo) ? texture( uAlbedoTex, uv) : uColor;
+  mat.color = (uHasAlbedo) ? texture( uAlbedoTex, frag.uv) : uColor;
 
   // Early Alpha fails.
   if (mat.color.a < uAlphaCutOff) { 
     discard; 
   }
   
-  // Ambient Occlusion.
-  const float ao = (uHasAO) ? texture( uAOTex, uv).r : 1.0f;
-
   // Roughness + Metallic.
-  const vec2 rough_metal = (uHasRoughMetal) ? texture( uRoughMetalTex, uv).yz // 
+  const vec2 rough_metal = (uHasRoughMetal) ? texture( uRoughMetalTex, frag.uv).yz // 
                                             : vec2( uRoughness, uMetallic );
-  mat.roughness = rough_metal.x;
+  mat.roughness = rough_metal.x + 0.001;
   mat.metallic  = rough_metal.y;
 
+  // Ambient Occlusion.
+  const float ao = (uHasAO) ? texture( uAOTex, frag.uv).r : 1.0f;
   mat.ao = pow(ao, 2.0);
 
-  // --------
+  // Emissive.
+  const vec3 emissive = (uHasEmissive) ? texture(uEmissiveTex, frag.uv).rgb : vec3(0.0f);
+  mat.emissive = emissive * uEmissiveFactor;
 
-  // [ fragment derivative materials ]
+  // -- fragment derivative materials ---
 
-  // Compose ambient with a fragment based irradiance color.
+  // Irradiance.
   mat.irradiance = get_irradiance( frag.N );
-  mat.reflection = texture( uEnvironmentMap, frag.R).rgb; //
+  
+  // Roughness based reflective color.
+  const int kEnvMaxLevels = int(log2(textureSize(uEnvironmentMap, 0).x))-1;
+  const float lvl = mat.roughness * kEnvMaxLevels;
+  mat.reflection = textureLod( uEnvironmentMap, frag.R, lvl).rgb; //
 
   return mat;
 }
@@ -215,6 +221,7 @@ void main() {
     //MATERIAL_GENERIC_COLOR_MODE_UNLIT,
     //MATERIAL_GENERIC_COLOR_MODE_NORMAL,
     //MATERIAL_GENERIC_COLOR_MODE_TEXCOORD, 
+    //MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS, 
     uColorMode, 
   fraginfo, material);
 
