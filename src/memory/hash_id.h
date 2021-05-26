@@ -62,6 +62,10 @@ struct HashId {
   inline operator size_t() const noexcept { 
     return h; 
   }
+  
+  inline std::string const& str() const noexcept {
+    return path;
+  }
 
   inline char const* c_str() const noexcept {
     return path.c_str();
