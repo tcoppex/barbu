@@ -20,15 +20,21 @@ struct TextureParameters : AssetParameters {
 
 struct Texture : Asset<TextureParameters, Image> {
  private:
+  // [ not covered everywhere ]
   // When true and hot-reload is activated, setup can destroy the current texture 
-  // to change its resolution (storage are immutable).
+  // to change its resolution (all storage are immutables).
   // Otherwhise the texture is reloaded only when the resolution has not changed.
   static constexpr bool kImmutableResolution = false;
 
-  // Return the maximum mip map level for a 2d texture.
-  static int32_t GetMaxMipMapLevel(int32_t w, int32_t h);
-
  public:
+  // Return the maximum mip map level for a 2d texture.
+  static constexpr int32_t GetMaxMipLevel(int32_t res) {
+    return static_cast<int32_t>(glm::log(res) * 1.4426950408889634);
+  }
+  static constexpr int32_t GetMaxMipLevel(int32_t w, int32_t h) {
+    return GetMaxMipLevel(glm::min(w, h));
+  }
+
   Texture(Parameters_t const& _params)
     : Asset(_params)
   {}
@@ -39,7 +45,13 @@ struct Texture : Asset<TextureParameters, Image> {
     return id != 0u;
   }
 
-  uint32_t id = 0u;
+  void generate_mipmaps();
+
+  int32_t levels() const { return params.levels; }
+  int32_t width() const { return params.w; }
+  int32_t height() const { return params.h; }
+
+  uint32_t id = 0u; //
 
  private:
   void allocate() final;
@@ -69,7 +81,7 @@ class TextureFactory : public AssetFactory<Texture> {
   Handle createCubemap(AssetId const& id, ResourceInfoList const& dependencies);
   Handle createCubemap(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels = nullptr);
   // Crossed HDR Cubemap.
-  Handle createCubemapHDR(AssetId const& id, ResourceId const& resource = nullptr);
+  Handle createCubemapHDR(AssetId const& id, int levels, ResourceId const& resource = nullptr);
 };
 
 // ----------------------------------------------------------------------------

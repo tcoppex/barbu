@@ -132,10 +132,6 @@ void GetTextureInfo(int32_t internalFormat, int32_t &format, int32_t &type) {
 // ----------------------------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-int32_t Texture::GetMaxMipMapLevel(int32_t w, int32_t h) {
-  return static_cast<int32_t>(glm::log(glm::min(w, h)) * 1.4426950408889634);
-}
-
 void Texture::allocate() {
   assert( params.target > 0 );
   if (!loaded()) {
@@ -200,7 +196,7 @@ bool Texture::setup() {
     bool const resolution_changed = (w != params.w) || (h != params.h);
     
     // Fix incorrect levels. [improve?]
-    int32_t const max_levels = GetMaxMipMapLevel(w, h);
+    int32_t const max_levels = GetMaxMipLevel(w, h);
     params.levels = glm::min(params.levels, max_levels);  
 
     // [ somes cases might have been missed ]
@@ -272,9 +268,9 @@ bool Texture::setup() {
 
   //------------------------------------------
 
-  // Generate mipmaps when requested.
-  if (params.levels > 1) {
-    glGenerateTextureMipmap(id);
+  // Generate mipmaps when needed.
+  if ((params.levels > 1) && pixels) {
+    generate_mipmaps();
   }
 
   // Save resource dependent setup parameters.
@@ -283,11 +279,15 @@ bool Texture::setup() {
   params.depth = z;
 
   // Empty pixels ptr if any.
-  params.pixels = nullptr;
+  params.pixels = nullptr; //
 
   CHECK_GX_ERROR();
 
   return true;
+}
+
+void Texture::generate_mipmaps() {
+  glGenerateTextureMipmap(id);
 }
 
 // ----------------------------------------------------------------------------
@@ -304,12 +304,11 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, i
 }
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, ResourceId const& resource) {
-  int32_t const levels  = 4; //
-  int32_t const internalFormat = GL_RGBA8; //
-  return create2d(id, levels, internalFormat, resource);
+  return create2d(id, 4, GL_RGBA8, resource); //
 }
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels) {
+  //levels = (levels < 0) ? Texture::GetMaxMipLevel( w, h) : levels; //
   assert(levels >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_2D;
@@ -340,6 +339,7 @@ TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, Resource
 }
 
 TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels) {
+  //levels = (levels < 0) ? Texture::GetMaxMipLevel( w, h) : levels; //
   assert(levels >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_CUBE_MAP;
@@ -353,10 +353,11 @@ TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, int leve
 
 // ----------------------------------------------------------------------------
 
-TextureFactory::Handle TextureFactory::createCubemapHDR(AssetId const& id, ResourceId const& resource) {
+TextureFactory::Handle TextureFactory::createCubemapHDR(AssetId const& id, int levels, ResourceId const& resource) {
+  assert(levels >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_CUBE_MAP;
-  params.levels         = 1;
+  params.levels         = levels;
   params.internalFormat = GL_RGBA16F; //
   params.dependencies.add_resource( (resource.h == 0) ? id : resource );
   return create(id, params);
