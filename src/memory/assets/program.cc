@@ -12,42 +12,42 @@ void Program::setUniform(int32_t loc, T const& value) {
 
 template<>
 void Program::setUniform(int32_t loc, float const& value) {
-  glUniform1f( loc, value);
+  gx::SetUniform( id, loc, value);
 }
 
 template<>
 void Program::setUniform(int32_t loc, int32_t const& value) {
-  glUniform1i( loc, value);
+  gx::SetUniform( id, loc, value);
 }
 
 template<>
 void Program::setUniform(int32_t loc, uint32_t const& value) {
-  glUniform1ui( loc, value);
+  gx::SetUniform( id, loc, value);
 }
 
 template<>
 void Program::setUniform(int32_t loc, glm::vec2 const& value) {
-  glUniform2fv( loc, 1, glm::value_ptr(value));
+  gx::SetUniform( id, loc, value);
 }
 
 template<>
 void Program::setUniform(int32_t loc, glm::vec3 const& value) {
-  glUniform3fv( loc, 1, glm::value_ptr(value));
+  gx::SetUniform( id, loc, value);
 }
 
 template<>
 void Program::setUniform(int32_t loc, glm::vec4 const& value) {
-  glUniform4fv( loc, 1, glm::value_ptr(value));
+  gx::SetUniform( id, loc, value);
 }
 
 template<>
 void Program::setUniform(int32_t loc, glm::mat3 const& value) {
-  glUniformMatrix3fv( loc, 1, GL_FALSE, glm::value_ptr(value));
+  gx::SetUniform( id, loc, value);
 }
 
 template<>
 void Program::setUniform(int32_t loc, glm::mat4 const& value) {
-  glUniformMatrix4fv( loc, 1, GL_FALSE, glm::value_ptr(value));
+  gx::SetUniform( id, loc, value);
 }
 
 void Program::allocate() {
