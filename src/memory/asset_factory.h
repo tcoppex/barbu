@@ -196,6 +196,10 @@ class AssetFactory {
     return assets_.find(id) != assets_.end();
   }
 
+  AssetId findUniqueID(std::string_view basename) {
+    return AssetId::FindUnique( basename, [this](AssetId const& _id) { return has(_id); });
+  }
+
   // Return the specificed asset if present in memory.
   inline Handle get(AssetId const& id) const noexcept {
     return has(id) ? assets_.at(id) : nullptr;
