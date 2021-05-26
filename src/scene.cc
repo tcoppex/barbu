@@ -20,7 +20,10 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
   scene_hierarchy_.init();
 
   // Special Rendering.
-  skybox_.init();
+  skybox_.init(
+    //ASSETS_DIR "/textures/cross_hdr/uffizi_cross_mmp_s.hdr"
+    ASSETS_DIR "/textures/reinforced_concrete_02_1k.hdr"
+  );
   grid_.init();
 
   // Simulation FX.
@@ -45,8 +48,9 @@ void Scene::init(Camera &camera, views::Main &ui_mainview) {
 #else
     auto e = scene_hierarchy_.import_model(
       //ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
-      // ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
-      ASSETS_DIR "/models/glb-heads/DigitalIra.glb"
+      //ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
+      //ASSETS_DIR "/models/glb-heads/DigitalIra.glb"
+      ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf"
     );
 
     params_.enable_hair = false;
@@ -302,7 +306,7 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
       grid_.render(camera);
     }
 
-    // Double faced meshes.
+    // Double faced meshes (work better when the mesh is convex).
     gx::Enable( gx::State::CullFace );
     {
       gx::CullFace( gx::Face::Front );
@@ -349,7 +353,9 @@ void Scene::render(Camera const& camera, uint32_t bitmask) {
     }
  
     // Display rigs with debug shapes.
-    scene_hierarchy_.render_debug_rigs();
+    if (params_.show_rigs) {
+      scene_hierarchy_.render_debug_rigs();
+    }
 
     // Display colliders with debug shapes.
     scene_hierarchy_.render_debug_colliders();
@@ -389,13 +395,13 @@ void Scene::setup_ui_views(views::Main &ui_mainview) {
 void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
   auto render_drawables = [this, render_mode, &camera](EntityHandle drawable) {
     // global matrix of the entity.
-    auto const& world = scene_hierarchy_.global_matrix( drawable->index() );
+    auto const& world = scene_hierarchy_.global_matrix(drawable->index());
 
     // External, per-mesh render attributes.
     RenderAttributes attributes;
     // (vertex)
-    attributes.world_matrix        = world;
     attributes.mvp_matrix          = camera.viewproj() * world;
+    attributes.world_matrix        = world;
 
     // (vertex skinning)
     if (drawable->has<SkinComponent>()) {
@@ -405,7 +411,7 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
     }
 
     // (fragment)
-    attributes.envmap_texid        = skybox_.texture() ? skybox_.texture()->id : 0u;
+    attributes.envmap_texid        = skybox_.specular_map() ? skybox_.specular_map()->id : 0u; //
     attributes.irradiance_texid    = skybox_.irradiance_map() ? skybox_.irradiance_map()->id : 0u;
     attributes.irradiance_matrices = skybox_.has_irradiance_matrice() ? skybox_.irradiance_matrices() : nullptr;
     attributes.eye_position        = camera.position();
@@ -432,53 +438,5 @@ void Scene::render_entities(RenderMode render_mode, Camera const& camera) {
 
   CHECK_GX_ERROR();
 }
-
-
-#if 0
-
-void Scene::render_debug_particles(Camera const& camera) {
-  auto const& params = particle_.simulation_parameters();
-  float const radius = params.emitter_radius;
-
-  glm::vec3 scale(1.0f);
-
-  switch (params.emitter_type) {
-    case GPUParticle::EMITTER_DISK:
-      scale = glm::vec3(radius, 0.0f, radius);
-    break;
-
-    case GPUParticle::EMITTER_SPHERE:
-    case GPUParticle::EMITTER_BALL:
-      scale = glm::vec3(radius);
-    break;
-
-    case GPUParticle::EMITTER_POINT:
-    default:
-    break;
-  }
-
-  gx::Disable( gx::State::CullFace );
-  gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Line);
-
-  gx::UseProgram( pgm_handle_->id );
-  {
-    // emitter.
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), params.emitter_position)
-                    * glm::scale(glm::mat4(1.0f), scale);
-    glm::vec4 color = glm::vec4(0.9f, 0.9f, 1.0f, 0.5f);
-    draw_mesh( debug_sphere_, model, color, camera);
-
-    // bounding volume.
-    model = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f*params.bounding_volume_size));
-    color = glm::vec4(1.0f, 0.5f, 0.5f, 1.0f);
-    draw_mesh( debug_sphere_, model, color, camera);
-  }
-  gx::UseProgram();
-
-  gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Fill);
-  gx::Enable( gx::State::CullFace );
-}
-
-#endif
 
 // ----------------------------------------------------------------------------
