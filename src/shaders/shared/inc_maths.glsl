@@ -67,8 +67,8 @@ vec2 trig_angle(float radians) {
 
 vec2 update_trig_angle(in vec2 base, in vec2 delta, float s) {
   return vec2(
-    base.x * delta.x - s * base.y * delta.y,
-    base.y * delta.x + s * base.x * delta.y 
+    base.x * delta.x - s * base.y * delta.y,  // cos(a +/- b) = cos(a)*cos(b) -/+ sin(a)*sin(b)
+    base.y * delta.x + s * base.x * delta.y   // sin(a +/- b) = sin(a)*cos(b) +/- cos(a)*sin(b) 
   );
 }
 
@@ -155,6 +155,42 @@ vec3 sample_sphere_out(float radius, vec2 rn) {
   const float z = radius * (2.0 * rn.y - 1.0);
   const float r = sqrt(radius * radius - z * z);
   return vec3(r * cos(theta), r * sin(theta), z);
+}
+
+// ----------------------------------------------------------------------------
+
+// Samples points on an hemisphere using the Hammersley point set.
+// ref : http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
+
+float radicalInverse_VdC(uint bits) {
+  bits = (bits << 16u) | (bits >> 16u);
+  bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+  bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+  bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+  bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+  return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+
+vec2 hammersley2d(int i, float inv_N) {
+  return vec2(float(i) * inv_N, radicalInverse_VdC(i));
+}
+
+vec2 hammersley2d(int i, int N) {
+  return hammersley2d(i, 1.0f / float(N));
+}
+
+vec3 hemisphereSample_uniform(float u, float v) {
+ const float phi = v * TwoPi();
+ const float cosTheta = 1.0 - u;
+ const float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+ return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+}
+  
+vec3 hemisphereSample_cos(float u, float v) {
+ const float phi = v * TwoPi();
+ const float cosTheta = sqrt(1.0 - u);
+ const float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+ return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }
 
 // ----------------------------------------------------------------------------
