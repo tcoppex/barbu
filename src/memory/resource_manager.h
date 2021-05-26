@@ -56,6 +56,10 @@ class Resource {
     return filename.substr(filename.find_last_of("/\\") + 1);
   }
 
+  static std::string TrimFilename(std::string_view filename) {
+    return TrimFilename(std::string(filename));
+  }
+
  protected:
   virtual ~Resource() {}
 
