@@ -38,7 +38,7 @@ class Probe {
   static EnumArray<glm::mat4, CubeFace> const kViewMatrices;
 
  public:
-  using DrawCallback_t = std::function<void(Camera const&)>;
+  using DrawCallback_t = std::function<void(Camera const&, int32_t level)>;
 
   Probe()
     : resolution_(0u)
@@ -51,11 +51,10 @@ class Probe {
     release();
   }
 
-  void init(int32_t const resolution = kDefaultCubemapResolution, bool bUseDepth = true);
+  void setup(int32_t const resolution, int32_t const levels, bool bUseDepth);
   void release();
 
-  // Update all 6 faces of the cubemap by providing a draw callback expecting 
-  // a view projection matrix.
+  // Update all 6 faces of the cubemap by providing a draw callback.
   void capture(DrawCallback_t draw_cb);
 
   inline int32_t resolution() const { return resolution_; }
@@ -67,7 +66,7 @@ class Probe {
   void end();
 
   // Prepare the face to render, shall be called between begin() / end().
-  void setup_face(CubeFace face);
+  void setup_face(CubeFace face, int32_t level);
 
   // Probe camera view controller.
   class ViewController final : public Camera::ViewController {
@@ -75,7 +74,7 @@ class Probe {
     virtual ~ViewController() {}
 
     inline void set_face(CubeFace face) { face_ = face; }
-    inline void get_view_matrix(float *m) final { memcpy(m, glm::value_ptr(Probe::kViewMatrices[face_]), 16 * sizeof(float)); } 
+    inline void get_view_matrix(float *m) final { memcpy(m, glm::value_ptr(Probe::kViewMatrices[face_]), 16 * sizeof(float)); } //
     inline glm::vec3 target() const final { return glm::vec3(0.0f); } //
 
    private:
@@ -85,8 +84,11 @@ class Probe {
   static Camera sCamera;                                //< Shared probe camera.
 
   int32_t resolution_;                                  //< Framebuffer resolution.
+  int32_t levels_;
+
   uint32_t fbo_; //                                     //< Framebuffer object.
   uint32_t renderbuffer_; //                            //< Renderbuffer (for depth).
+  
   TextureHandle texture_;                               //< Environment map.
 };
 

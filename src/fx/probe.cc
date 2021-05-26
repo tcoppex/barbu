@@ -1,5 +1,6 @@
 #include "fx/probe.h"
 
+#include <cstring>
 #include "memory/assets/assets.h"
 
 // ----------------------------------------------------------------------------
@@ -32,8 +33,9 @@ Camera Probe::sCamera;
 
 // ----------------------------------------------------------------------------
 
-void Probe::init(int32_t const resolution, bool bUseDepth) {
+void Probe::setup(int32_t const resolution, int32_t const levels, bool bUseDepth) {
   resolution_ = resolution;
+  levels_ = levels;
 
   // Initialize the shared camera if needed.
   if (!sCamera.initialized()) {
@@ -41,10 +43,12 @@ void Probe::init(int32_t const resolution, bool bUseDepth) {
     sCamera.set_default();
   }
 
-  glCreateFramebuffers( 1, &fbo_);
+  if (fbo_ <= 0u) {
+    glCreateFramebuffers( 1, &fbo_);
+  }
 
-  // Attach a renderbuffer for depth testing.
-  if (bUseDepth) {
+  // Attach a renderbuffer for depth testing when needed.
+  if (bUseDepth && renderbuffer_ <= 0u) {
     glCreateRenderbuffers( 1, &renderbuffer_);
     glNamedRenderbufferStorage( renderbuffer_, GL_DEPTH_COMPONENT24, resolution_, resolution_);
     glNamedFramebufferRenderbuffer( fbo_, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer_);
@@ -52,7 +56,10 @@ void Probe::init(int32_t const resolution, bool bUseDepth) {
 
   // Create a HDR cubemap texture.
   texture_ = TEXTURE_ASSETS.createCubemap( 
-    kDefaultProbeName, 1, kProbeInternalFormat, resolution_, resolution_
+    TEXTURE_ASSETS.findUniqueID(kDefaultProbeName), 
+    levels, 
+    kProbeInternalFormat, 
+    resolution_, resolution_
   );
   LOG_CHECK( texture_ != nullptr );
 
@@ -73,9 +80,11 @@ void Probe::release() {
 
 void Probe::capture(DrawCallback_t draw_cb) {
   begin();
-  for (auto const& face : kIterFaces) {
-    setup_face(face);
-    draw_cb(sCamera);
+  for (int32_t lvl=0; lvl<levels_; ++lvl) {
+    for (auto const& face : kIterFaces) {
+      setup_face(face, lvl);
+      draw_cb(sCamera, lvl);
+    }
   }
   end();
 }
@@ -84,7 +93,6 @@ void Probe::capture(DrawCallback_t draw_cb) {
 
 void Probe::begin() {
   sCamera.set_controller(&view_controller_);
-  gx::Viewport(resolution_, resolution_);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
 }
 
@@ -96,10 +104,15 @@ void Probe::end() {
   CHECK_GX_ERROR();
 }
 
-void Probe::setup_face(CubeFace face) {
+void Probe::setup_face(CubeFace face, int32_t level) {
+  // Setup the viewport to appropriate level resolution.
+  float const scale = 1.0f / static_cast<float>(1 << level);
+  int32_t const res = scale * resolution_;
+  gx::Viewport( res, res);
+
   // Attach the cubemap face to the framebuffer color output.
   auto const face_id{ static_cast<int32_t>(face) };
-  glNamedFramebufferTextureLayer( fbo_, GL_COLOR_ATTACHMENT0, texture_->id, 0, face_id);
+  glNamedFramebufferTextureLayer( fbo_, GL_COLOR_ATTACHMENT0, texture_->id, level, face_id);
   LOG_CHECK( gx::CheckFramebufferStatus() );
 
   // [ the user is responsible to clear the framebuffer when needed ]
