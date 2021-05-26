@@ -77,6 +77,9 @@ bool checkExtensions(char const* extensions[]) {
   return valid;
 }
 
+static constexpr int32_t kErrorBufferSize = 1024;
+static char s_errorBuffer[kErrorBufferSize]; //
+
 } // namespace
 
 
@@ -165,8 +168,9 @@ void InitializeSamplers() {
 
     glSamplerParameterf( id, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8.0f); //
   }
+  LOG_DEBUG_INFO( "All samplers have anisotropy set to 8.0" );
 
-  //atexit([](){DefaultSamplers::Deinitialize();});
+  //atexit([](){gx::Deinitialize();});
 
   CHECK_GX_ERROR();
 }
@@ -229,7 +233,6 @@ bool IsEnabled(State cap) {
   return glIsEnabled( gl_capability[cap] );
 }
 
-
 void Viewport(float x, float y, float w, float h) {
   glViewport( x, y, w, h);
 }
@@ -243,7 +246,7 @@ void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor) {
 }
 
 void ClearColor(float r, float g, float b, float a) {
-  // (IDEA : automatically gamma-correct values).
+  // (IDEA : automatically gamma-correct values ?).
   glClearColor(r, g, b, a);
 }
 
@@ -382,9 +385,8 @@ bool CheckShaderStatus(uint32_t shader, std::string_view name){
 
   glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
   if (status != GL_TRUE) {
-    char buffer[1024];
-    glGetShaderInfoLog(shader, 1024, nullptr, buffer);
-    LOG_ERROR( name, "\n", buffer);
+    glGetShaderInfoLog(shader, kErrorBufferSize, nullptr, s_errorBuffer);
+    LOG_ERROR( name, "\n", s_errorBuffer);
     return false;
   }
 
@@ -396,9 +398,8 @@ bool CheckProgramStatus(uint32_t program, std::string_view name) {
 
   glGetProgramiv(program, GL_LINK_STATUS, &status);
   if (status != GL_TRUE) {
-    char buffer[1024];
-    glGetProgramInfoLog(program, 1024, nullptr, buffer);
-    LOG_ERROR( name, "\n", buffer );
+    glGetProgramInfoLog(program, kErrorBufferSize, nullptr, s_errorBuffer);
+    LOG_ERROR( name, "\n", s_errorBuffer );
   }
 
   glValidateProgram(program);
