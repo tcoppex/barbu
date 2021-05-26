@@ -116,6 +116,8 @@ class GPUParticle {
   void update(float const dt, Camera const& camera);
   void render(Camera const& camera);
   
+  void render_debug_particles(Camera const& camera);
+
   UIView* view() const;
 
   inline SimulationParameters_t& simulation_parameters() {

@@ -185,6 +185,51 @@ void GPUParticle::render(Camera const& camera) {
   CHECK_GX_ERROR();
 }
 
+void GPUParticle::render_debug_particles(Camera const& camera) {
+  auto const& params = simulation_parameters(); //
+  float const radius = params.emitter_radius;
+
+  glm::vec3 scale(1.0f);
+
+  switch (params.emitter_type) {
+    case GPUParticle::EMITTER_DISK:
+      scale = glm::vec3(radius, 0.0f, radius);
+    break;
+
+    case GPUParticle::EMITTER_SPHERE:
+    case GPUParticle::EMITTER_BALL:
+      scale = glm::vec3(radius);
+    break;
+
+    case GPUParticle::EMITTER_POINT:
+    default:
+    break;
+  }
+
+  gx::Disable( gx::State::CullFace );
+  gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Line);
+
+#if 0
+  gx::UseProgram( pgm_handle_->id );
+  {
+    // emitter.
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), params.emitter_position)
+                    * glm::scale(glm::mat4(1.0f), scale);
+    glm::vec4 color = glm::vec4(0.9f, 0.9f, 1.0f, 0.5f);
+    draw_mesh( debug_sphere_, model, color, camera);
+
+    // bounding volume.
+    model = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f*params.bounding_volume_size));
+    color = glm::vec4(1.0f, 0.5f, 0.5f, 1.0f);
+    draw_mesh( debug_sphere_, model, color, camera);
+  }
+  gx::UseProgram();
+#endif 
+  
+  gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Fill);
+  gx::Enable( gx::State::CullFace );
+}
+
 // ----------------------------------------------------------------------------
 
 UIView* GPUParticle::view() const {
