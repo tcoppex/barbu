@@ -27,7 +27,7 @@ class SkinComponent final : public ComponentParams<Component::Skin> {
 
   ~SkinComponent();
 
-  void update(float global_time);
+  bool update(float global_time);
 
   // void debug_draw(); //
 
