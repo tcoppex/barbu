@@ -27,6 +27,7 @@ class Scene : public AppScene {
     bool show_wireframe  = false;
     bool enable_hair     = true;
     bool enable_particle = false;
+    bool show_rigs       = false;
 
     UIView* ui_view_ptr = nullptr;
   };
