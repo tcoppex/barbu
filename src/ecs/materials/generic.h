@@ -34,10 +34,12 @@ class GenericMaterial : public Material {
     , alpha_cutoff_(kDefaultAlphaCutOff)
     , roughness_(0.0f) //
     , metallic_(0.0f) //
+    , emissive_factor_{1.0f, 1.0f, 1.0f}
     , tex_albedo_(nullptr)
     , tex_normal_(nullptr)
     , tex_rough_metal_(nullptr)
     , tex_ao_(nullptr)
+    , tex_emissive_(nullptr)
   {
     PROGRAM_ASSETS.create( program_id_, { 
       SHADERS_DIR "/generic/vs_generic.glsl",
@@ -55,6 +57,8 @@ class GenericMaterial : public Material {
     alpha_cutoff_ = info.alpha_cutoff;
     roughness_    = info.roughness;
     metallic_     = info.metallic;
+    
+    emissive_factor_ = info.emissive_factor;
 
     auto get_texture = [](auto const& str) {
       return (!str.empty()) ? TEXTURE_ASSETS.create2d( AssetId(str) ) : nullptr;
@@ -64,6 +68,7 @@ class GenericMaterial : public Material {
     tex_normal_      = get_texture(info.bump_map);
     tex_rough_metal_ = get_texture(info.metallic_rough_map);
     tex_ao_          = get_texture(info.ao_map);
+    tex_emissive_    = get_texture(info.emissive_map);
 
     // Switch mode depending on parameters.
     if (render_mode_ == RenderMode::kDefault) {
@@ -88,6 +93,7 @@ class GenericMaterial : public Material {
     bool const hasNormal      = static_cast<bool>(tex_normal_);
     bool const hasRoughMetal  = static_cast<bool>(tex_rough_metal_);
     bool const hasAO          = static_cast<bool>(tex_ao_);
+    bool const hasEmissive    = static_cast<bool>(tex_emissive_);
     
     auto bind_texture = [this, &pgm](auto const& name, TextureHandle tex, gx::SamplerName sampler = gx::kDefaultSampler) {
       if (nullptr != tex) {
@@ -102,16 +108,19 @@ class GenericMaterial : public Material {
     gx::SetUniform( pgm, "uAlphaCutOff",    cutoff);
     gx::SetUniform( pgm, "uMetallic",       metallic_);
     gx::SetUniform( pgm, "uRoughness",      roughness_);
+    gx::SetUniform( pgm, "uEmissiveFactor", emissive_factor_);
 
     gx::SetUniform( pgm, "uHasAlbedo",      hasAlbedo);
     gx::SetUniform( pgm, "uHasNormal",      hasNormal);
     gx::SetUniform( pgm, "uHasRoughMetal",  hasRoughMetal);
     gx::SetUniform( pgm, "uHasAO",          hasAO);
-  
+    gx::SetUniform( pgm, "uHasEmissive",    hasEmissive);
+
     bind_texture( "uAlbedoTex",     tex_albedo_);
     bind_texture( "uNormalTex",     tex_normal_);
     bind_texture( "uRoughMetalTex", tex_rough_metal_);
     bind_texture( "uAOTex",         tex_ao_);
+    bind_texture( "uEmissiveTex",   tex_emissive_);
 
     CHECK_GX_ERROR();
   }
@@ -123,11 +132,13 @@ class GenericMaterial : public Material {
   float         alpha_cutoff_;
   float         roughness_;
   float         metallic_;
+  glm::vec3     emissive_factor_;
   
   TextureHandle tex_albedo_;
   TextureHandle tex_normal_;
   TextureHandle tex_rough_metal_;
   TextureHandle tex_ao_;
+  TextureHandle tex_emissive_;
 };
 
 // ----------------------------------------------------------------------------

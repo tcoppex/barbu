@@ -6,6 +6,7 @@ struct Material_t {
   float metallic;
   float roughness;
   float ao;
+  vec3 emissive;
 
   vec3 irradiance;
   vec3 reflection;//
