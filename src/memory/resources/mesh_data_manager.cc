@@ -251,6 +251,9 @@ void ParseMTL(char *input, MaterialFile &matfile) {
   //  * transparent if they have an opacity value ('d').
   //  * double sided when certain tokens are found in the material name, &
   //  * unlit if there is no specular / normal map as well.
+  //
+  // Bump map are bypassed because there are often not used as normal maps.
+  //
 
   char *s = input;
   for (char *end = strchr(s, '\n'); end != nullptr; s=end+1u, end = strchr(s, '\n')) //
@@ -301,16 +304,16 @@ void ParseMTL(char *input, MaterialFile &matfile) {
         mat.specular_map = std::string(namebuffer);
         mat.bUnlit = false;
       } else if (check_token(s, "map_Bump -bm")) {
-        float tmp;
-        sscanf( s+13, "%f %128s", &tmp, namebuffer);
-        mat.bump_map = std::string( namebuffer );
-        mat.bUnlit = false;
-        // (sometimes the bump might have a scale factor we bypass)
-        LOG_WARNING("[MTL Loader] Bypassed bump factor", tmp, "for file :\n", namebuffer);
+        // float tmp;
+        // sscanf( s+13, "%f %128s", &tmp, namebuffer);
+        // mat.bump_map = std::string( namebuffer );
+        // mat.bUnlit = false;
+        // // (sometimes the bump might have a scale factor we bypass)
+        // LOG_WARNING("[MTL Loader] Bypassed bump factor", tmp, "for file :\n", namebuffer);
       } else if (check_token(s, "map_Bump")) {
-        sscanf( s+9, "%128s", namebuffer);
-        mat.bump_map = std::string( namebuffer );
-        mat.bUnlit = false;
+        // sscanf( s+9, "%128s", namebuffer);
+        // mat.bump_map = std::string( namebuffer );
+        // mat.bUnlit = false;
       } else if (check_token(s, "map_d")) {
         sscanf( s+6, "%128s", namebuffer);
         mat.alpha_map = std::string( namebuffer );
@@ -460,7 +463,9 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
   std::setlocale(LC_ALL, locale);
 #endif
 
-  return meshdata.setup( meshfile ); //
+  bool const bNeedTangents = false; //!mat.bump_map.empty(); //
+
+  return meshdata.setup( meshfile, bNeedTangents );
 }
 
 // ----------------------------------------------------------------------------
@@ -696,6 +701,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
   basename = basename.substr(0, basename.find_last_of('.'));
 
   /* ------------ */
+  bool bNeedTangents = false;
 
   RawMeshFile meshfile;
   {
@@ -765,6 +771,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
           // Positions.
           if (attrib.type == cgltf_attribute_type_position) {
+            LOG_CHECK(attrib.data->type == cgltf_type_vec3);
             raw.vertices.reserve(attribsize);
             
             glm::vec3 vertex;
@@ -776,6 +783,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           }
           // Normals.
           else if (attrib.type == cgltf_attribute_type_normal) {
+            LOG_CHECK(attrib.data->type == cgltf_type_vec3);
             raw.normals.reserve(attribsize);
             
             glm::vec3 normal;
@@ -785,10 +793,32 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
               raw.normals.push_back( normal );
             }
           }
+          // Tangents
+          else if (attrib.type == cgltf_attribute_type_tangent) {
+            LOG_CHECK(attrib.data->type == cgltf_type_vec4);
+            raw.tangents.reserve(attribsize);
+            
+            glm::vec4 tangent;
+            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
+              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(tangent), 4);
+              glm::vec3 t3 = glm::vec3(tangent);
+                        t3 = glm::vec3(world_matrix * glm::vec4(t3, 0.0f));
+              tangent = glm::vec4(t3, tangent.w);
+              raw.tangents.push_back( tangent );
+            }
+          }
           // Texcoords. [check which index is used !]
           else if (attrib.type == cgltf_attribute_type_texcoord) {
+            LOG_CHECK(attrib.data->type == cgltf_type_vec2);
+            LOG_CHECK(attrib.index == 0);
+
+            if (attrib.index > 0) {
+              LOG_WARNING( "multitexturing is not supported yet." );
+              continue;
+            }
+
             raw.texcoords.reserve(attribsize);
-            
+
             glm::vec2 texcoord;
             for (cgltf_size index = 0; index < attrib.data->count; ++index) {
               cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(texcoord), 2);
@@ -929,11 +959,19 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         }
 
         // Miscs.
-        info.bump_map     = SetupTextureGLTF( mat.normal_texture.texture, dirname, info.name + "_normal");
+        info.bump_map     = SetupTextureGLTF( mat.normal_texture.texture,    dirname, info.name + "_normal");
         info.ao_map       = SetupTextureGLTF( mat.occlusion_texture.texture, dirname, info.name + "_occlusion");
+        info.emissive_map = SetupTextureGLTF( mat.emissive_texture.texture,  dirname, info.name + "_emissive");
         info.alpha_cutoff = mat.alpha_cutoff;
         info.bDoubleSided = mat.double_sided;
         info.bUnlit       = mat.unlit;
+
+        auto const emf = mat.emissive_factor;
+        info.emissive_factor = glm::vec3( emf[0], emf[1], emf[2]);
+
+        if (!info.bump_map.empty()) {
+          bNeedTangents = true; //
+        }
 
         mtl.infos.push_back(info);
       }
@@ -955,7 +993,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
   cgltf_free(data);
 
-  return meshdata.setup( meshfile ); //
+  return meshdata.setup( meshfile, bNeedTangents ); //
 }
 
 // ----------------------------------------------------------------------------

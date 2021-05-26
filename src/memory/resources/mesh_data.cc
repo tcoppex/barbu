@@ -285,7 +285,7 @@ void MeshData::release() {
 
 // ----------------------------------------------------------------------------
 
-bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
+bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents) {
   type = _type;
   std::swap(vgroups, _raw.vgroups);
    
@@ -333,7 +333,7 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
       }
 
       // [only recalculate tangent when the material contains normal map ?]
-      if (_raw.tangents.empty()) {
+      if (_raw.tangents.empty() && bNeedTangents) {
         _raw.recalculate_tangents();
       }
       has_tangent = true;
@@ -398,7 +398,7 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw) {
   return true;
 }
 
-bool MeshData::setup(RawMeshFile &meshfile) {
+bool MeshData::setup(RawMeshFile &meshfile, bool bNeedTangents) {
   // Note : for now we process only a single mesh, but in the future we shall
   //        handle all sub objects from a file.
 
@@ -406,7 +406,7 @@ bool MeshData::setup(RawMeshFile &meshfile) {
   MeshData::PrimitiveType primtype = raw.elementsAttribs.empty() ? MeshData::POINTS
                                                                  : MeshData::TRIANGLES
                                                                  ;
-  return setup( primtype, raw);
+  return setup( primtype, raw, bNeedTangents);
 }
 
 // ----------------------------------------------------------------------------

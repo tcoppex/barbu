@@ -103,8 +103,8 @@ struct MeshData : public Resource {
   // -------------------
 
   /* Setup from a RawMeshData of specified primitive type. */
-  bool setup(PrimitiveType _type, RawMeshData &_raw); //
-  bool setup(RawMeshFile &meshfile);
+  bool setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents = false); //
+  bool setup(RawMeshFile &meshfile, bool bNeedTangents = false);
 
   void release() final;
 
