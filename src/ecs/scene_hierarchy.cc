@@ -71,27 +71,27 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
     }
     
     // Calculate skinning matrices.
-    auto &skin = e->get<SkinComponent>();
-    skin.update(global_time);
+    if (auto &skin = e->get<SkinComponent>(); skin.update(global_time)) {
+      // Update rig entity global matrix from skinning.
+      // [ hence we might want to avoid computing their global uselessly beforehand ]
+      auto &visual = e->get<VisualComponent>();
+      if (auto rig = visual.rig(); rig) {
+        auto const& rig_global = global_matrix(rig->index());
+        auto const& controller = skin.controller();
+        auto const& global_pose_matrices = controller.global_pose_matrices();
 
-    // Update rig entity global matrix from skinning.
-    // [ hence we might want to avoid computing their global uselessly beforehand ]
-    auto &visual = e->get<VisualComponent>();
-    if (auto rig = visual.rig(); rig) {
-      auto const& rig_global = global_matrix(rig->index());
-      auto const& controller = skin.controller();
-      auto const& global_pose_matrices = controller.global_pose_matrices();
+        // Map skeleton joint index to their rig entity.
+        auto &skeleton_map = skin.skeleton_map(); //
+        assert(!skeleton_map.empty());
 
-      // Map skeleton joint index to their rig entity.
-      auto &skeleton_map = skin.skeleton_map(); //
-      assert(!skeleton_map.empty());
+        for (int32_t joint_id = 0; joint_id < controller.njoints(); ++joint_id) {
+          auto const& global_pose = global_pose_matrices[joint_id];
+          auto const entity_index = skeleton_map[joint_id]->index(); //
+          assert( entity_index > -1 );
 
-      for (int32_t joint_id = 0; joint_id < controller.njoints(); ++joint_id) {
-        auto const& global_pose = global_pose_matrices[joint_id];
-        auto const entity_index = skeleton_map[joint_id]->index(); //
-        assert( entity_index > -1 );
-
-        frame_.globals[entity_index] = rig_global * global_pose;
+          //LOG_MESSAGE(entity_index);
+          frame_.globals[entity_index] = rig_global * global_pose;
+        }
       }
     }
   }
@@ -338,12 +338,12 @@ glm::vec3 SceneHierarchy::centroid(bool selected) const {
 
 
 EntityHandle SceneHierarchy::next(EntityHandle entity, int32_t step) const {
-  int32_t next_id = static_cast<int32_t>((entity->index()+step));
   int32_t const nentities = static_cast<int32_t>(entities_.size());
 
+  int32_t next_id = entity->index() + step;
   next_id = (next_id < 0) ? nentities + next_id : next_id % nentities; //
 
-  // O(n) complexity..
+  // [ O(n), improve ? ]
   for (auto e : entities_) {
     if (next_id-- == 0) {
       return e;

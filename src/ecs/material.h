@@ -20,8 +20,8 @@ enum class RenderMode {
 // Attributes shared by all materials.
 struct RenderAttributes {
   // (vertex)
-  glm::mat4 world_matrix;
   glm::mat4 mvp_matrix;
+  glm::mat4 world_matrix;
 
   // (vertex skinning)
   uint32_t skinning_texid = 0u;
@@ -82,8 +82,8 @@ class Material {
       };
 
       // (vertex)
-      gx::SetUniform( pgm, "uModelMatrix", attributes.world_matrix);
       gx::SetUniform( pgm, "uMVP",         attributes.mvp_matrix);
+      gx::SetUniform( pgm, "uModelMatrix", attributes.world_matrix);
 
       // (vertex skinning)
       if (attributes.skinning_texid > 0u) {

@@ -7,7 +7,7 @@
 
 void MaterialAsset::allocate() {
   assert( !loaded() );
-  material_ = std::make_shared<GenericMaterial>();
+  material_ = std::make_shared<GenericMaterial>(); //
 }
 
 void MaterialAsset::release() {
