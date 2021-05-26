@@ -167,6 +167,7 @@ void App::frame() {
   // Camera specific rendering.
   gizmo_.begin_frame(deltatime_, camera_);
   {
+    gx::Viewport(camera_.width(), camera_.height());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //
 
     // 'Deffered'-pass, post-process the solid objects.
