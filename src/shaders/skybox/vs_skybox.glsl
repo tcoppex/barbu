@@ -9,7 +9,7 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 0) out vec3 outView;
 
 // Uniforms.
-uniform mat4  uMVP;
+uniform mat4 uMVP;
 
 // ----------------------------------------------------------------------------
 

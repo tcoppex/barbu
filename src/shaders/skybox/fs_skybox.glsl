@@ -15,7 +15,7 @@ uniform vec4 uFactors = vec4(1.0);
 // ----------------------------------------------------------------------------
 
 void main() {
-  fragColor = uFactors * texture(uCubemap, inView, 0);
+  fragColor = uFactors * textureLod(uCubemap, inView, 0.0);
 }
 
 // ----------------------------------------------------------------------------
