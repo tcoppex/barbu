@@ -43,7 +43,7 @@ class Renderer {
     bool show_transform     = true;
     bool show_wireframe     = false;
     bool show_rigs          = false;
-    bool enable_hair        = true; //
+    bool enable_hair        = true;
     bool enable_particle    = false;
     bool enable_postprocess = true;
 
@@ -78,7 +78,7 @@ class Renderer {
   Skybox skybox_;
   Grid grid_;
 
-  // [ should probably be used by components instead ]
+  // [ should probably be reserved for components ]
   GPUParticle particle_;
   Hair hair_;
 

@@ -17,10 +17,8 @@ Renderer::~Renderer() {
 void Renderer::init() {
   postprocess_.init();
   gizmo_.init();
-  
   grid_.init();
   skybox_.init();
-
   particle_.init();  
   hair_.init();
 
@@ -40,7 +38,6 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
 
     // Will initialize / resize textures when needed [to improve]
     postprocess_.setup_textures(camera); //
-    postprocess_.toggle( params_.enable_postprocess );
 
     if (params_.enable_particle) {
       particle_.update( deltatime, camera);

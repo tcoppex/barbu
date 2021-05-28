@@ -28,23 +28,26 @@ void Application::setup() {
   //renderer_.params().show_skybox = false;
 
   // Scene Hierarchy.
+  EntityHandle e(nullptr);
   if constexpr (true) {
     // -- Hair sample --
 
-    scene_.import_model( ASSETS_DIR "/models/InfiniteScan/Head.glb" );
+    e = scene_.import_model( ASSETS_DIR "/models/InfiniteScan/Head.glb" );
     renderer_.hair().setup( ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" ); //
     scene_.add_bounding_sphere(0.25f);
   } else {
     // -- Simple model sample --
 
+    e =
     // scene_.import_model( ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf" );
     // scene_.import_model( ASSETS_DIR "/models/gltf_samples/CesiumMan.glb" );
     // scene_.import_model( ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb" );
     scene_.import_model( ASSETS_DIR "/models/glb-heads/DigitalIra.glb" );
   }
 
-  // Recenter the view on the scene's centroid.
-  arcball_controller_.set_target(scene_.centroid(), true);
+  // Recenter the view on the focus centroid.
+  auto const centroid = e ? scene_.entity_global_centroid(e) : scene_.centroid();
+  arcball_controller_.set_target( centroid, true);
 }
 
 void Application::update() {
