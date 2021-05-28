@@ -1,4 +1,4 @@
-#include "animation/skeleton_controller.h"
+#include "fx/animation/skeleton_controller.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"

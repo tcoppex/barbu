@@ -5,9 +5,9 @@
 
 #include "ecs/component.h"
 
-#include "animation/common.h"
-#include "animation/skeleton.h"
-#include "animation/skeleton_controller.h"
+#include "fx/animation/common.h"
+#include "fx/animation/skeleton.h"
+#include "fx/animation/skeleton_controller.h"
 #include "ecs/entity-fwd.h"
 
 // ----------------------------------------------------------------------------

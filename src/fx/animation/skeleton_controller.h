@@ -2,8 +2,8 @@
 #define BARBU_ANIMATION_SKELETON_CONTROLLER_H_
 
 #include <cassert>
-#include "animation/common.h"
-#include "animation/skeleton.h"
+#include "fx/animation/common.h"
+#include "fx/animation/skeleton.h"
 
 // -----------------------------------------------------------------------------
 

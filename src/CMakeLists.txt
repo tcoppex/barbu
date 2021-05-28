@@ -8,10 +8,6 @@ list(APPEND Sources
   main.cc
   Application.cc
 
-  # animation/blend_tree.cc
-  animation/skeleton.cc
-  animation/skeleton_controller.cc
-
   core/app.cc
   core/events.cc
   core/global_clock.cc
@@ -29,6 +25,11 @@ list(APPEND Sources
   fx/skybox.cc
   fx/postprocess/hbao.cc
   fx/postprocess/postprocess.cc
+
+  # fx/animation/blend_tree.cc
+  fx/animation/common.cc
+  fx/animation/skeleton.cc
+  fx/animation/skeleton_controller.cc
 
   memory/assets/assets.cc
   memory/assets/material_asset.cc
@@ -56,12 +57,6 @@ list(APPEND Sources
 list(APPEND Headers
   Application.h
 
-  # animation/blend_tree.h
-  # animation/blend_node.h
-  animation/skeleton.h
-  animation/skeleton_controller.h
-  animation/common.h
-
   core/app.h
   core/events.h
   core/global_clock.h
@@ -82,6 +77,13 @@ list(APPEND Headers
   fx/irradiance.h
   fx/marschner.h
   fx/skybox.h
+
+  # fx/animation/blend_tree.h
+  # fx/animation/blend_node.h
+  fx/animation/skeleton.h
+  fx/animation/skeleton_controller.h
+  fx/animation/common.h
+
   fx/postprocess/postprocess.h
   fx/postprocess/hbao.h
 

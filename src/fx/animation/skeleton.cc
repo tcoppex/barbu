@@ -1,4 +1,4 @@
-#include "animation/skeleton.h"
+#include "fx/animation/skeleton.h"
 #include "core/logger.h"
 
 // -----------------------------------------------------------------------------

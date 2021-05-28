@@ -1,4 +1,4 @@
-#include "animation/common.h"
+#include "fx/animation/common.h"
 
 bool SequenceClip_t::evaluate_localtime(float const global_time, float &local_time) const {
   assert( nullptr != action_ptr );

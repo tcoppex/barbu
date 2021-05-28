@@ -7,7 +7,7 @@
 #include "memory/resource_manager.h"
 
 #include "utils/raw_mesh_file.h" // VertexGroups_t, RawMeshFile, MaterialFile
-#include "animation/skeleton.h"
+#include "fx/animation/skeleton.h"
 
 // ----------------------------------------------------------------------------
 //

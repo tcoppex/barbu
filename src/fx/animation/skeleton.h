@@ -8,7 +8,7 @@
 
 #include "glm/glm.hpp"
 
-#include "animation/common.h"
+#include "fx/animation/common.h"
 
 // -----------------------------------------------------------------------------
 
