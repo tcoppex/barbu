@@ -8,6 +8,7 @@
 #include "glm/vec3.hpp"
 #include "glm/mat4x4.hpp"
 
+#include "core/logger.h"
 #include "memory/resources/resources.h" //
 
 // ----------------------------------------------------------------------------
@@ -42,7 +43,6 @@ class Irradiance {
     float const texelSize  = 1.0f / static_cast<float>(w);
 
     SHCoeff_t shCoeff{0};
-
     float sumWeight = 0.0f;
     for (int texid = 0; texid < 6; ++texid) {
       auto const* pixels = cubemap[texid];
@@ -121,6 +121,8 @@ class Irradiance {
   void PrefilterHDR( ResourceInfo const& resource, SHMatrices_t &M) {
     CubemapData_t<float> cubemap{nullptr};
 
+    LOG_INFO( "Prefiltering irradance matrices on CPU for :", resource.id.str() );
+
     auto img = Resources::Get<Image>( resource.id ).data;
     for (int i=0; i<img->depth; ++i) {
       cubemap[i] = ((float*)img->pixels) + i * img->width * img->height * img->channels;
@@ -129,6 +131,8 @@ class Irradiance {
     // Small scale down of the floating point value.
     auto const dColor = [](float x) { return 0.1f*x; };
     Prefilter<float>( cubemap, dColor, img->width, img->height, img->channels, M);
+
+    LOG_MESSAGE( "Irradiance matrices completed !" );
   }
 
  private:

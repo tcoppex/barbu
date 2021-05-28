@@ -329,12 +329,20 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
     // Recalculate normals / tangents when none exists.
     if (!_raw.elementsAttribs.empty()) { 
       if (_raw.normals.empty()) {
+        LOG_INFO( "Recalculating normals for :", _raw.name );
+
         _raw.recalculate_normals();
+
+        LOG_MESSAGE( "Normals completed !" );
       }
 
       // [only recalculate tangent when the material contains normal map ?]
       if (_raw.tangents.empty() && bNeedTangents) {
+        LOG_INFO( "Recalculating tangents for :", _raw.name );
+        
         _raw.recalculate_tangents();
+
+        LOG_MESSAGE( "Tangents completed !" );
       }
       has_tangent = true;
     }

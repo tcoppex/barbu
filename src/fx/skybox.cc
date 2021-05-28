@@ -137,12 +137,18 @@ void Skybox::setup_texture(ResourceId resource_id) {
   // Irradiance envmap.
   if (!has_sh_matrices_) {
     constexpr int32_t kIrradianceMapResolution = 64;
+
+    LOG_INFO( "Computing convolution cubemaps on GPU for :", resource_id.str() );
+
     probe.setup( kIrradianceMapResolution, 1, false);
     probe.capture( [this](Camera const& camera, int32_t level) {
       render( RenderMode::Convolution, camera); 
     });
     irradiance_map_ = probe.texture();
+
+    LOG_MESSAGE( "Cubemap completed !" );
   }
+
   LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
 
   // --------------------------------------
@@ -155,6 +161,8 @@ void Skybox::setup_texture(ResourceId resource_id) {
     constexpr int32_t kSpecularMapLevel      = Texture::GetMaxMipLevel(kSpecularMapResolution);
     constexpr float kInvMaxLevel             = 1.0f / (kSpecularMapLevel - 1.0f);
 
+    LOG_INFO( "Computing prefiltered cubemaps on GPU for :", resource_id.str() );
+
     pgm_.prefilter->setUniform( "uNumSamples", kSpecularMapNumSamples);
     probe.setup( kSpecularMapResolution, kSpecularMapLevel, false); //
     probe.capture( [this, kInvMaxLevel](Camera const& camera, int32_t level) {
@@ -163,6 +171,8 @@ void Skybox::setup_texture(ResourceId resource_id) {
       render( RenderMode::Prefilter, camera); 
     });
     specular_map_ = probe.texture();
+
+    LOG_MESSAGE( "Cubemap completed !" );
   }
 }
 
