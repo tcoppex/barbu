@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 
 #include "core/camera.h"
 #include "core/graphics.h"
@@ -98,6 +99,9 @@ class GPUParticle {
     RenderingParameters_t rendering;
   };
 
+  std::shared_ptr<UIView> ui_view;
+
+ public:
   GPUParticle() :
     num_alive_particles_(0u),
     vao_(0u),
@@ -117,8 +121,6 @@ class GPUParticle {
   void render(Camera const& camera);
   
   void render_debug_particles(Camera const& camera);
-
-  UIView* view() const;
 
   inline SimulationParameters_t& simulation_parameters() {
    return params_.simulation;
@@ -184,10 +186,6 @@ private:
   bool enable_vectorfield_;                       //< True if the vector field is used.
 
   Parameters_t params_;
-
-  struct {
-    UIView *sparkle = nullptr;
-  } ui_views_;                                    //< UI views.
 };
 
 // ----------------------------------------------------------------------------

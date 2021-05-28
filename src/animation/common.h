@@ -65,7 +65,7 @@ struct AnimationClip_t : Action_t {
     , framecount(_size)
     , framerate(framecount / _duration) //
   {
-    LOG_DEBUG_INFO("* AnimationClip :"_name, _size, _duration, framerate);
+    LOG_DEBUG_INFO("* AnimationClip :", _name, _size, _duration, framerate);
     samples.resize(_size);
   }
 

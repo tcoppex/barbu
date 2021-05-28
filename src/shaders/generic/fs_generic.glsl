@@ -53,15 +53,14 @@ uniform bool uHasEmissive;
 vec3 get_normal() {
   vec3 N = normalize(inNormalWS);
 
-  // Retrieve the bump normal in tangent space using mikktspace decoding.
+  // Retrieve the bump normal in tangent space using mikkTSpace decoding.
   if (uHasNormal) {
     // [still got weird seams on UVs, probably due to wrong mikktspace indexing]
 
     // TBN basis to transform from tangent-space to world-space.
-    // (we should not normalized this interpolated vectors to get the TBN).
-    const float sign = inTangentWS.w;
-    const vec3 T     = inTangentWS.xyz;
-    const vec3 B     = sign * cross( N, T);
+    // We do not have to normalize this interpolated vectors to get the TBN.
+    const vec3 T = inTangentWS.xyz;
+    const vec3 B = inTangentWS.w * cross( N, T);
     const mat3 TBN = mat3( T, B, N);
     
     // Tangent-space normal.
@@ -112,8 +111,8 @@ vec3 get_irradiance(in vec3 normalWS) {
       dot( n, uIrradianceMatrices[2] * n)
     );
   } else {
-    const float irr_factor = 0.5; //
-    irradiance = irr_factor * texture( uIrradianceMap, normalWS).rgb;
+    const float kIrradianceMapFactor = 0.5; //
+    irradiance = kIrradianceMapFactor * texture( uIrradianceMap, normalWS).rgb;
   }
 
   return irradiance;
@@ -129,14 +128,14 @@ Material_t get_material(in FragInfo_t frag) {
   mat.color = (uHasAlbedo) ? texture( uAlbedoTex, frag.uv) : uColor;
 
   // Early Alpha fails.
-  if (mat.color.a < uAlphaCutOff) { 
+  if (mat.color.a <= uAlphaCutOff) { 
     discard; 
   }
   
   // Roughness + Metallic.
   const vec2 rough_metal = (uHasRoughMetal) ? texture( uRoughMetalTex, frag.uv).yz // 
                                             : vec2( uRoughness, uMetallic );
-  mat.roughness = rough_metal.x + 0.001;
+  mat.roughness = max(rough_metal.x, 0.001);
   mat.metallic  = rough_metal.y;
 
   // Ambient Occlusion.

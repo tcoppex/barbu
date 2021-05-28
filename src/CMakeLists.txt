@@ -6,7 +6,7 @@ set(TARGET_NAME "${CMAKE_PROJECT_NAME}")
 
 list(APPEND Sources
   main.cc
-  scene.cc
+  Application.cc
 
   # animation/blend_tree.cc
   animation/skeleton.cc
@@ -16,6 +16,7 @@ list(APPEND Sources
   core/events.cc
   core/global_clock.cc
   core/graphics.cc
+  core/renderer.cc
 
   ecs/scene_hierarchy.cc
   ecs/components/skin.cc
@@ -47,13 +48,13 @@ list(APPEND Sources
 
   ui/ui_controller.cc
 
-  ui/views/SceneView.cc
   ui/views/Main.cc
+  ui/views/RendererView.cc
   ui/views/fx/SparkleView.cc
 )
 
 list(APPEND Headers
-  scene.h
+  Application.h
 
   # animation/blend_tree.h
   # animation/blend_node.h
@@ -65,6 +66,7 @@ list(APPEND Headers
   core/events.h
   core/global_clock.h
   core/graphics.h
+  core/renderer.h
 
   ecs/ecs.h
   ecs/entity.h
@@ -111,12 +113,13 @@ list(APPEND Headers
   ui/imgui_wrapper.h
   ui/ui_controller.h
   ui/ui_view.h
-  ui/views/SceneView.h
+
+  ui/views/Main.h
+  ui/views/RendererView.cc
+  ui/views/views.h
   ui/views/fx/HairView.h
   ui/views/fx/MarschnerView.h
   ui/views/fx/SparkleView.h
-  ui/views/Main.h
-  ui/views/views.h
 )
 
 file(GLOB_RECURSE Miscs 

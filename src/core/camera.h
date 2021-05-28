@@ -1,6 +1,8 @@
 #ifndef BARBU_CORE_CAMERA_H_
 #define BARBU_CORE_CAMERA_H_
 
+#include <memory>
+
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
@@ -136,6 +138,8 @@ class Camera {
 
   bool bUseOrtho_;
 };
+
+using CameraHandle = std::shared_ptr<Camera>;
 
 // ----------------------------------------------------------------------------
 

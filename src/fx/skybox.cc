@@ -13,7 +13,9 @@ static bool constexpr kVisualizeSpecularMap   = false;
 
 // ----------------------------------------------------------------------------
 
-void Skybox::init(ResourceId resource_id) {
+void Skybox::init() {
+  assert(nullptr == cube_mesh_);
+  
   // Compute program to transform a spherical map to a cubemap.
   pgm_.cs_transform = PROGRAM_ASSETS.createCompute( 
     SHADERS_DIR "/skybox/cs_spherical_to_cubemap.glsl" 
@@ -45,8 +47,6 @@ void Skybox::init(ResourceId resource_id) {
   // Skybox mesh.
   cube_mesh_ = MESH_ASSETS.createCube();
 
-  setup_texture(resource_id); //
-
   CHECK_GX_ERROR();
 }
 
@@ -63,7 +63,7 @@ void Skybox::render(Camera const& camera) {
 
 
 void Skybox::setup_texture(ResourceId resource_id) {
-  assert(sky_map_ == nullptr);
+  assert(sky_map_ == nullptr); //
 
   // (we might want to use mipmaps for late convolutions)
   constexpr int32_t kLevels = 1;
@@ -131,8 +131,8 @@ void Skybox::setup_texture(ResourceId resource_id) {
   Probe probe;
 
   // Be sure to have set the proper pipeline states (Already done in the renderer).
-  // gx::Enable( gx::State::CubeMapSeamless );
-  // gx::Disable( gx::State::CullFace );
+  gx::Enable( gx::State::CubeMapSeamless ); //
+  gx::Disable( gx::State::CullFace ); //
 
   // Irradiance envmap.
   if (!has_sh_matrices_) {
@@ -166,8 +166,12 @@ void Skybox::setup_texture(ResourceId resource_id) {
   }
 }
 
-
 void Skybox::render(RenderMode mode, Camera const& camera) {
+  if (sky_map_ == nullptr) {
+    LOG_DEBUG_INFO( "No map were specified for the skybox." );
+    return;
+  }
+
   auto const pgm = (mode == RenderMode::Sky)         ? pgm_.render->id : 
                    (mode == RenderMode::Convolution) ? pgm_.convolution->id
                                                      : pgm_.prefilter->id

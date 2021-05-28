@@ -14,10 +14,11 @@ Here's a [sneak peek](https://imgur.com/ZyjYbiN).
 
 * Entity-Components based system with live scene edit.
 * Hot-reload of external assets (*textures, models, shaders*).
-* PBR pipeline with Irradiance Environment map based lighting.
+* PBR pipeline with Image Based Lighting.
+* Postprocessing with tonemapping and horizontal based SSAO.
 * Marschner's hair reflectance model GPU implementation.
 * Dynamic GPU particles & hair simulation.
-* Skinned animation via Dual Quaternion blending.
+* GPU skinning animation via Dual Quaternion blending.
 * GLTF 2.0 & OBJ drag-n-drop model import.
 * Features rich camera controls.
 * Colourful console logger with context tracking !

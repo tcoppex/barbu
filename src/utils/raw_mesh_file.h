@@ -116,7 +116,7 @@ struct MaterialInfo {
 
   bool bAlphaTest   = false;
   bool bBlending    = false;  // (Blending always preempt alpha test)
-  bool bDoubleSided = false; //
+  bool bDoubleSided = true; //
   bool bUnlit       = false;
 };
 

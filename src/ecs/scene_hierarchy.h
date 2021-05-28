@@ -18,9 +18,15 @@ class SceneHierarchyView;
 
 class SceneHierarchy {
  public:
+  // Default container for entities.
   using EntityList_t = std::list<EntityHandle>;
 
+  // Identity matrix.
   static constexpr glm::mat4 sIdentity{1.0f};
+
+  // User interface data.
+  std::shared_ptr<views::SceneHierarchyView> ui_view = nullptr;
+  friend class views::SceneHierarchyView;
 
  public:
   SceneHierarchy() {
@@ -90,8 +96,11 @@ class SceneHierarchy {
   EntityHandle add_bounding_sphere(float radius=1.0f); //
 
   // Render availables rigs from the scene for debug display.
-  void render_debug_rigs(); //
-  void render_debug_colliders(); //
+  void render_debug_rigs() const; //
+  void render_debug_colliders() const; //
+
+  // Update / display selected gizmos.
+  void gizmos(bool use_centroid);
 
   // ----------------------
 
@@ -142,7 +151,7 @@ class SceneHierarchy {
   }
 
   // Render a node depending on its relations in hierarchy.
-  void render_debug_node(EntityHandle node);
+  void render_debug_node(EntityHandle node) const;
 
   // Entry to the entity hierarchy.
   EntityHandle root_;
@@ -152,10 +161,6 @@ class SceneHierarchy {
 
   // Holds per frame data.
   PerFrame_t frame_;
-
- public:
-  UIView *ui_view = nullptr;
-  friend class views::SceneHierarchyView;
 };
 
 // ----------------------------------------------------------------------------

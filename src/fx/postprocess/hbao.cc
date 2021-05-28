@@ -24,22 +24,12 @@ static void bindImageTexture(GLint unit, GLuint tex, GLenum mode, GLenum format)
 
 // ----------------------------------------------------------------------------
 
-void HBAO::init(Camera const& camera, float const scaling) {
-  auto const w = camera.width();
-  auto const h = camera.height();
-  params_.full_resolution = glm::vec4( w, h, 1.0f / w, 1.0f / h);
-  params_.ao_resolution   = glm::vec4( scaling * w, scaling * h, 1.0f / (scaling*w), 1.0f / (scaling * h));
-
-  init_textures();
+void HBAO::init() {
   init_shaders();
 }
 
 void HBAO::deinit() {
-  if (nullptr == pgm_.ssao) {
-    return;
-  }
-
-  glDeleteTextures(((GLsizei)textures_.size()), textures_.data()); //
+  //
 }
 
 void HBAO::process(Camera const& camera, GLuint const tex_linear_depth, GLuint &tex_ao_out) {
@@ -57,7 +47,10 @@ void HBAO::process(Camera const& camera, GLuint const tex_linear_depth, GLuint &
 
 // ----------------------------------------------------------------------------
 
-void HBAO::init_textures() {
+void HBAO::create_textures(int32_t w, int32_t h, float const scaling) {
+  params_.full_resolution = glm::vec4( w, h, 1.0f / w, 1.0f / h);
+  params_.ao_resolution   = glm::vec4( scaling * w, scaling * h, 1.0f / (scaling*w), 1.0f / (scaling * h));
+
   GLsizei const width  = static_cast<GLsizei>(params_.ao_resolution.x); 
   GLsizei const height = static_cast<GLsizei>(params_.ao_resolution.y);
 
@@ -67,6 +60,11 @@ void HBAO::init_textures() {
     glTextureStorage2D(textures_[i], 1, kTextureFormats[i], width, height);
   }
 
+  CHECK_GX_ERROR();
+}
+
+void HBAO::release_textures() {
+  glDeleteTextures(((GLsizei)textures_.size()), textures_.data()); //
   CHECK_GX_ERROR();
 }
 

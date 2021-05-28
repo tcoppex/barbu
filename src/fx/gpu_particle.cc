@@ -232,89 +232,80 @@ void GPUParticle::render_debug_particles(Camera const& camera) {
 
 // ----------------------------------------------------------------------------
 
-UIView* GPUParticle::view() const {
-  return ui_views_.sparkle;
-}
-
-// ----------------------------------------------------------------------------
-
 void GPUParticle::init_vao() {
   glCreateVertexArrays(1u, &vao_);
   glBindVertexArray(vao_);
 
   auto const vbo = pbuffer_.read_ssbo_id();
 
-#if SPARKLE_USE_SOA_LAYOUT
+  if constexpr(SPARKLE_USE_SOA_LAYOUT) {
 
-  auto const attrib_size = PingPongBuffer::kAttribBytesize; // vec4
-  auto const attrib_buffer_size = pbuffer_.attrib_buffer_bytesize();
+    auto const attrib_size = PingPongBuffer::kAttribBytesize; // vec4
+    auto const attrib_buffer_size = pbuffer_.attrib_buffer_bytesize();
 
-  GLuint binding_point = 0u;
-  GLuint attrib_index = 0u;
+    GLuint binding_point = 0u;
+    GLuint attrib_index = 0u;
 
-  // Position.
-  binding_point = STORAGE_BINDING_PARTICLE_POSITIONS_A;
-  glBindVertexBuffer(binding_point, vbo, attrib_index*attrib_buffer_size, attrib_size);
-  {
-    uint32_t const num_component = 3u;
-    glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, 0);
-    glVertexAttribBinding(attrib_index, binding_point);
-    glEnableVertexAttribArray(attrib_index);
-    ++attrib_index;
+    // Position.
+    binding_point = STORAGE_BINDING_PARTICLE_POSITIONS_A;
+    glBindVertexBuffer(binding_point, vbo, attrib_index*attrib_buffer_size, attrib_size);
+    {
+      uint32_t const num_component = 3u;
+      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, 0);
+      glVertexAttribBinding(attrib_index, binding_point);
+      glEnableVertexAttribArray(attrib_index);
+      ++attrib_index;
+    }
+
+    // Velocity.
+    binding_point = STORAGE_BINDING_PARTICLE_VELOCITIES_A;
+    glBindVertexBuffer(binding_point, vbo, attrib_index*attrib_buffer_size, attrib_size);
+    {
+      uint32_t const num_component = 3u;
+      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, 0);
+      glVertexAttribBinding(attrib_index, binding_point);
+      glEnableVertexAttribArray(attrib_index);
+      ++attrib_index;
+    }
+
+    // Age attributes.
+    binding_point = STORAGE_BINDING_PARTICLE_ATTRIBUTES_A;
+    glBindVertexBuffer(binding_point, vbo, attrib_index*attrib_buffer_size, attrib_size);
+    {
+      uint32_t const num_component = 2u;
+      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, 0);
+      glVertexAttribBinding(attrib_index, binding_point);
+      glEnableVertexAttribArray(attrib_index);
+      ++attrib_index;
+    }
+  } else {
+    uint32_t const binding_index = 0u;
+    glBindVertexBuffer(binding_index, vbo, 0u, sizeof(TParticle));
+    // Positions.
+    {
+      uint32_t const attrib_index = 0u;
+      uint32_t const num_component = static_cast<uint32_t>((sizeof TParticle::position) / sizeof(TParticle::position[0u]));
+      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, position));
+      glVertexAttribBinding(attrib_index, binding_index);
+      glEnableVertexAttribArray(attrib_index);
+    }
+    // Velocities.
+    {
+      uint32_t const attrib_index = 1u;
+      uint32_t const num_component = static_cast<uint32_t>((sizeof TParticle::velocity) / sizeof(TParticle::velocity[0u]));
+      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, velocity));
+      glVertexAttribBinding(attrib_index, binding_index);
+      glEnableVertexAttribArray(attrib_index);
+    }
+    // Age attributes.
+    {
+      uint32_t const attrib_index = 2u;
+      uint32_t const num_component = 2u;
+      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, start_age)); //
+      glVertexAttribBinding(attrib_index, binding_index);
+      glEnableVertexAttribArray(attrib_index);
+    }
   }
-
-  // Velocity.
-  binding_point = STORAGE_BINDING_PARTICLE_VELOCITIES_A;
-  glBindVertexBuffer(binding_point, vbo, attrib_index*attrib_buffer_size, attrib_size);
-  {
-    uint32_t const num_component = 3u;
-    glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, 0);
-    glVertexAttribBinding(attrib_index, binding_point);
-    glEnableVertexAttribArray(attrib_index);
-    ++attrib_index;
-  }
-
-  // Age attributes.
-  binding_point = STORAGE_BINDING_PARTICLE_ATTRIBUTES_A;
-  glBindVertexBuffer(binding_point, vbo, attrib_index*attrib_buffer_size, attrib_size);
-  {
-    uint32_t const num_component = 2u;
-    glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, 0);
-    glVertexAttribBinding(attrib_index, binding_point);
-    glEnableVertexAttribArray(attrib_index);
-    ++attrib_index;
-  }
-
-#else
-
-  uint32_t const binding_index = 0u;
-  glBindVertexBuffer(binding_index, vbo, 0u, sizeof(TParticle));
-  // Positions.
-  {
-    uint32_t const attrib_index = 0u;
-    uint32_t const num_component = static_cast<uint32_t>((sizeof TParticle::position) / sizeof(TParticle::position[0u]));
-    glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, position));
-    glVertexAttribBinding(attrib_index, binding_index);
-    glEnableVertexAttribArray(attrib_index);
-  }
-  // Velocities.
-  {
-    uint32_t const attrib_index = 1u;
-    uint32_t const num_component = static_cast<uint32_t>((sizeof TParticle::velocity) / sizeof(TParticle::velocity[0u]));
-    glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, velocity));
-    glVertexAttribBinding(attrib_index, binding_index);
-    glEnableVertexAttribArray(attrib_index);
-  }
-  // Age attributes.
-  {
-    uint32_t const attrib_index = 2u;
-    uint32_t const num_component = 2u;
-    glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, start_age)); //
-    glVertexAttribBinding(attrib_index, binding_index);
-    glEnableVertexAttribArray(attrib_index);
-  }
-
-#endif
 
   glBindVertexArray(0u);
 
@@ -394,7 +385,7 @@ void GPUParticle::init_shaders() {
 }
 
 void GPUParticle::init_ui_views() {
-  ui_views_.sparkle = new views::SparkleView(params_);
+  ui_view = std::make_shared<views::SparkleView>(params_);
 }
 
 void GPUParticle::_emission(uint32_t const count) {

@@ -23,41 +23,40 @@ static constexpr int kDebugRenderControlPointSize = 4;
 
 // ----------------------------------------------------------------------------
 
-void Hair::init(ResourceId const& scalpId) {
-  auto scalp_resource = Resources::Get<MeshData>( scalpId );
+void Hair::init(ResourceId const& scalp_id) {
+  auto scalp_resource = Resources::Get<MeshData>( scalp_id );
   if (!scalp_resource.is_valid()) {
-    LOG_ERROR( "The scalp mesh resource was not found.\n", scalpId.c_str() );
+    LOG_ERROR( "The scalp mesh resource was not found.\n", scalp_id.str() );
     return; 
   }
 
-  auto scalpMeshData = *scalp_resource.data;
+  auto &scalp_mesh_data = *scalp_resource.data;
   glm::vec3 pivot(0), bounds(0);
-  scalpMeshData.calculate_bounds(pivot, bounds);
+  scalp_mesh_data.calculate_bounds(pivot, bounds);
 
-  // --------
-
-  nroots_ = scalpMeshData.nvertices();
+  nroots_ = scalp_mesh_data.nvertices();
   model_ = glm::translate( glm::mat4(1.0f), pivot);
 
-  init_simulation( scalpMeshData );
-  init_mesh( scalpMeshData );
+  init_simulation( scalp_mesh_data );
+  init_mesh( scalp_mesh_data );
 
-  init_transform_feedbacks();
-  init_shaders();
+  // (This could be shared between hair instances)
+  {
+    init_transform_feedbacks();
+    init_shaders();
 
-  // [should be capped by nfaces * maxtessLevel * maxInstances or smthg]
-  randbuffer_.init( HAIR_TF_RANDOMBUFFER_SIZE );
-  randbuffer_.generate_values();
+    // [should be capped by nfaces * maxtessLevel * maxInstances or smthg]
+    randbuffer_.init( HAIR_TF_RANDOMBUFFER_SIZE );
+    randbuffer_.generate_values();
 
-  marschner_.init();
-  marschner_.generate();
+    marschner_.init();
+    marschner_.generate();
 
-  init_ui_views();
+    init_ui_views();
+  }
 }
 
 void Hair::deinit() {
-  // (ui)
-  delete ui_views_.hair;
   // (buffers)
   pbuffer_.destroy();
   randbuffer_.deinit();
@@ -68,22 +67,30 @@ void Hair::deinit() {
   glDeleteTransformFeedbacks(1, &tess_stream_.tf);
   glDeleteBuffers(1, &tess_stream_.tf);
   glDeleteVertexArrays(1u, &tess_stream_.vao);
+  nroots_ = 0;
 }
 
 void Hair::update(float const dt) {
+  if (!initialized()) {
+    LOG_DEBUG_INFO( "Calling Hair::update without initialization." );
+    return;
+  }
+
+  // Update the reflectance model LUT when they've changed.
   marschner_.update();
   
+  // [Debug : change scalp model matrix ]
   //Im3d::Gizmo( "HairScalp", glm::value_ptr(model_));
 
   // Simulation CS.
   pbuffer_.bind();
   {
-    auto const pgm = pgm_.cs_simulation;
+    auto const pgm = pgm_.cs_simulation->id;
 
     gx::UseProgram(pgm);
-      gx::SetUniform( pgm, "uTimeStep",     dt);
-      gx::SetUniform( pgm, "uScaleFactor",  params_.render.lengthScale);
-      gx::SetUniform( pgm, "uModel",        model_); 
+      gx::SetUniform( pgm, "uTimeStep",       dt);
+      gx::SetUniform( pgm, "uScaleFactor",    params_.render.lengthScale);
+      gx::SetUniform( pgm, "uModel",          model_); 
       gx::SetUniform( pgm, "uBoundingSphere", boundingsphere_);
 
       gx::DispatchCompute(nroots_);
@@ -102,8 +109,13 @@ void Hair::update(float const dt) {
 }
 
 void Hair::render(Camera const& camera) {
+  if (!initialized()) {
+    LOG_DEBUG_INFO( "Calling Hair::render without initialization." );
+    return;
+  }
+
   // Note :
-  // The first and second passes could be merged in a single pass if we only
+  // The first and second passes could be merged in a single one if we only
   // need to render the hair once.
   // As the tesselator cannot output lines_adjacency informations for the following
   // geometry stage, we need two passes at least to fix the triangle strip generation
@@ -114,7 +126,7 @@ void Hair::render(Camera const& camera) {
   {
     // 1) Stream tesselated hairs to buffer [put in update stage ?].
     {
-      auto const pgm = pgm_.tess_stream;
+      auto const pgm = pgm_.tess_stream->id;
 
       gx::UseProgram(pgm);
         randbuffer_.bind(SSBO_HAIR_TF_RANDOMBUFFER);
@@ -142,7 +154,7 @@ void Hair::render(Camera const& camera) {
 
     // 2) Render hair as camera aligned ribbons.
     {
-      auto const pgm = pgm_.render;
+      auto const pgm = pgm_.render->id;
 
       gx::UseProgram(pgm);
         // (VS)
@@ -172,7 +184,7 @@ void Hair::render(Camera const& camera) {
 
   // Simple debug rendering (show control points).
   if (params_.render.bShowDebugCP) {
-    auto const& pgm = pgm_.render_debug;
+    auto const& pgm = pgm_.render_debug->id;
 
     glm::vec4 const color(1.0f, 0.0f, 0.0f, 0.9f);
 
@@ -193,17 +205,13 @@ void Hair::render(Camera const& camera) {
   CHECK_GX_ERROR();
 }
 
-UIView* Hair::view() const {
-  return ui_views_.hair;
-}
-
 // ----------------------------------------------------------------------------
 
 void Hair::init_ui_views() {
   params_.readonly.nroots = nroots_;
   params_.readonly.nControlPoints = kNumControlPoints;
-  params_.ui_marschner = marschner_.view(); //
-  ui_views_.hair = new views::HairView(params_);
+  params_.ui_marschner = marschner_.ui_view; //
+  ui_view = std::make_shared<views::HairView>(params_);
 }
 
 void Hair::init_simulation(MeshData const& scalpMesh) {
@@ -417,15 +425,12 @@ void Hair::init_transform_feedbacks() {
 
 void Hair::init_shaders() {
   // Simulation pass.
-  {
-    auto& pgm = pgm_.cs_simulation;
-    pgm = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/hair/01_simulation/cs_simulation.glsl" )->id;
-  }
+  pgm_.cs_simulation = PROGRAM_ASSETS.createCompute(
+    SHADERS_DIR "/hair/01_simulation/cs_simulation.glsl"
+  );
 
   // Tesselation stream pass.
   {
-    auto& pgm = pgm_.tess_stream;
-
     AssetId assetId( "hair::tessFeedback" );
     ProgramParameters params{
       SHADERS_DIR "/hair/02_tess_stream/vs_stream_hair.glsl",
@@ -434,37 +439,36 @@ void Hair::init_shaders() {
       SHADERS_DIR "/hair/02_tess_stream/gs_stream_hair.glsl"
     };
 
-    pgm = PROGRAM_ASSETS.create( assetId, params )->id;
+    pgm_.tess_stream = PROGRAM_ASSETS.create( assetId, params );
 
-    // Set transform feedback outputs.
-    std::array<GLchar const*, 1> varyings{ "position_xyz_coeff_w" };
-    glTransformFeedbackVaryings(pgm, varyings.size(), varyings.data(), GL_INTERLEAVED_ATTRIBS);
+    // [ to wrap ]
+    {
+      auto const pgm = pgm_.tess_stream->id;
 
-    // (linked manually because of TF)
-    glLinkProgram(pgm); //
-    gx::CheckProgramStatus( pgm, assetId );
+      // Set transform feedback outputs.
+      std::array<GLchar const*, 1> varyings{ "position_xyz_coeff_w" };
+      glTransformFeedbackVaryings(pgm, varyings.size(), varyings.data(), GL_INTERLEAVED_ATTRIBS); //
+
+      // (linked manually because of TF)
+      gx::LinkProgram(pgm);
+      gx::CheckProgramStatus( pgm, assetId );
+    }
   }
 
   // Geometry / Render pass.
-  {
-    auto& pgm = pgm_.render;
-    pgm = PROGRAM_ASSETS.createGeo(
-      "hair::geo",
-      SHADERS_DIR "/hair/03_rendering/vs_render_hair.glsl",
-      SHADERS_DIR "/hair/03_rendering/gs_render_hair.glsl",
-      SHADERS_DIR "/hair/03_rendering/fs_render_hair.glsl"
-    )->id;
-  }
+  pgm_.render = PROGRAM_ASSETS.createGeo(
+    "hair::geo",
+    SHADERS_DIR "/hair/03_rendering/vs_render_hair.glsl",
+    SHADERS_DIR "/hair/03_rendering/gs_render_hair.glsl",
+    SHADERS_DIR "/hair/03_rendering/fs_render_hair.glsl"
+  );
 
   // Debug render.
-  {
-    auto& pgm = pgm_.render_debug;
-    pgm = PROGRAM_ASSETS.createRender(
-      "hair::debug",
-      SHADERS_DIR "/unlit/vs_unlit.glsl",
-      SHADERS_DIR "/unlit/fs_unlit.glsl"
-    )->id;
-  }
+  pgm_.render_debug = PROGRAM_ASSETS.createRender(
+    "hair::debug",
+    SHADERS_DIR "/unlit/vs_unlit.glsl",
+    SHADERS_DIR "/unlit/fs_unlit.glsl"
+  );
 
   CHECK_GX_ERROR();
 }

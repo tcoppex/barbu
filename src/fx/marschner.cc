@@ -31,7 +31,7 @@ void Marschner::init() {
   CHECK_GX_ERROR();
 
   // Setup the UI.
-  ui_view_ = new views::MarschnerView(params_);
+  ui_view = std::make_shared<views::MarschnerView>(params_);
 }
 
 // ----------------------------------------------------------------------------

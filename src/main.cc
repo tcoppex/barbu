@@ -1,24 +1,13 @@
-#include <cstdlib>
-#include "core/app.h"
-#include "scene.h"
+#include "Application.h"
 
 // ----------------------------------------------------------------------------
 
-#define WINDOW_TITLE    "- barbü -"
-
-// ----------------------------------------------------------------------------
+#ifndef WINDOW_TITLE
+  #define WINDOW_TITLE    "- barbü -"
+#endif
 
 int main(int, char *[]) {
-  App app;
-  Scene scene;
-
-  if (!app.init(WINDOW_TITLE, &scene)) {
-    return EXIT_FAILURE;
-  }
-  app.run();
-  app.deinit();
-
-  return EXIT_SUCCESS;
+  return Application().run( WINDOW_TITLE );
 }
 
 // ----------------------------------------------------------------------------

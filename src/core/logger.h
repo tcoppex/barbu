@@ -187,7 +187,7 @@ class Logger : public Singleton<Logger> {
 #endif
 
 #ifndef NDEBUG
-#define LOG_CHECK( x )          if (!(x)) Logger::Get().warning( __FILE__, __LINE__, #x, " test fails")
+#define LOG_CHECK( x )          if (!(x)) Logger::Get().warning( __FILE__, __LINE__, #x, " test fails\n")
 #else
 #define LOG_CHECK( x )          if (!(x)) {}
 #endif

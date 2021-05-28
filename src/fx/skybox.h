@@ -22,7 +22,7 @@ class Skybox {
  public:
   Skybox() = default;
 
-  void init(ResourceId resource_id);
+  void init();
   void deinit();
 
   void setup_texture(ResourceId resource_id); //
@@ -52,7 +52,7 @@ class Skybox {
     ProgramHandle prefilter;  //            //< prefilter specular map.
   } pgm_;
 
-  MeshHandle cube_mesh_; //
+  MeshHandle cube_mesh_ = nullptr; //
 
   TextureHandle sky_map_;                   //< sky cubemap.
   TextureHandle irradiance_map_;            //< irradiance envmap.

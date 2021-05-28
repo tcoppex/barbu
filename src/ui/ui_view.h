@@ -7,7 +7,7 @@
  * @brief Interface used to render User Interface View.
  */
 class UIView {
-public:
+ public:
   virtual ~UIView() {}
   virtual void render() = 0;
 };

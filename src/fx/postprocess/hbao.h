@@ -30,10 +30,13 @@ class HBAO {
  public:
   HBAO() = default;
 
-  void init(Camera const& camera, float const scaling = kDefaultScaling);
+  void init(); //
   void deinit();
 
   void process(Camera const& camera, GLuint const tex_linear_depth, GLuint &tex_ao_out);
+
+  void create_textures(int32_t w, int32_t h, float const scaling = kDefaultScaling);
+  void release_textures();
 
  private:
   enum TextureName_t {
@@ -53,8 +56,7 @@ class HBAO {
 
   static const int kHBAOTileWidth;
   static const int kBlurRadius;
-
-  void init_textures();
+  
   void init_shaders();
 
   void update_parameters(Camera const& camera);

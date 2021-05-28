@@ -9,29 +9,7 @@
 
 // ----------------------------------------------------------------------------
 
-void Postprocess::init(Camera const& camera) {
-  auto const w = camera.width();
-  auto const h = camera.height();
-
-  // Initialize the FBOs with their internal buffer textures.
-  glCreateFramebuffers(kNumBuffers, fbos_);
-  for (int i = 0; i < kNumBuffers; ++i) {
-    auto &buffer = buffers_[i];
-    glCreateTextures(GL_TEXTURE_2D, kNumBufferTextureName, buffer.data());
-    for (int j = 0; j < kNumBufferTextureName; ++j) {
-      glTextureStorage2D( buffer[j], 1, kBufferTextureFormats[j], w, h);
-    }
-
-    auto &fbo = fbos_[i];
-    glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, buffer[COLOR_RGBA8], 0);
-    glNamedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, buffer[DEPTH], 0);
-    
-    if (!gx::CheckFramebufferStatus()) {
-      LOG_WARNING( "Postprocess framebuffer", i, "completion failed" );
-    }
-  }
-  current_buffer_ = 0;
-
+void Postprocess::init() {
   // VAO.
   glCreateVertexArrays(1, &vao_);
   
@@ -40,29 +18,111 @@ void Postprocess::init(Camera const& camera) {
     "pp::composition",
     SHADERS_DIR "/postprocess/vs_mapscreen.glsl",
     SHADERS_DIR "/postprocess/fs_composition.glsl"
-  )->id;
+  );
+
+  pgm_.lindepth = PROGRAM_ASSETS.createCompute( 
+    SHADERS_DIR "/postprocess/linear_depth/cs_lindepth.glsl"
+  );
+
+  ssao_.init();
+
+  CHECK_GX_ERROR();
+}
+
+void Postprocess::setup_textures(Camera const& camera) {
+  auto const w = camera.width();
+  auto const h = camera.height();
+  bool const bResized = (w_ != w) || (h_ != h);
+
+  if (bResized) {
+    if (bTextureInit_) {
+      release_textures();
+    }
+
+    w_ = w;
+    h_ = h;
+    create_textures();
+  }
+}
+
+void Postprocess::create_textures() {
+  // Initialize the FBOs with their internal buffer textures.
+  glCreateFramebuffers(kNumBuffers, fbos_);
+  
+  for (int i = 0; i < kNumBuffers; ++i) {
+    auto &buffer = buffers_[i];
+    glCreateTextures(GL_TEXTURE_2D, kNumBufferTextureName, buffer.data());
+
+    auto &fbo = fbos_[i];
+    glNamedFramebufferTexture(fbo, GL_COLOR_ATTACHMENT0, buffer[COLOR_RGBA8], 0);
+    glNamedFramebufferTexture(fbo, GL_DEPTH_ATTACHMENT, buffer[DEPTH], 0);
+
+    if (!gx::CheckFramebufferStatus()) {
+      LOG_WARNING( "Postprocess framebuffer", i, "completion failed" );
+    }
+  }
+
+  for (auto &buffer : buffers_) {
+    for (int j = 0; j < kNumBufferTextureName; ++j) {
+      glTextureStorage2D( buffer[j], 1, kBufferTextureFormats[j], w_, h_);
+    }
+  }
+  current_buffer_ = 0;
 
   // sub-effects.
-  init_post_effects(camera);
+  {
+    // LinearDepth.
+    glCreateTextures(GL_TEXTURE_2D, 1, &out_.lindepth_r32f);
+
+    // (we might want to scaled down the texture for post-effects)
+    lindepth_res_ = glm::vec2( w_, h_);
+    glTextureStorage2D(out_.lindepth_r32f, 1, kLinearDepthFormat, lindepth_res_.x, lindepth_res_.y);  
+  
+    ssao_.create_textures(w_, h_);
+  }
+
+  bTextureInit_ = true;
+
+  CHECK_GX_ERROR();
+}
+
+void Postprocess::release_textures() {
+  if (!bTextureInit_) {
+    return;
+  }
+
+  glDeleteFramebuffers(kNumBuffers, fbos_);
+  for (int i = 0; i < kNumBuffers; ++i) {
+    glDeleteTextures( kNumBufferTextureName, buffers_[i].data());
+  }
+  glDeleteTextures(1, &out_.lindepth_r32f);
+  out_.lindepth_r32f = 0u;
+  
+  ssao_.release_textures();
+  bTextureInit_ = false;
 
   CHECK_GX_ERROR();
 }
 
 void Postprocess::deinit() {
-  glDeleteFramebuffers(kNumBuffers, fbos_);
-  for (int i = 0; i < kNumBuffers; ++i) {
-    glDeleteTextures( kNumBufferTextureName, buffers_[i].data());
-  }
+  release_textures();
   glDeleteVertexArrays(1, &vao_);
+  //ssao_.deinit();
+
+  CHECK_GX_ERROR();
 }
 
 void Postprocess::begin() {
+  assert(bTextureInit_);
+
   if (!bEnable_) {
     return;
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, fbos_[current_buffer_]);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+  CHECK_GX_ERROR();
 }
 
 void Postprocess::end(Camera const& camera) {
@@ -104,31 +164,13 @@ void Postprocess::end(Camera const& camera) {
 
 // ----------------------------------------------------------------------------
 
-void Postprocess::init_post_effects(Camera const& camera) {
-  // LinearDepth.
-  glCreateTextures(GL_TEXTURE_2D, 1, &out_.lindepth_r32f);
-
-  // (we might want to scaled down the texture for post-effects)
-  lindepth_res_ = glm::vec2(camera.width(), camera.height());
-  glTextureStorage2D(out_.lindepth_r32f, 1, kLinearDepthFormat, lindepth_res_.x, lindepth_res_.y);
-
-  pgm_.lindepth = PROGRAM_ASSETS.createCompute( 
-    SHADERS_DIR "/postprocess/linear_depth/cs_lindepth.glsl"
-  )->id;
-
-  ssao_.init(camera);
-
-  CHECK_GX_ERROR();
-}
-
 void Postprocess::post_effects(Camera const& camera) {
+  auto const pgm = pgm_.lindepth->id;
   int image_unit = -1;
 
   // Linearize Depth.
-  gx::UseProgram(pgm_.lindepth);
+  gx::UseProgram(pgm);
   {
-    auto &pgm = pgm_.lindepth;
-    
     gx::SetUniform( pgm, "uResolution", lindepth_res_);
     gx::SetUniform( pgm, "uLinearParams", camera.linearization_params());
 
@@ -157,7 +199,7 @@ void Postprocess::post_effects(Camera const& camera) {
 }
 
 void Postprocess::render_screen() {
-  auto const& pgm = pgm_.mapscreen;
+  auto const& pgm = pgm_.mapscreen->id;
 
   gx::Disable(gx::State::DepthTest);
 

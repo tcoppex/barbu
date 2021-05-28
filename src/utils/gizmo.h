@@ -14,7 +14,7 @@ class Camera;
 //
 class Gizmo {
  public:
-  static constexpr bool kbFlipGizmoWhenBehind = true;
+  static constexpr bool kbFlipGizmoWhenBehind = false;
   static constexpr bool kDefaultGlobal        = false;
   static constexpr float kGizmoScaling        = 0.95f;
   static constexpr float kTranslationSnapUnit = 0.5f;

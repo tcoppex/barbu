@@ -8,7 +8,8 @@
 
 #include "core/graphics.h"
 #include "fx/marschner.h"
-#include "memory/assets/mesh.h"     // (to minimize)
+#include "memory/assets/mesh.h"
+#include "memory/assets/program.h"
 #include "memory/pingpong_buffer.h"
 #include "memory/random_buffer.h"
 
@@ -22,7 +23,7 @@ class UIView;
 //
 class Hair {
  public:
-  // Parameters.
+  // UI Parameters.
   struct Parameters_t {
     struct {
       float maxlength  = 0.50f;
@@ -46,8 +47,10 @@ class Hair {
       int nControlPoints;
     } readonly;
 
-    UIView *ui_marschner = nullptr;
+    std::shared_ptr<UIView> ui_marschner = nullptr;
   };
+
+  std::shared_ptr<UIView> ui_view = nullptr;
 
  public:
   Hair()
@@ -60,11 +63,13 @@ class Hair {
   void update(float const dt);
   void render(Camera const& camera);
 
-  void set_bounding_sphere(glm::vec4 const& bsphere) {
+  inline void set_bounding_sphere(glm::vec4 const& bsphere) noexcept {
     boundingsphere_ = bsphere;
   }
 
-  UIView* view() const;
+  inline bool initialized() const noexcept {
+    return nroots_ != 0;
+  }
 
  private:
   void init_simulation(MeshData const& scalpMesh);
@@ -85,8 +90,7 @@ class Hair {
                                     //  shading reflectance model.
   
   glm::mat4 model_; //
-
-  glm::vec4 boundingsphere_;
+  glm::vec4 boundingsphere_; //
 
   struct {
     GLuint vao;
@@ -102,15 +106,12 @@ class Hair {
   } tess_stream_;                   //< Transform feedback parameters for tess output.
 
   struct {
-    GLuint cs_simulation;
-    GLuint tess_stream;
-    GLuint render;
-    GLuint render_debug;
+    ProgramHandle cs_simulation;
+    ProgramHandle tess_stream;
+    ProgramHandle render;
+    ProgramHandle render_debug;
   } pgm_;                           //< Hair pipeline program shaders.
 
-  struct {
-    UIView *hair = nullptr;
-  } ui_views_;                      //< UI views.
 };
 
 // ----------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 #ifndef BARBU_UI_UI_CONTROLLER_H_
 #define BARBU_UI_UI_CONTROLLER_H_
 
+#include <memory>
+
 struct GLFWwindow;
 struct ImDrawData;
 class UIView;
@@ -20,7 +22,7 @@ class UIController {
   void update();
   void render(bool show_ui = true);
 
-  inline void set_mainview(UIView *view) {
+  inline void set_mainview(std::shared_ptr<UIView> view) {
     mainview_ptr_ = view;
   }
 
@@ -31,7 +33,7 @@ class UIController {
   void render_frame(ImDrawData* draw_data);
 
   GLFWwindow *window_ptr_;
-  UIView *mainview_ptr_;
+  std::shared_ptr<UIView> mainview_ptr_;
   double time_;
 
   struct TDeviceObjects {

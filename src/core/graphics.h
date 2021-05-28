@@ -13,6 +13,9 @@
 //
 // ----------------------------------------------------------------------------
 
+#include "glm/vec4.hpp"
+#include "glm/vec3.hpp"
+
 #include "core/logger.h"
 #include "core/glfw.h"
 
@@ -98,8 +101,12 @@ void Viewport(float w, float h);
 
 void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor);
 
-void ClearColor(float r, float g, float b, float a = 1.0f);
-void ClearColor(int32_t r, int32_t g, int32_t b, int32_t a = 255);
+void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect=false);
+void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect=false);
+void ClearColor(float r, float g, float b, float a = 1.0f, bool bGammaCorrect=false);
+void ClearColor(int8_t r, int8_t g, int8_t b, int8_t a = 0xff, bool bGammaCorrect=false);
+void ClearColor(float c, bool bGammaCorrect=false);
+void ClearColor(int8_t c, bool bGammaCorrect=false);
 
 //void Clear();
 
@@ -128,6 +135,8 @@ void UnbindTexture(int unit = 0);
 // Program --------------------------------------------------------------------
 
 void UseProgram(uint32_t pgm = 0u);
+
+void LinkProgram(uint32_t pgm);
 
 int32_t UniformLocation(uint32_t pgm, std::string_view name);
 

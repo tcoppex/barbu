@@ -245,17 +245,36 @@ void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor) {
   glBlendFunc( gl_blendfactor[src_factor], gl_blendfactor[dst_factor] );
 }
 
-void ClearColor(float r, float g, float b, float a) {
-  // (IDEA : automatically gamma-correct values ?).
-  glClearColor(r, g, b, a);
+
+// Note : for proper internal gamma correction, we should use a custom
+//        color structure instead.
+
+void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect) {
+  auto c = (bGammaCorrect) ? glm::vec4(glm::pow( glm::vec3(rgba), glm::vec3(2.2f)), rgba.w) : rgba;
+  glClearColor(c.x, c.y, c.z, c.w);
 }
 
-void ClearColor(int32_t r, int32_t g, int32_t b, int32_t a) {
+void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect) {
+  ClearColor( glm::vec4(rgb, 1.0f), bGammaCorrect);
+}
+
+void ClearColor(float r, float g, float b, float a, bool bGammaCorrect) {
+  ClearColor(glm::vec4(r, g, b, a), bGammaCorrect);
+}
+
+void ClearColor(int8_t r, int8_t g, int8_t b, int8_t a, bool bGammaCorrect) {
   float constexpr s = 1.0f / 255.0f;
-  ClearColor( r * s, g * s, b * s, a * s);
+  ClearColor( r * s, g * s, b * s, a * s, bGammaCorrect);
 }
 
-//void Clear() { }
+void ClearColor(float c, bool bGammaCorrect) {
+  ClearColor( glm::vec3(c), bGammaCorrect);
+}
+
+void ClearColor(int8_t c, bool bGammaCorrect) {
+  ClearColor( c, c, c, 0xff, bGammaCorrect);
+}
+
 
 void CullFace(Face mode) {
   glCullFace( gl_facemode[mode] );
@@ -301,6 +320,10 @@ void UnbindTexture(int unit) {
 
 void UseProgram(uint32_t pgm) {
   glUseProgram(pgm);
+}
+
+void LinkProgram(uint32_t pgm) {
+  glLinkProgram(pgm);
 }
 
 int32_t UniformLocation(uint32_t pgm, std::string_view name) {

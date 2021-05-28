@@ -4,55 +4,18 @@
 // ----------------------------------------------------------------------------
 
 #include <chrono>
-#include "glm/mat4x4.hpp"
+#include <string_view>
+#include "glm/vec2.hpp"
 
 #include "core/camera.h"
-#include "fx/postprocess/postprocess.h"
+#include "core/renderer.h"
+#include "ecs/scene_hierarchy.h"
 #include "ui/ui_controller.h"
-#include "utils/arcball_controller.h"
-#include "utils/gizmo.h"
 
 struct GLFWwindow;
-
 namespace views {
   class Main;
 }
-
-// ----------------------------------------------------------------------------
-
-// Bitflags to filter which scene pass to render.
-enum SceneFilterBit : uint32_t {
-  SCENE_EVERYTHING        = 0x7fffffff,
-  SCENE_NONE              = 0,
-
-  SCENE_SKYBOX_BIT        = 1 << 0,
-  SCENE_SOLID_BIT         = 1 << 1,
-  SCENE_WIRE_BIT          = 1 << 2,
-  SCENE_HAIR_BIT          = 1 << 3,
-  SCENE_PARTICLE_BIT      = 1 << 4,
-  SCENE_TRANSPARENT_BIT   = 1 << 5,
-  SCENE_DEBUG_BIT         = 1 << 6,
-
-  PASS_DEFERRED           = SCENE_SKYBOX_BIT | SCENE_SOLID_BIT,
-  PASS_FORWARD            = SCENE_EVERYTHING ^ PASS_DEFERRED,
-};
-
-// ----------------------------------------------------------------------------
-
-// Interface for a scene run by the app.
-class AppScene {
- public:
-  AppScene() = default;
-  virtual ~AppScene() {}
-
-  virtual void init(Camera &camera, views::Main &ui_mainview) = 0;
-  virtual void deinit() = 0;
-
-  virtual UIView* view() const = 0;
-
-  virtual void update(float const dt, Camera &camera) = 0;
-  virtual void render(Camera const& camera, unsigned int bitmask = SceneFilterBit::SCENE_EVERYTHING) = 0;
-};
 
 // ----------------------------------------------------------------------------
 
@@ -60,53 +23,59 @@ class App {
  public:
   struct Parameters_t {
     bool regulate_fps = true;
-    bool postprocess  = true; //
     bool show_ui      = true;
   };
 
- public:
-  App() :
-    window_(nullptr),
-    scene_(nullptr),
-    deltatime_(0.0f),
-    camera_(&arcball_controller_),
-    ui_mainview_(nullptr)
+  App()
+    : ui_mainview_(nullptr)
+    , camera_(nullptr)
+    , window_(nullptr)
+    , rand_seed_(0u)
+    , deltatime_(0.0f)
   {}
+
+  virtual ~App();
   
-  bool init(char const* title, AppScene *scene);
-  void deinit();
-  
-  void run();
-  
+  /* Initialize then run the application mainloop. */
+  int32_t run(std::string_view title);
+
+  glm::ivec2 const& resolution() const {
+    return resolution_;
+  }
+
+  // User interface data are public.
+  std::shared_ptr<views::Main> ui_mainview_;
+  Parameters_t params_; //
+
+ protected:
+  virtual void setup() {}
+  virtual void update() {}
+  virtual void draw() {}
+
+  Camera camera_;
+  SceneHierarchy scene_;
+  Renderer renderer_;
+
  private:
-  void frame();
+  /* Initialize the core app. */
+  bool presetup(std::string_view title);
+
+  /* Update the global clock & regulate framecontrol. */
   void update_time();
 
+  // Window.
   GLFWwindow *window_;
-  AppScene *scene_;
+  glm::ivec2 resolution_;
 
+  // RNG seed.
   uint32_t rand_seed_;
 
   // Time.
   std::chrono::steady_clock::time_point time_;
-  float deltatime_;
+  float deltatime_; 
 
-  // Camera.
-  ArcBallController arcball_controller_;
-  Camera camera_;
-
-  // Gizmos handler.
-  Gizmo gizmo_;
-
-  // Postprocess.
-  Postprocess postprocess_;
-
-  // UI.
+  // User Interface.
   UIController ui_controller_;
-  views::Main *ui_mainview_;
-
-  // UI accessible parameters.
-  Parameters_t params_;
 
  private:
   App(App const&) = delete;

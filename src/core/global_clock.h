@@ -27,6 +27,7 @@ enum class TimeUnit {
 class Clock {
  public:
   Clock();
+  virtual ~Clock() {}
 
   // pause the application timeline.
   void pause() { bPaused_ = true; }
@@ -35,7 +36,7 @@ class Clock {
   void resume() { bPaused_ = false; }
 
   // Update per-frame time values.
-  void update();
+  virtual void update();
 
   // Convert time from one unit to another.
   double convert_time(TimeUnit src_unit, TimeUnit dst_unit, double const time) const;
@@ -104,7 +105,11 @@ class Clock {
   bool bPaused_;                   //  when true, do not update application time
 };
 
-class GlobalClock : public Singleton<Clock> {
+// ----------------------------------------------------------------------------
+
+// [ use singleton of a specialized "AppClock" instead, with custom update ]
+class GlobalClock final : public Singleton<Clock> {
+ private:
   friend class Singleton<Clock>;
 };
 

@@ -26,14 +26,11 @@ constexpr bool kEnableLoadRigHierarchy = true;
 // ----------------------------------------------------------------------------
 
 SceneHierarchy::~SceneHierarchy() {
-  if (ui_view) {
-    delete ui_view;
-    ui_view = nullptr;
-  }
+  ui_view.reset();
 }
 
 void SceneHierarchy::init() {
-  ui_view = new views::SceneHierarchyView(*this); //
+  ui_view = std::make_shared<views::SceneHierarchyView>(*this);
 }
 
 void SceneHierarchy::update(float const dt, Camera const& camera) {
@@ -291,15 +288,15 @@ void SceneHierarchy::update_selected_local_matrices() {
 
 void SceneHierarchy::select(EntityHandle entity, bool status) {
   // [fixme] using the UI as state holder is not great.
-  ((views::SceneHierarchyView*)ui_view)->select(entity->index(), status);
+  ui_view->select(entity->index(), status);
 }
 
 void SceneHierarchy::select_all(bool status) {
-  ((views::SceneHierarchyView*)ui_view)->select_all(status);
+  ui_view->select_all(status);
 }
 
 bool SceneHierarchy::is_selected(EntityHandle entity) const {
-  return entity ? ((views::SceneHierarchyView*)ui_view)->is_selected(entity->index()) : false;
+  return entity ? ui_view->is_selected(entity->index()) : false;
 }
 
 glm::vec3 SceneHierarchy::pivot(bool selected) const {
@@ -369,7 +366,7 @@ EntityHandle SceneHierarchy::add_bounding_sphere(float radius) {
   return nullptr;
 }
 
-void SceneHierarchy::render_debug_rigs() {
+void SceneHierarchy::render_debug_rigs() const {
   for (auto e : frame_.drawables) {
     auto &visual = e->get<VisualComponent>();
     if (auto rig = visual.rig(); rig) {
@@ -378,7 +375,7 @@ void SceneHierarchy::render_debug_rigs() {
   }
 }
 
-void SceneHierarchy::render_debug_colliders() {
+void SceneHierarchy::render_debug_colliders() const {
   for (auto e : frame_.colliders) {
     auto const& bsphere = e->get<SphereColliderComponent>();
     auto pos = global_matrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
@@ -386,6 +383,25 @@ void SceneHierarchy::render_debug_colliders() {
     Im3d::DrawSphere( glm::vec3(pos), bsphere.radius(), kDebugSphereResolution);
     Im3d::PopColor();
   } 
+}
+
+void SceneHierarchy::gizmos(bool use_centroid) {
+  // 1) Use global matrices for gizmos.
+  for (auto e : selected()) {
+    auto &global = global_matrix( e->index() );
+    auto const& centroid = e->centroid();
+
+    if (use_centroid) {
+      global = glm::translate( global, centroid);
+    }
+    Im3d::Gizmo( e->name().c_str(), glm::value_ptr(global)); // [modify global]
+    if (use_centroid) {
+      global = glm::translate( global, -centroid);
+    }
+  }
+  
+  // 2) Recompute selected locals from modified globals.
+  update_selected_local_matrices();
 }
 
 // ----------------------------------------------------------------------------
@@ -458,7 +474,7 @@ void SceneHierarchy::sort_drawables(Camera const& camera) {
   );
 }
 
-void SceneHierarchy::render_debug_node(EntityHandle node) {
+void SceneHierarchy::render_debug_node(EntityHandle node) const {
   if (nullptr == node) {
     return;
   }

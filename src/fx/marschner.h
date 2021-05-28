@@ -2,6 +2,8 @@
 #define BARBU_FX_MARSCHNER_H_
 
 #include <array>
+#include <memory>
+
 #include "core/graphics.h"
 class UIView;
 
@@ -53,6 +55,9 @@ class Marschner {
     GLuint *tex_ptr[kNumLUTs]{ nullptr, nullptr };
   };
 
+
+  std::shared_ptr<UIView> ui_view = nullptr;
+
  public:
   Marschner() = default;
   ~Marschner();
@@ -60,10 +65,6 @@ class Marschner {
   void init();
   void update(bool bForceUpdate = false);
   void generate();
-
-  UIView* view() const {
-    return ui_view_;
-  }
 
   void bind_lookups(int baseUnit = 0) {
     for (int i=0; i<kNumLUTs; ++i) {
@@ -78,7 +79,6 @@ class Marschner {
   }
 
  private:
-  UIView *ui_view_ = nullptr;
   Parameters_t params_;
   ShadingParameters_t previous_shading_params_;
 
