@@ -27,38 +27,53 @@ class App {
   };
 
   App()
-    : ui_mainview_(nullptr)
-    , camera_(nullptr)
+    : camera_(nullptr)
     , window_(nullptr)
     , rand_seed_(0u)
     , deltatime_(0.0f)
+    , ui_mainview_(nullptr)
   {}
 
+  /* The destructor is the recommended place to clean the app when it finishes. */
   virtual ~App();
   
   /* Initialize & run the application mainloop. */
+
+  /* Launch the application mainloop.
+     Returns a non null value if the application fails, zero otherwise. */
   int32_t run(std::string_view title);
 
-  /* Returns window resolution. */
+ protected:
+  /* User defined, called once at initialization, after the constructor and
+     before the loop. This is the recommended way to setup the App. */
+  virtual void setup() {}
+
+  /* User defined, call each frame before draw.
+     This is the recommended place to update simulation states. */
+  virtual void update() {}
+  
+  /* User defined, call each frame after update.
+     This is the recommended place to declare custom rendering calls 
+     which does not use the renderer directly. */
+  virtual void draw() {}
+
+  /* Returns the window resolution. */
   inline glm::ivec2 const& resolution() const {
     return resolution_;
   }
 
-  /* Return core app parameters. */
+  /* Returns core app parameters. */
   inline Parameters_t& params() {
     return params_;
   }
 
-  // User interface data are public.
-  std::shared_ptr<views::Main> ui_mainview_;
-
- protected:
-  virtual void setup() {}
-  virtual void update() {}
-  virtual void draw() {}
-
+  // Main camera accessible to the user, it's projection must be set before the mainloop start.
   Camera camera_;
+
+  // Entity Component Scene hierarchy to fetch the renderer.
   SceneHierarchy scene_;
+
+  // Pipeline defining how a scene is rendered.
   Renderer renderer_;
 
  private:
@@ -82,6 +97,7 @@ class App {
   // User Interface.
   UIController ui_controller_;
   Parameters_t params_;
+  std::shared_ptr<views::Main> ui_mainview_;
 
  private:
   App(App const&) = delete;
