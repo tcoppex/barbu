@@ -22,8 +22,8 @@ void Renderer::init() {
   skybox_.init();
 
   particle_.init();  
-  // Hair is initialized outside..
-  
+  hair_.init();
+
   ui_view = std::make_shared<views::RendererView>(params_);
 }
 

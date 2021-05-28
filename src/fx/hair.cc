@@ -23,7 +23,24 @@ static constexpr int kDebugRenderControlPointSize = 4;
 
 // ----------------------------------------------------------------------------
 
-void Hair::init(ResourceId const& scalp_id) {
+void Hair::init() {
+  // (This could be shared between hair instances)
+  
+  init_transform_feedbacks();
+  init_shaders();
+
+  // [should be capped by nfaces * maxtessLevel * maxInstances or smthg]
+  randbuffer_.init( HAIR_TF_RANDOMBUFFER_SIZE );
+  randbuffer_.generate_values();
+
+  marschner_.init();
+  marschner_.generate();
+
+  init_ui_views();
+
+}
+
+void Hair::setup(ResourceId const& scalp_id) {
   auto scalp_resource = Resources::Get<MeshData>( scalp_id );
   if (!scalp_resource.is_valid()) {
     LOG_ERROR( "The scalp mesh resource was not found.\n", scalp_id.str() );
@@ -39,34 +56,28 @@ void Hair::init(ResourceId const& scalp_id) {
 
   init_simulation( scalp_mesh_data );
   init_mesh( scalp_mesh_data );
-
-  // (This could be shared between hair instances)
-  {
-    init_transform_feedbacks();
-    init_shaders();
-
-    // [should be capped by nfaces * maxtessLevel * maxInstances or smthg]
-    randbuffer_.init( HAIR_TF_RANDOMBUFFER_SIZE );
-    randbuffer_.generate_values();
-
-    marschner_.init();
-    marschner_.generate();
-
-    init_ui_views();
-  }
 }
 
 void Hair::deinit() {
   // (buffers)
   pbuffer_.destroy();
   randbuffer_.deinit();
+
   // (mesh)
-  glDeleteVertexArrays(1u, &mesh_.vao);
-  glDeleteBuffers(1u, &mesh_.ibo);
+  if (mesh_.vao) {
+    glDeleteVertexArrays(1u, &mesh_.vao);
+    glDeleteBuffers(1u, &mesh_.ibo);
+    mesh_.vao = 0u;
+  }
+
   // (tf)
-  glDeleteTransformFeedbacks(1, &tess_stream_.tf);
-  glDeleteBuffers(1, &tess_stream_.tf);
-  glDeleteVertexArrays(1u, &tess_stream_.vao);
+  if (tess_stream_.tf) {
+    glDeleteTransformFeedbacks(1, &tess_stream_.tf);
+    glDeleteBuffers(1, &tess_stream_.tf);
+    glDeleteVertexArrays(1u, &tess_stream_.vao);
+    tess_stream_.tf = 0;
+  }
+  
   nroots_ = 0;
 }
 

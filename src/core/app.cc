@@ -8,7 +8,7 @@
 #include "core/global_clock.h"
 #include "core/logger.h"
 #include "memory/assets/assets.h"
-#include "ui/views/Main.h"
+#include "ui/views/views.h"
 
 // ----------------------------------------------------------------------------
 
@@ -167,6 +167,20 @@ bool App::presetup(std::string_view title) {
 
   // Renderer.
   renderer_.init();
+  
+  // Setup renderer UI with mainview [improve].
+  {
+    renderer_.params().sub_view = scene_.ui_view;
+    if (auto ui = renderer_.ui_view; ui) {
+      ui_mainview_->push_view( ui );
+    }
+    if (auto ui = renderer_.hair().ui_view; ui) {
+      ui_mainview_->push_view( ui );
+    }
+    if (auto ui = renderer_.particle().ui_view; ui) {
+      //ui_mainview_->push_view( ui );
+    }
+  }
 
   return true;
 }

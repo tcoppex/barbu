@@ -57,8 +57,14 @@ class Hair {
     : nroots_(0)
   {}
 
-  void init(ResourceId const& scalpId);
+  /* Initialize base resources & UI. */
+  void init();
+
+  /* Release all allocated resources. */
   void deinit();
+
+  /* Setup scalp specific resources. */
+  void setup(ResourceId const& scalpId);
 
   void update(float const dt);
   void render(Camera const& camera);

@@ -1,12 +1,6 @@
 #include "Application.h"
 
 #include "memory/assets/assets.h"
-#include "ui/views/views.h"
-
-// ----------------------------------------------------------------------------
-
-static constexpr bool bDisplayUI_Hair     = true;
-static constexpr bool bDisplayUI_Particle = false;
 
 // ----------------------------------------------------------------------------
 
@@ -14,7 +8,7 @@ void Application::setup() {
   // Gamma-corrected clear color.
   gx::ClearColor(0.145f, true);
 
-  // Camera setup.
+  // Camera.
   {
     auto const rx = glm::pi<float>() / 16.0f;
     auto const ry = glm::pi<float>() / 8.0f;
@@ -26,7 +20,7 @@ void Application::setup() {
     camera_.set_perspective(glm::radians(60.0f), res.x, res.y, 0.01f, 500.0f);
   }
 
-  // Set skybox texture.
+  // Skybox texture.
   renderer_.skybox().setup_texture(
     ASSETS_DIR "/textures/cross_hdr/uffizi_cross_mmp_s.hdr"
     //ASSETS_DIR "/textures/reinforced_concrete_02_1k.hdr"
@@ -38,7 +32,7 @@ void Application::setup() {
     // -- Hair sample --
 
     scene_.import_model( ASSETS_DIR "/models/InfiniteScan/Head.glb" );
-    renderer_.hair().init( ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" ); //
+    renderer_.hair().setup( ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" ); //
     scene_.add_bounding_sphere(0.25f);
   } else {
     // -- Simple model sample --
@@ -51,31 +45,6 @@ void Application::setup() {
 
   // Recenter the view on the scene's centroid.
   arcball_controller_.set_target(scene_.centroid(), true);
-
-  // Links UI views.
-  if constexpr(true) {
-    renderer_.params().sub_view = scene_.ui_view;
-
-    // if (auto ui = std::dynamic_pointer_cast<UIView>(scene_.ui_view); ui) {
-    //   App::ui_mainview_->push_view( ui );
-    // }
-
-    if (auto ui = renderer_.ui_view; ui) {
-      App::ui_mainview_->push_view( ui );
-    }
-
-    if constexpr (bDisplayUI_Hair) {
-      if (auto ui = renderer_.hair().ui_view; ui) {
-        App::ui_mainview_->push_view( ui );
-      }
-    }
-
-    if constexpr (bDisplayUI_Particle) {
-      if (auto ui = renderer_.particle().ui_view; ui) {
-        App::ui_mainview_->push_view( ui );
-      }
-    }
-  }
 }
 
 void Application::update() {

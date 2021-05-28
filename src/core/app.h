@@ -36,16 +36,21 @@ class App {
 
   virtual ~App();
   
-  /* Initialize then run the application mainloop. */
+  /* Initialize & run the application mainloop. */
   int32_t run(std::string_view title);
 
-  glm::ivec2 const& resolution() const {
+  /* Returns window resolution. */
+  inline glm::ivec2 const& resolution() const {
     return resolution_;
+  }
+
+  /* Return core app parameters. */
+  inline Parameters_t& params() {
+    return params_;
   }
 
   // User interface data are public.
   std::shared_ptr<views::Main> ui_mainview_;
-  Parameters_t params_; //
 
  protected:
   virtual void setup() {}
@@ -76,6 +81,7 @@ class App {
 
   // User Interface.
   UIController ui_controller_;
+  Parameters_t params_;
 
  private:
   App(App const&) = delete;

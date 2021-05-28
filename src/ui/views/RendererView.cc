@@ -8,7 +8,7 @@ namespace views {
 void RendererView::render() {
   ImGui::SetNextItemOpen(true, ImGuiCond_Once);
   
-  if (!ImGui::CollapsingHeader("General")) {
+  if (!ImGui::CollapsingHeader("Scene")) {
     return;
   }
     
