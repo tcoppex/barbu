@@ -36,24 +36,6 @@ int32_t App::run(std::string_view title) {
     return EXIT_FAILURE;
   }
 
-  // User initialization.
-  setup();
-
-  // Check camera settings.
-  if (!camera_.initialized()) {
-    LOG_ERROR( "The camera projection has not been properly initialized (￣ε￣)" );
-    camera_.set_default();
-  }
-
-  // Resume clock.
-  {
-    // Resume the clock post-initialization to skip initialization overhead. 
-    GlobalClock::Get().resume();
-
-    // Start the FPS chrono (the framerate is regulated through a local timer).
-    time_ = std::chrono::steady_clock::now();
-  }
-
   // Mainloop.
   while (!glfwWindowShouldClose(window_)) {
     // Events.
@@ -178,6 +160,24 @@ bool App::presetup(std::string_view title) {
     if (auto ui = renderer_.particle().ui_view; ui) {
       //ui_mainview_->push_view( ui );
     }
+  }
+
+  // User initialization.
+  setup();
+
+  // Check camera settings.
+  if (!camera_.initialized()) {
+    LOG_ERROR( "The camera projection has not been properly initialized (￣ε￣)" );
+    camera_.set_default();
+  }
+
+  // Resume clock.
+  {
+    // Resume the clock post-initialization to skip initialization overhead. 
+    GlobalClock::Get().resume();
+
+    // Start the FPS chrono (the framerate is regulated through a local timer).
+    time_ = std::chrono::steady_clock::now();
   }
 
   return true;
