@@ -47,12 +47,11 @@ int32_t App::run(std::string_view title) {
 
   // Resume clock.
   {
-    // Start the FPS chrono.
-    // (the framerate is regulated through a local timer)
-    time_ = std::chrono::steady_clock::now(); //
-
     // Resume the clock post-initialization to skip initialization overhead. 
     GlobalClock::Get().resume();
+
+    // Start the FPS chrono (the framerate is regulated through a local timer).
+    time_ = std::chrono::steady_clock::now();
   }
 
   // Mainloop.
@@ -62,7 +61,6 @@ int32_t App::run(std::string_view title) {
 
     // User interface.
     ui_controller_.update();
-    if ('h' == GetEventData().lastChar) { params_.show_ui ^= true; } //
 
     // Clock (with framerate control).
     update_time();

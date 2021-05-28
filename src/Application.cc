@@ -49,40 +49,10 @@ void Application::setup() {
 
 void Application::update() {
   auto const& eventData{ GetEventData() }; //
-
-  // On selection.
   auto const& selected = scene_.selected();  
-  if (!selected.empty()) {
-    // Reset.
-    if ('x' == eventData.lastChar) {
-      for (auto &e : selected) {
-        scene_.reset_entity(e);
-      }
-    } 
-    // Delete.
-    else if ('X' == eventData.lastChar) {
-      for (auto &e : selected) {
-        scene_.remove_entity(e, true);
-      }
-      scene_.select_all(false);
-    }
+  EntityHandle focus = nullptr;
 
-    // Cycle through entities when selected.
-    EntityHandle focus = nullptr;
-    if ('j' == eventData.lastChar) {
-      //auto nx = std::next(it, 1);
-      focus = scene_.next(selected.front(), +1);
-    } else if ('k' == eventData.lastChar) {
-      focus = scene_.next(selected.front(), -1);
-    }
-    if (focus) {
-      scene_.select_all(false);
-      scene_.select(focus, true);
-      auto const& target = scene_.entity_global_position(focus);
-      arcball_controller_.set_target(target); 
-    }
-  }
-
+  // -- Key bindings.
   switch (eventData.lastChar) {
     // Select  / Unselect all.
     case 'a':
@@ -102,7 +72,20 @@ void Application::update() {
       arcball_controller_.set_target(scene_.centroid(), true);
     break;
 
-    // Display opaque materials wireframe.
+    // Cycle through entities.
+    case 'j':
+      focus = selected.front() ? scene_.next(selected.front(), +1) : scene_.all().front();
+    break;
+    case 'k':
+      focus = selected.front() ? scene_.next(selected.front(), -1) : scene_.all().front();
+    break;
+
+    // Show / hide UI.
+    case 'u':
+      App::params().show_ui ^= true;
+    break;
+
+    // Show / hide wireframe.
     case 'w':
       renderer_.params().show_wireframe ^= true;
     break;
@@ -111,14 +94,39 @@ void Application::update() {
     break;
   }
 
+  // Recenter camera on focus.
+  if (focus) {
+    scene_.select_all(false);
+    scene_.select(focus, true);
+    auto const& target = scene_.entity_global_position(focus);
+    arcball_controller_.set_target(target); 
+  }
+
+  // -- Key bindings on selection.
+  if (!selected.empty()) {
+    // Reset transform.
+    if ('x' == eventData.lastChar) {
+      for (auto &e : selected) {
+        scene_.reset_entity(e);
+      }
+    } 
+    // Delete.
+    else if ('X' == eventData.lastChar) {
+      for (auto &e : selected) {
+        scene_.remove_entity(e, true);
+      }
+      scene_.select_all(false);
+    }
+  }
+
   // Import drag-n-dropped objects & center them to camera target.
-  // constexpr float kDragNDropDistance = 2.0f;
-  // auto const dnd_target = camera.position() + kDragNDropDistance * camera.direction();
+  //constexpr float kDragNDropDistance = 2.0f;
+  auto const dnd_target = camera_.target(); //camera.position() + kDragNDropDistance * camera.direction();
   for (auto &fn : eventData.dragFilenames) {
     auto const ext = fn.substr(fn.find_last_of(".") + 1);
     if (MeshDataManager::CheckExtension(ext)) {
       if (auto e = scene_.import_model(fn); e) {
-        e->set_position( camera_.target() );
+        e->set_position( dnd_target );
       }
     }
   }    
