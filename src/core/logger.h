@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <unordered_map>
+#include <string>
 #include <string_view>
 
 #include "utils/singleton.h"
@@ -24,6 +25,14 @@ class Logger : public Singleton<Logger> {
   friend class Singleton<Logger>;
 
  public:
+  static std::string TrimFilename(std::string const& filename) {
+    return filename.substr(filename.find_last_of("/\\") + 1);
+  }
+
+  static std::string TrimFilename(std::string_view filename) {
+    return TrimFilename(std::string(filename));
+  }
+
   enum class LogType {
     Message,
     Info,

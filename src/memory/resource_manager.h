@@ -50,16 +50,6 @@ namespace fs = std::experimental::filesystem;
 // Abstract view of a resource, used to handle the specialized release of data.
 //
 class Resource {
- public:
-  // [Temporary helper, to be externalized]
-  static std::string TrimFilename(std::string const& filename) {
-    return filename.substr(filename.find_last_of("/\\") + 1);
-  }
-
-  static std::string TrimFilename(std::string_view filename) {
-    return TrimFilename(std::string(filename));
-  }
-
  protected:
   virtual ~Resource() {}
 
@@ -81,7 +71,7 @@ struct ResourceHandle {
   ResourceHandle() = default;
 
   ResourceHandle(ResourceId const& _id)
-    : name(Resource::TrimFilename(_id.path))
+    : name(Logger::TrimFilename(_id.path))
     , data(std::make_shared<TResource>()) //
   {}
 
@@ -167,7 +157,7 @@ class ResourceManager {
 
           if (load(id).is_valid()) {
             // (the file has been modified)
-            LOG_INFO( "[VERSIONING]", Resource::TrimFilename(id.path), ": v", version(id));
+            LOG_INFO( "[VERSIONING]", Logger::TrimFilename(id.path), ": v", version(id));
           }
         }
       }
