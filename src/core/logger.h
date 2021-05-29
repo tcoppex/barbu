@@ -37,7 +37,7 @@ class Logger : public Singleton<Logger> {
   }
 
   template<typename T, typename ... Args>
-  bool log(char const* file, int line, bool useHash, LogType type, T first, Args ... args) {
+  bool log(char const* file, char const* fn, int line, bool useHash, LogType type, T first, Args ... args) {
     // Clear the local stream and retrieve the full current message.
     out_.str(std::string());
     sub_log(first, args ...);
@@ -102,7 +102,7 @@ class Logger : public Singleton<Logger> {
 
       case LogType::Error:
       case LogType::FatalError:
-        std::cerr << std::endl <<  "(" << filename << " L." << line << ")" << std::endl;
+        std::cerr << std::endl <<  "(" << filename << " " << fn << " L." << line << ")" << std::endl;
       break;
     }
 
@@ -114,28 +114,28 @@ class Logger : public Singleton<Logger> {
 
 
   template<typename T, typename ... Args>
-  void message(char const* file, int line, T first, Args ... args) {
-    log(file, line, false, LogType::Message, first, args...);
+  void message(char const* file, char const* fn, int line, T first, Args ... args) {
+    log(file, fn, line, false, LogType::Message, first, args...);
   }
 
   template<typename T, typename ... Args>
-  void info(char const* file, int line, T first, Args ... args) {
-    log(file, line, true, LogType::Info, first, args...);
+  void info(char const* file, char const* fn, int line, T first, Args ... args) {
+    log(file, fn, line, true, LogType::Info, first, args...);
   }
 
   template<typename T, typename ... Args>
-  void warning(char const* file, int line, T first, Args ... args) {
-    log(file, line, true, LogType::Warning, first, args...);
+  void warning(char const* file, char const* fn, int line, T first, Args ... args) {
+    log(file, fn, line, true, LogType::Warning, first, args...);
   }
 
   template<typename T, typename ... Args>
-  void error(char const* file, int line, T first, Args ... args) {
-    log(file, line, true, LogType::Error, first, args...);
+  void error(char const* file, char const* fn, int line, T first, Args ... args) {
+    log(file, fn, line, true, LogType::Error, first, args...);
   }
 
   template<typename T, typename ... Args>
-  void fatal_error(char const* file, int line, T first, Args ... args) {
-    log(file, line, false, LogType::FatalError, first, args...);
+  void fatal_error(char const* file, char const* fn, int line, T first, Args ... args) {
+    log(file, fn, line, false, LogType::FatalError, first, args...);
     exit(EXIT_FAILURE);
   }
 
@@ -172,22 +172,22 @@ class Logger : public Singleton<Logger> {
 
 // ----------------------------------------------------------------------------
 
-#define LOG_MESSAGE( ... )      Logger::Get().message( __FILE__, __LINE__, ##__VA_ARGS__)
-#define LOG_INFO( ... )         Logger::Get().info( __FILE__, __LINE__, ##__VA_ARGS__)
-#define LOG_WARNING( ... )      Logger::Get().warning( __FILE__, __LINE__, ##__VA_ARGS__)
-#define LOG_ERROR( ... )        Logger::Get().error( __FILE__, __LINE__, ##__VA_ARGS__)
-#define LOG_FATAL_ERROR( ... )  Logger::Get().fatal_error( __FILE__, __LINE__, ##__VA_ARGS__)
+#define LOG_MESSAGE( ... )      Logger::Get().message( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_INFO( ... )         Logger::Get().info( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_WARNING( ... )      Logger::Get().warning( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_ERROR( ... )        Logger::Get().error( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_FATAL_ERROR( ... )  Logger::Get().fatal_error( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #ifdef BARBU_ENABLE_DEBUG_LOG
-#define LOG_DEBUG( ... )        Logger::Get().message( __FILE__, __LINE__, ##__VA_ARGS__)
-#define LOG_DEBUG_INFO( ... )   Logger::Get().info( __FILE__, __LINE__, ##__VA_ARGS__)
+#define LOG_DEBUG( ... )        Logger::Get().message( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_DEBUG_INFO( ... )   Logger::Get().info( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 #else
 #define LOG_DEBUG( ... )        
 #define LOG_DEBUG_INFO( ... )
 #endif
 
 #ifndef NDEBUG
-#define LOG_CHECK( x )          if (!(x)) Logger::Get().warning( __FILE__, __LINE__, #x, " test fails\n")
+#define LOG_CHECK( x )          if (!(x)) Logger::Get().warning( __FILE__, __FUNCTION__, __LINE__, #x, " test fails\n")
 #else
 #define LOG_CHECK( x )          if (!(x)) {}
 #endif
