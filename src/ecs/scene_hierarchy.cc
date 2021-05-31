@@ -34,8 +34,6 @@ void SceneHierarchy::init() {
 }
 
 void SceneHierarchy::update(float const dt, Camera const& camera) {
-  float const global_time = GlobalClock::Get().application_time();
-
   // Clear per-frame data.
   frame_.clear();
   frame_.globals.resize(entities_.size(), glm::mat4(1.0f));
@@ -43,14 +41,10 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
   // Update the scene entities hierarchically.
   update_hierarchy(dt);
 
-  // Retrieve renderable entities.
+  // Retrieve specific entities.
   for (auto& e : entities_) {
     if (is_selected(e)) {
       frame_.selected.push_back( e );
-    }
-
-    if (e->has<VisualComponent>()) {
-      frame_.drawables.push_back( e );
     }
 
     if (e->has<SphereColliderComponent>()) {
@@ -58,10 +52,20 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
     }
   }
 
+  // ----------------------------------------
+
+  // Retrieve renderable entities.
+  for (auto& e : entities_) {
+    if (e->has<VisualComponent>()) {
+      frame_.drawables.push_back( e );
+    }
+  }
+
   // Sort the drawables front to back.
   sort_drawables(camera);
 
   // Animate nodes with skinning (for now, suppose them all drawables).
+  float const global_time = GlobalClock::Get().application_time();
   for (auto& e : frame_.drawables) {
     if (!e->has<SkinComponent>()) {
       continue;
@@ -86,7 +90,6 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
           auto const entity_index = skeleton_map[joint_id]->index(); //
           assert( entity_index > -1 );
 
-          //LOG_MESSAGE(entity_index);
           frame_.globals[entity_index] = rig_global * global_pose;
         }
       }
@@ -104,6 +107,16 @@ void SceneHierarchy::add_entity(EntityHandle entity, EntityHandle parent) {
     // [debug only] 
     //parent = entities_.empty() ? root_ : entities_.back();
   }
+
+  // [fixme]
+  // New entities don't have an index and corresponding perFrame internal structures
+  // while the hierarchy has not been update. Hence using their perFrame data directly
+  // afterwards, in the same frame, can crash the app.
+  // One obvious solution would be to update the subhierarchy after every add.
+  // + Or use two updates : one pre-user_update & one pre-use_draw calls.
+  // + Or don't allow indexing use externally.
+
+  entity->index_ = entities_.empty() ? 0 : static_cast<int32_t>(entities_.size()-1);
 
   entity->parent_ = parent;
   parent->children_.push_back( entity );
@@ -193,7 +206,7 @@ EntityHandle SceneHierarchy::import_model(std::string_view filename) {
     MATERIAL_ASSETS.import_from_meshdata( ResourceId(filename) );
 
     // Retrieve the file basename.
-    auto const basename = Resource::TrimFilename( std::string(filename) );    
+    auto const basename = Logger::TrimFilename( std::string(filename) );    
     
     // Create a new mesh entity node.
     auto entity = create_model_entity(basename, mesh);
@@ -287,6 +300,11 @@ void SceneHierarchy::update_selected_local_matrices() {
 }
 
 void SceneHierarchy::select(EntityHandle entity, bool status) {
+  if (entity->index() < 0) {
+    LOG_ERROR( "Entity index is invalid, it must have been created before scene internal update." );
+    return;
+  }
+  
   // [fixme] using the UI as state holder is not great.
   ui_view->select(entity->index(), status);
 }

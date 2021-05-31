@@ -71,6 +71,8 @@ class SceneHierarchy {
     return glm::vec3(parent_global_matrix(e) * glm::vec4(e->centroid(), 1.0)); //
   }
 
+  EntityHandle first() const { return entities_.empty() ? nullptr : entities_.front(); } //
+
   inline EntityList_t const& all() const { return entities_; }
   inline EntityList_t const& selected() const { return frame_.selected; }
   inline EntityList_t const& drawables() const { return frame_.drawables; }
