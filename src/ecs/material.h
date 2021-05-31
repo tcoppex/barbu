@@ -1,11 +1,8 @@
 #ifndef BARBU_ECS_MATERIAL_H_
 #define BARBU_ECS_MATERIAL_H_
 
-#include "glm/glm.hpp"
-
 #include "memory/assets/assets.h" //
 #include "memory/enum_array.h"
-#include "ui/ui_view.h"
 
 // ----------------------------------------------------------------------------
 
@@ -16,6 +13,8 @@ enum class RenderMode {
   kCount,
   kDefault = RenderMode::Opaque
 };
+
+// ----------------------------------------------------------------------------
 
 // Attributes shared by all materials.
 struct RenderAttributes {
@@ -28,8 +27,9 @@ struct RenderAttributes {
   SkinningMode skinning_mode;
 
   // (fragment)
-  uint32_t envmap_texid = 0u;
-  uint32_t irradiance_texid = 0u;
+  uint32_t brdf_lut_texid     = 0u;
+  uint32_t prefilter_texid    = 0u;
+  uint32_t irradiance_texid   = 0u;
   glm::mat4 const* irradiance_matrices = nullptr;
   glm::vec3 eye_position;
   //int32_t tonemap_mode;
@@ -48,96 +48,31 @@ class Material {
     , bDoubleSided_(false)
   {}
 
-  virtual ~Material() {
-    if (ui_view_) {
-      delete ui_view_;
-      ui_view_ = nullptr;
-    }
-  }
+  virtual ~Material() {}
 
   // Set internal data from material loading info.
   virtual void setup(MaterialInfo const& info) = 0;
 
   // Update commons uniforms for the material before rendering.
-  int32_t update_uniforms(RenderAttributes const& attributes, int32_t default_unit = 0) {
-    texture_unit_ = default_unit; //
-
-    bool const use_new_program{ texture_unit_ == 0 };
-    
-    if (use_new_program) {
-      auto pgm_handle = program();
-      if (!pgm_handle) {
-        LOG_FATAL_ERROR( "Material program \"", program_id_.c_str(), "\" not found." );
-      }
-
-      auto const pgm = pgm_handle->id;
-      gx::UseProgram( pgm );
-
-      auto bind_texture = [this, &pgm](auto const& name, uint32_t id) {
-        if (id > 0u) {
-          gx::BindTexture( id, texture_unit_);
-          gx::SetUniform( pgm, name, texture_unit_);
-          ++texture_unit_;  
-        }
-      };
-
-      // (vertex)
-      gx::SetUniform( pgm, "uMVP",         attributes.mvp_matrix);
-      gx::SetUniform( pgm, "uModelMatrix", attributes.world_matrix);
-
-      // (vertex skinning)
-      if (attributes.skinning_texid > 0u) {
-        bind_texture( "uSkinningDatas", attributes.skinning_texid);
-        
-        // [ improve ]
-        skinning_subroutines_[ SkinningMode::LinearBlending ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_LBS");
-        skinning_subroutines_[ SkinningMode::DualQuaternion ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_DQBS");
-        auto const& su_index = skinning_subroutines_[ attributes.skinning_mode ];
-        LOG_CHECK( su_index != GL_INVALID_INDEX );
-        glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &su_index);
-      }
-
-      // (fragment)
-      bind_texture( "uEnvironmentMap", attributes.envmap_texid);
-      bind_texture( "uIrradianceMap",  attributes.irradiance_texid);
-
-      gx::SetUniform( pgm, "uEyePosWS", attributes.eye_position);
-
-      bool const has_irradiance_matrices = (nullptr != attributes.irradiance_matrices);
-      gx::SetUniform( pgm, "uHasIrradianceMatrices", has_irradiance_matrices);
-      if (has_irradiance_matrices) {
-        gx::SetUniform( pgm, "uIrradianceMatrices", attributes.irradiance_matrices, 3);
-      }
-      //gx::SetUniform(pgm, "uToneMapMode",       static_cast<int>(attributes.tonemap_mode));
-    }
-    CHECK_GX_ERROR();
-
-    update_internals();
-
-    return texture_unit_;
-  }
+  int32_t update_uniforms(RenderAttributes const& attributes, int32_t default_unit = 0);
 
   inline ProgramHandle program() {
     return PROGRAM_ASSETS.get(program_id_); //
   }
 
-  inline RenderMode render_mode() const {
+  inline RenderMode render_mode() const noexcept {
     return render_mode_;
   }
 
-  inline bool double_sided() const {
+  inline bool double_sided() const noexcept {
     return bDoubleSided_;
   }
 
-  inline UIView* ui_view() {
-    return ui_view_;
-  }
-
-  inline void set_render_mode(RenderMode const& render_mode) {
+  inline void set_render_mode(RenderMode const& render_mode) noexcept {
     render_mode_ = render_mode;
   }
 
-  inline void set_double_sided(bool status) {
+  inline void set_double_sided(bool status) noexcept {
     bDoubleSided_ = status;
   }
 
@@ -151,8 +86,8 @@ class Material {
   int32_t texture_unit_; //
   bool bDoubleSided_; //
 
- public:
-  UIView *ui_view_ = nullptr; // [not used yet]
+ // public:
+ //  UIView *ui_view_ = nullptr; // [not used yet]
 };
 
 // ----------------------------------------------------------------------------

@@ -15,6 +15,7 @@ list(APPEND Sources
   core/renderer.cc
 
   ecs/scene_hierarchy.cc
+  ecs/material.cc
   ecs/components/skin.cc
 
   fx/gpu_particle.cc
