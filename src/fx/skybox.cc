@@ -36,31 +36,36 @@ void Skybox::init() {
     SHADERS_DIR "/skybox/fs_convolution.glsl"
   );
 
-  //
+  // Prefilter convolution for specular envmap;
   pgm_.prefilter = PROGRAM_ASSETS.createRender(
     "skybox::prefilter",
     SHADERS_DIR "/skybox/vs_skybox.glsl",
     SHADERS_DIR "/skybox/fs_prefiltering.glsl"
   );
 
-  // [ use a generic one ]
-  // Skybox mesh.
-  cube_mesh_ = MESH_ASSETS.createCube();
+  // [should probably be moved elsewhere]
+  // Compute the integrate BRDF Lookup texture.
+  if constexpr(true) {
+    calculate_integrated_brdf();
+  }
+
+  // Skybox cube mesh.
+  cube_mesh_ = MESH_ASSETS.createCube(); // [ use a generic one instead ]
 
   CHECK_GX_ERROR();
 }
 
 void Skybox::deinit() {
-  cube_mesh_.reset(); //
-  sky_map_.reset(); //
-  irradiance_map_.reset();
+  cube_mesh_.reset();
   specular_map_.reset();
+  irradiance_map_.reset();
+  integrate_brdf_.reset();
+  sky_map_.reset();
 }
 
 void Skybox::render(Camera const& camera) {
   render(RenderMode::Sky, camera);
 }
-
 
 void Skybox::setup_texture(ResourceId resource_id) {
   assert(sky_map_ == nullptr); //
@@ -68,13 +73,13 @@ void Skybox::setup_texture(ResourceId resource_id) {
   // (we might want to use mipmaps for late convolutions)
   constexpr int32_t kLevels = 1;
 
-  auto const kSkyboxCubemapID = TEXTURE_ASSETS.findUniqueID( "Skybox::Cubemap" );
-  auto const basename   = Resource::TrimFilename(resource_id);
+  auto const kSkyboxCubemapID = TEXTURE_ASSETS.findUniqueID( "skybox::Cubemap" );
+  auto const basename   = Logger::TrimFilename(resource_id);
   bool const is_crossed = basename.find("cross") != std::string::npos;
 
   // Environment sky map.
   if (is_crossed) {
-    // -- Crossed HDR map --
+    // -- Crossed HDR --
 
     sky_map_ = TEXTURE_ASSETS.createCubemapHDR( kSkyboxCubemapID, kLevels, resource_id);
 
@@ -127,53 +132,96 @@ void Skybox::setup_texture(ResourceId resource_id) {
     }
   }
 
-  // Prove use to generate the envmap convolutions.
+  calculate_irradiance_envmaps(basename);
+  LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
+}
+
+// ----------------------------------------------------------------------------
+
+void Skybox::calculate_integrated_brdf() {
+  // Setup the 2D texture.
+  auto const kLevels = 1;
+  auto const kFormat = GL_RG16F;
+  auto const kResolution = 256;
+  integrate_brdf_ = TEXTURE_ASSETS.create2d( 
+    "skybox::integrate_brdf", 
+    kLevels, kFormat, kResolution, kResolution
+  );
+
+  // Setup the compute program.
+  auto pgm_handle = PROGRAM_ASSETS.createCompute( 
+    SHADERS_DIR "/skybox/cs_integrate_brdf.glsl" 
+  );
+  auto const pgm = pgm_handle->id;
+
+  // Run the Kernel.
+  auto const kNumSamples = 1024;
+  gx::SetUniform( pgm, "uResolution", kResolution);
+  gx::SetUniform( pgm, "uNumSamples", kNumSamples);
+
+  constexpr int32_t image_unit = 0;
+  glBindImageTexture( image_unit, integrate_brdf_->id, 0, GL_TRUE, 0, GL_WRITE_ONLY, kFormat); //
+  gx::SetUniform( pgm, "uDstImg", image_unit);
+
+  gx::UseProgram(pgm);
+    gx::DispatchCompute<16, 16>(kResolution, kResolution);
+  gx::UseProgram(0);
+
+  glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT); //
+
+  //pgm_handle.reset();
+
+  CHECK_GX_ERROR();
+}
+
+void Skybox::calculate_irradiance_envmaps(std::string const& basename) {
   Probe probe;
 
-  // Be sure to have set the proper pipeline states (Already done in the renderer).
-  gx::Enable( gx::State::CubeMapSeamless ); //
-  gx::Disable( gx::State::CullFace ); //
+  // Be sure to have set the proper pipeline states (supposedely already set in the renderer).
+  {
+    gx::Enable( gx::State::CubeMapSeamless ); //
+    gx::Disable( gx::State::CullFace ); //
+  }
 
-  // Irradiance envmap.
+  // -- DIFFUSE.
+
+  // Diffuse convolution irradiance envmap.
   if (!has_sh_matrices_) {
     constexpr int32_t kIrradianceMapResolution = 64;
 
-    LOG_INFO( "Computing convolution cubemaps on GPU for :", resource_id.str() );
+    LOG_DEBUG_INFO( "Computing irradiance convolution for :", basename );
 
     probe.setup( kIrradianceMapResolution, 1, false);
     probe.capture( [this](Camera const& camera, int32_t level) {
       render( RenderMode::Convolution, camera); 
     });
     irradiance_map_ = probe.texture();
-
-    LOG_MESSAGE( "Cubemap completed !" );
   }
+  CHECK_GX_ERROR();
 
-  LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
+  // -- SPECULAR.
 
-  // --------------------------------------
-  
-  // [Work in Progress]
-  // Specular envmap.
+  // Prefiltered specular envmap.
   if constexpr(true) {
     constexpr int32_t kSpecularMapNumSamples = 2048; //
     constexpr int32_t kSpecularMapResolution = 256; //
     constexpr int32_t kSpecularMapLevel      = Texture::GetMaxMipLevel(kSpecularMapResolution);
     constexpr float kInvMaxLevel             = 1.0f / (kSpecularMapLevel - 1.0f);
 
-    LOG_INFO( "Computing prefiltered cubemaps on GPU for :", resource_id.str() );
+    LOG_DEBUG_INFO( "Computing prefiltered convolution for :", basename );
 
     pgm_.prefilter->setUniform( "uNumSamples", kSpecularMapNumSamples);
+
     probe.setup( kSpecularMapResolution, kSpecularMapLevel, false); //
+    
     probe.capture( [this, kInvMaxLevel](Camera const& camera, int32_t level) {
       const float roughness = level * kInvMaxLevel;
       pgm_.prefilter->setUniform( "uRoughness",  roughness); //
       render( RenderMode::Prefilter, camera); 
     });
-    specular_map_ = probe.texture();
-
-    LOG_MESSAGE( "Cubemap completed !" );
+    specular_map_ = probe.texture();    
   }
+  CHECK_GX_ERROR();
 }
 
 void Skybox::render(RenderMode mode, Camera const& camera) {

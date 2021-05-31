@@ -43,10 +43,15 @@ class Skybox {
     Convolution,
     Prefilter, //
   };
+
+  void calculate_integrated_brdf();
+
+  void calculate_irradiance_envmaps(std::string const& basename);
+
   void render(RenderMode mode, Camera const& camera);
 
   struct {
-    ProgramHandle cs_transform;             //< transform spherical map to cube map.  
+    ProgramHandle cs_transform;             //< transform spherical map to cube map.
     ProgramHandle render;                   //< render skybox.
     ProgramHandle convolution;              //< convolute irradiance map.
     ProgramHandle prefilter;  //            //< prefilter specular map.
@@ -54,9 +59,11 @@ class Skybox {
 
   MeshHandle cube_mesh_ = nullptr; //
 
-  TextureHandle sky_map_;                   //< sky cubemap.
-  TextureHandle irradiance_map_;            //< irradiance envmap.
-  TextureHandle specular_map_; //           //< 
+  TextureHandle sky_map_;                   //< sky diffuse cubmap.
+  TextureHandle irradiance_map_;            //< diffuse irradiance envmap.
+
+  TextureHandle specular_map_; //           //< prefiltered specular envmap.
+  TextureHandle integrate_brdf_; //         //< integrate brdf LUT.
 
   Irradiance::SHMatrices_t sh_matrices_;    //< irradiances spherical harmonics matrices.
   bool has_sh_matrices_ = false;
