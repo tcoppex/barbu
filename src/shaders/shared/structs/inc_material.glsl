@@ -9,7 +9,8 @@ struct Material_t {
   vec3 emissive;
 
   vec3 irradiance;
-  vec3 reflection;//
+  vec3 prefiltered;
+  vec2 BRDF;
 };
 
 #endif // SHADERS_SHARED_STRUCTS_INC_MATERIAL_GLSL_

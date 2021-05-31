@@ -30,8 +30,11 @@ class Skybox {
   void render(Camera const& camera);
 
   TextureHandle texture() { return sky_map_; }
+
   TextureHandle irradiance_map() { return irradiance_map_; }
-  TextureHandle specular_map() { return specular_map_; } //
+  
+  TextureHandle prefilter_map() { return prefilter_map_; }
+  TextureHandle brdf_lut_map() { return brdf_lut_map_; }
 
   inline glm::mat4 const* irradiance_matrices() const { return sh_matrices_.data(); }
 
@@ -46,7 +49,7 @@ class Skybox {
 
   void calculate_integrated_brdf();
 
-  void calculate_irradiance_envmaps(std::string const& basename);
+  void calculate_convolution_envmaps(std::string const& basename);
 
   void render(RenderMode mode, Camera const& camera);
 
@@ -62,8 +65,8 @@ class Skybox {
   TextureHandle sky_map_;                   //< sky diffuse cubmap.
   TextureHandle irradiance_map_;            //< diffuse irradiance envmap.
 
-  TextureHandle specular_map_; //           //< prefiltered specular envmap.
-  TextureHandle integrate_brdf_; //         //< integrate brdf LUT.
+  TextureHandle prefilter_map_;             //< prefiltered specular envmap.
+  TextureHandle brdf_lut_map_;              //< BRDF LUT.
 
   Irradiance::SHMatrices_t sh_matrices_;    //< irradiances spherical harmonics matrices.
   bool has_sh_matrices_ = false;

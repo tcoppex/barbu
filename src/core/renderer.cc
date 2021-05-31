@@ -267,7 +267,8 @@ void Renderer::draw_entities(RenderMode render_mode, SceneHierarchy const& scene
     }
 
     // (fragment)
-    attributes.envmap_texid        = skybox_.specular_map() ? skybox_.specular_map()->id : 0u; //
+    attributes.brdf_lut_texid      = skybox_.brdf_lut_map()->id;
+    attributes.prefilter_texid     = skybox_.prefilter_map() ? skybox_.prefilter_map()->id : 0u;
     attributes.irradiance_texid    = skybox_.irradiance_map() ? skybox_.irradiance_map()->id : 0u;
     attributes.irradiance_matrices = skybox_.has_irradiance_matrice() ? skybox_.irradiance_matrices() : nullptr;
     attributes.eye_position        = camera.position();

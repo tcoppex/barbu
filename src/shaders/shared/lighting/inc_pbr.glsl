@@ -83,9 +83,7 @@ BRDFMaterial_t get_brdf_material(in Material_t mat) {
   BRDFMaterial_t brdf_mat;
 
   // Corrected albedo component of the reflectance equation.
-  //brdf_mat.albedo = (1.0 - mat.metallic) * color;
-  brdf_mat.albedo = mix( color, mat.reflection, mat.metallic); //
-  
+  brdf_mat.albedo = (1.0 - mat.metallic) * color;
   // Fresnel parameter.
   brdf_mat.F0 = mix( kF0, color, mat.metallic);
   // Squared roughness.
@@ -155,11 +153,15 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
     L0 += (kD + kS) * light.radiance.rgb * light.n_dot_l;
   }
 
-  // Ambient factor.
-  const vec3 albedo = brdf_mat.albedo;
-
-  const vec3 kD = (1.0 - f_SchlickRoughness( frag_info.n_dot_v, brdf_mat.F0, mat.roughness)) * albedo; //
-  const vec3 ambient = mat.irradiance * kD * mat.ao;
+  // Ambient contribution from Image Based Lighting.
+  vec3 ambient = vec3(0.0);
+  {
+    const vec3 F = f_SchlickRoughness( frag_info.n_dot_v, brdf_mat.F0, mat.roughness);
+    const vec3 kD = (1.0 - F) * brdf_mat.albedo; //
+    const vec3 kS = mat.prefiltered * (F * mat.BRDF.x + mat.BRDF.y);
+    
+    ambient += (mat.irradiance * kD + kS) * mat.ao;
+  }
 
   // Final light color.
   const vec3 color = L0 + ambient + mat.emissive;

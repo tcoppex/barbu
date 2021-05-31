@@ -21,7 +21,7 @@ uniform int uResolution;
 uniform int uNumSamples = 1024;
 
 writeonly 
-uniform layout(rgba16f) image2D uDstImg;
+uniform layout(rg16f) image2D uDstImg;
 
 // ----------------------------------------------------------------------------
 

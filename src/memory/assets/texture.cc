@@ -173,9 +173,9 @@ bool Texture::setup() {
   //------------------------------------------
 
   // Target dependent texture setup.
-  // [ ! only TEXTURE_2D and CUBE_MAP have been implemented ]
-  if (GL_TEXTURE_2D == params.target) 
-  {
+  if (GL_TEXTURE_2D == params.target) {
+    bool bCreateStorage = false;
+
     // Retrieve the image resource.
     if (!resources.empty()) {
       auto const img = Resources::GetUpdated<Resource_t>( resources[0] ).data;
@@ -192,23 +192,26 @@ bool Texture::setup() {
                (img->channels == 3) ? GL_RGBA : //
                (img->channels == 2) ? GL_RG : 
                                       GL_RED;
-    }
-    bool const resolution_changed = (w != params.w) || (h != params.h);
     
-    // Fix incorrect levels. [improve?]
-    int32_t const max_levels = GetMaxMipLevel(w, h);
-    params.levels = glm::min(params.levels, max_levels);  
+      if (kImmutableResolution) {
+        bCreateStorage = (resources[0].version <= 0);
+      } else {
+        bool const resolution_changed = (w != params.w) || (h != params.h);
+        if (resolution_changed && (resources[0].version > 0)) {
+          release();
+          allocate();
+        }
+        bCreateStorage = resolution_changed;
+      }
+    } else {
+      bCreateStorage = true;
+    }
+    
+    // Clamp levels to maximum.
+    params.levels = glm::min(params.levels, GetMaxMipLevel(w, h));  
 
     // [ somes cases might have been missed ]
-    if (kImmutableResolution) {
-      if (resources[0].version <= 0) {
-        glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
-      }
-    } else if (resolution_changed) {
-      if (resources[0].version > 0) {
-        release();
-        allocate();
-      }
+    if (bCreateStorage) {
       glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
     }
     
@@ -268,6 +271,13 @@ bool Texture::setup() {
   }
 
   //------------------------------------------
+
+  // Set a default internal sampler. 
+  // glTextureParameteri( id, GL_TEXTURE_WRAP_S,      GL_CLAMP_TO_EDGE);
+  // glTextureParameteri( id, GL_TEXTURE_WRAP_T,      GL_CLAMP_TO_EDGE);
+  // glTextureParameteri( id, GL_TEXTURE_WRAP_R,      GL_CLAMP_TO_EDGE);
+  // glTextureParameteri( id, GL_TEXTURE_MIN_FILTER,  GL_LINEAR);
+  // glTextureParameteri( id, GL_TEXTURE_MAG_FILTER,  GL_LINEAR);  
 
   // Generate mipmaps when needed.
   if ((params.levels > 1) && pixels) {

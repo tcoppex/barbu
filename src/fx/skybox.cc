@@ -57,10 +57,10 @@ void Skybox::init() {
 
 void Skybox::deinit() {
   cube_mesh_.reset();
-  specular_map_.reset();
-  irradiance_map_.reset();
-  integrate_brdf_.reset();
-  sky_map_.reset();
+  // prefilter_map_.reset();
+  // irradiance_map_.reset();
+  // brdf_lut_map_.reset();
+  // sky_map_.reset();
 }
 
 void Skybox::render(Camera const& camera) {
@@ -70,7 +70,7 @@ void Skybox::render(Camera const& camera) {
 void Skybox::setup_texture(ResourceId resource_id) {
   assert(sky_map_ == nullptr); //
 
-  // (we might want to use mipmaps for late convolutions)
+  // (we might want to use mipmaps to improve the quality of  late convolutions)
   constexpr int32_t kLevels = 1;
 
   auto const kSkyboxCubemapID = TEXTURE_ASSETS.findUniqueID( "skybox::Cubemap" );
@@ -119,7 +119,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
         gx::DispatchCompute<16, 16>( kResolution, kResolution, kNumFaces);
       gx::UseProgram(0u);
 
-      glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT); //
+      glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT); //
 
       // Generate sub mips levels when needed.
       if (kLevels > 1) {
@@ -132,7 +132,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
     }
   }
 
-  calculate_irradiance_envmaps(basename);
+  calculate_convolution_envmaps(basename);
   LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
 }
 
@@ -140,10 +140,12 @@ void Skybox::setup_texture(ResourceId resource_id) {
 
 void Skybox::calculate_integrated_brdf() {
   // Setup the 2D texture.
-  auto const kLevels = 1;
-  auto const kFormat = GL_RG16F;
-  auto const kResolution = 256;
-  integrate_brdf_ = TEXTURE_ASSETS.create2d( 
+  int32_t constexpr kFormat = GL_RG16F;
+  int32_t constexpr kResolution = 512;
+  int32_t constexpr kLevels = Texture::GetMaxMipLevel(kResolution);
+  int32_t constexpr kNumSamples = 1024;
+
+  brdf_lut_map_ = TEXTURE_ASSETS.create2d( 
     "skybox::integrate_brdf", 
     kLevels, kFormat, kResolution, kResolution
   );
@@ -155,26 +157,27 @@ void Skybox::calculate_integrated_brdf() {
   auto const pgm = pgm_handle->id;
 
   // Run the Kernel.
-  auto const kNumSamples = 1024;
   gx::SetUniform( pgm, "uResolution", kResolution);
   gx::SetUniform( pgm, "uNumSamples", kNumSamples);
 
   constexpr int32_t image_unit = 0;
-  glBindImageTexture( image_unit, integrate_brdf_->id, 0, GL_TRUE, 0, GL_WRITE_ONLY, kFormat); //
+  glBindImageTexture( image_unit, brdf_lut_map_->id, 0, GL_FALSE, 0, GL_WRITE_ONLY, kFormat); //
   gx::SetUniform( pgm, "uDstImg", image_unit);
 
   gx::UseProgram(pgm);
     gx::DispatchCompute<16, 16>(kResolution, kResolution);
   gx::UseProgram(0);
 
-  glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT); //
+  glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT); //
 
-  //pgm_handle.reset();
+  if (kLevels > 1) {
+    brdf_lut_map_->generate_mipmaps();
+  }
 
   CHECK_GX_ERROR();
 }
 
-void Skybox::calculate_irradiance_envmaps(std::string const& basename) {
+void Skybox::calculate_convolution_envmaps(std::string const& basename) {
   Probe probe;
 
   // Be sure to have set the proper pipeline states (supposedely already set in the renderer).
@@ -219,7 +222,7 @@ void Skybox::calculate_irradiance_envmaps(std::string const& basename) {
       pgm_.prefilter->setUniform( "uRoughness",  roughness); //
       render( RenderMode::Prefilter, camera); 
     });
-    specular_map_ = probe.texture();    
+    prefilter_map_ = probe.texture();    
   }
   CHECK_GX_ERROR();
 }
@@ -249,8 +252,8 @@ void Skybox::render(RenderMode mode, Camera const& camera) {
   if (mode == RenderMode::Sky) {
     if (kVisualizeIrradianceMap && irradiance_map_) {
       tex_id = irradiance_map_->id;
-    } else if (kVisualizeSpecularMap && specular_map_) {
-      tex_id = specular_map_->id;
+    } else if (kVisualizeSpecularMap && prefilter_map_) {
+      tex_id = prefilter_map_->id;
     }
   }
 

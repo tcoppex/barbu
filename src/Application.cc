@@ -39,13 +39,12 @@ void Application::setup() {
     // -- Simple model sample --
 
     focus_ =
-    scene_.import_model( ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf" );
-    // scene_.import_model( ASSETS_DIR "/models/gltf_samples/CesiumMan.glb" );
-    // scene_.import_model( ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb" );
-    // scene_.import_model( ASSETS_DIR "/models/glb-heads/DigitalIra.glb" );
-
-    // auto fish = scene_.import_model( ASSETS_DIR "/models/gltf_samples/BarramundiFish.glb" );
-    // fish->set_position(fish->position() + glm::vec3(2.0f, 0.0f, 0.0f)); 
+    scene_.import_model( 
+      // ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf"
+      // ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
+      ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
+      // ASSETS_DIR "/models/glb-heads/DigitalIra.glb" 
+    );
   }
 
   // Recenter the view on the focus centroid.
@@ -54,7 +53,7 @@ void Application::setup() {
 }
 
 void Application::update() {
-  auto const& eventData{ GetEventData() }; //
+  auto const& eventData{ GetEventData() };
   auto const& selected = scene_.selected();  
   EntityHandle new_focus = nullptr;
 

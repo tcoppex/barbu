@@ -19,13 +19,15 @@ layout(location = 0) out vec4 fragColor;
 #include "shared/structs/inc_fraginfo.glsl"
 #include "shared/structs/inc_material.glsl"
 #include "shared/inc_tonemapping.glsl"
+#include "shared/inc_maths.glsl"
 
 // Uniforms : Default Material.
-uniform vec3 uEyePosWS;
-uniform samplerCube uEnvironmentMap;
-uniform samplerCube uIrradianceMap;
+uniform sampler2D uBRDFMap;
+uniform samplerCube uPrefilterEnvmap;
+uniform samplerCube uIrradianceEnvmap;
 uniform mat4 uIrradianceMatrices[3];
 uniform bool uHasIrradianceMatrices;
+uniform vec3 uEyePosWS;
 uniform int uToneMapMode = TONEMAPPING_NONE;
 
 // Uniforms : Generic Material.
@@ -55,8 +57,6 @@ vec3 get_normal() {
 
   // Retrieve the bump normal in tangent space using mikkTSpace decoding.
   if (uHasNormal) {
-    // [still got weird seams on UVs, probably due to wrong mikktspace indexing]
-
     // TBN basis to transform from tangent-space to world-space.
     // We do not have to normalize this interpolated vectors to get the TBN.
     const float s = 1.0; //inTangentWS.w;
@@ -72,10 +72,8 @@ vec3 get_normal() {
     const vec3 bump = normalize(TBN * Nt);
 
     // Contribute to the main normal.
-    N = bump;
-
-    // [ show the seams issue ]
     //N = normalize(mix(N, bump, 5.5)); //
+    N = bump;
   }
 
   return N;
@@ -90,22 +88,21 @@ FragInfo_t get_worldspace_fraginfo() {
   frag.V        = normalize( uEyePosWS - frag.P );
   frag.R        = reflect( -frag.V, frag.N);
   frag.uv       = inTexcoord.xy;
-  frag.n_dot_v  = max(dot(frag.N, frag.V), 0);
+  frag.n_dot_v  = saturate(dot(frag.N, frag.V)); //
 
   // [fixme] Deal with double sided plane.
-  // const float s = sign(frag.n_dot_v);
-  // frag.N *= s;
+  // frag.N *= sign(dot(frag.N, frag.V));
 
   return frag;
 }
 
 // ----------------------------------------------------------------------------
 
-vec3 get_irradiance(in vec3 normalWS) {
+vec3 get_irradiance(in vec3 normal_ws) {
   vec3 irradiance = vec3(0.0);
 
   if (uHasIrradianceMatrices) {
-    const vec4 n = vec4( normalWS, 1.0);
+    const vec4 n = vec4( normal_ws, 1.0);
     irradiance = vec3(
       dot( n, uIrradianceMatrices[0] * n),
       dot( n, uIrradianceMatrices[1] * n),
@@ -113,7 +110,7 @@ vec3 get_irradiance(in vec3 normalWS) {
     );
   } else {
     const float kIrradianceMapFactor = 0.5; //
-    irradiance = kIrradianceMapFactor * texture( uIrradianceMap, normalWS).rgb;
+    irradiance = kIrradianceMapFactor * texture( uIrradianceEnvmap, normal_ws).rgb;
   }
 
   return irradiance;
@@ -148,14 +145,18 @@ Material_t get_material(in FragInfo_t frag) {
   mat.emissive = emissive * uEmissiveFactor;
 
   // -- fragment derivative materials ---
+  {
+    // Diffuse irradiance.
+    mat.irradiance = get_irradiance( frag.N );
 
-  // Irradiance.
-  mat.irradiance = get_irradiance( frag.N );
-  
-  // Roughness based reflective color.
-  const int kEnvMaxLevels = int(log2(textureSize(uEnvironmentMap, 0).x))-1;
-  const float lvl = mat.roughness * kEnvMaxLevels;
-  mat.reflection = textureLod( uEnvironmentMap, frag.R, lvl).rgb; //
+    // Roughness based prefiltered specular.
+    const float roughness_level = mat.roughness * log(textureSize(uPrefilterEnvmap, 0).x);
+    mat.prefiltered = textureLod( uPrefilterEnvmap, frag.R, roughness_level).rgb;
+
+    // Roughness based BRDF specular values. [weird issue on edges].
+    const vec2 brdf_uv = vec2( frag.n_dot_v, mat.roughness);
+    mat.BRDF = texture( uBRDFMap, brdf_uv).rg;
+  }
 
   return mat;
 }
@@ -217,16 +218,7 @@ void main() {
   FragInfo_t fraginfo = get_worldspace_fraginfo();
   Material_t material = get_material(fraginfo);
 
-  fragColor = colorize( 
-    //MATERIAL_GENERIC_COLOR_MODE_UNLIT,
-    //MATERIAL_GENERIC_COLOR_MODE_NORMAL,
-    //MATERIAL_GENERIC_COLOR_MODE_TEXCOORD, 
-    //MATERIAL_GENERIC_COLOR_MODE_ROUGHNESS, 
-    uColorMode, 
-  fraginfo, material);
-
-  // [Test tangent output]
-  //fragColor.rgb = gamma_uncorrect((inTangentWS.xyz + 1.0) / 2.0);
+  fragColor = colorize( uColorMode, fraginfo, material);
 }
 
 // ----------------------------------------------------------------------------
