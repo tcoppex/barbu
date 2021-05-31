@@ -59,8 +59,9 @@ vec3 get_normal() {
 
     // TBN basis to transform from tangent-space to world-space.
     // We do not have to normalize this interpolated vectors to get the TBN.
+    const float s = 1.0; //inTangentWS.w;
     const vec3 T = inTangentWS.xyz;
-    const vec3 B = inTangentWS.w * cross( N, T);
+    const vec3 B = s * cross( N, T);
     const mat3 TBN = mat3( T, B, N);
     
     // Tangent-space normal.
@@ -74,7 +75,7 @@ vec3 get_normal() {
     N = bump;
 
     // [ show the seams issue ]
-    //N = normalize(mix(N, bump, 10.75)); //
+    //N = normalize(mix(N, bump, 5.5)); //
   }
 
   return N;
@@ -140,7 +141,7 @@ Material_t get_material(in FragInfo_t frag) {
 
   // Ambient Occlusion.
   const float ao = (uHasAO) ? texture( uAOTex, frag.uv).r : 1.0f;
-  mat.ao = pow(ao, 2.0);
+  mat.ao = pow(ao, 1.5);
 
   // Emissive.
   const vec3 emissive = (uHasEmissive) ? texture(uEmissiveTex, frag.uv).rgb : vec3(0.0f);
@@ -225,7 +226,7 @@ void main() {
   fraginfo, material);
 
   // [Test tangent output]
-  //fragColor.rgb = (inTangentWS.xyz + 1.0) / 2.0;
+  //fragColor.rgb = gamma_uncorrect((inTangentWS.xyz + 1.0) / 2.0);
 }
 
 // ----------------------------------------------------------------------------
