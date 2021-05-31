@@ -227,6 +227,12 @@ vec4 hermite_mix(in vec3 p0, in vec3 p1, in vec3 t0, in vec3 t1, in float u) {
 
 // ----------------------------------------------------------------------------
 
+float saturate(float x) {
+  return min(max(x, 0.0), 1.0);
+}
+
+// ----------------------------------------------------------------------------
+
 // Map a range from [edge0, edge1] to [0, 1].
 float maprange(float edge0, float edge1, float x) {
   return clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
