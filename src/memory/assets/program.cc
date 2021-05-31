@@ -122,7 +122,7 @@ ProgramFactory::Handle ProgramFactory::createCompute(AssetId const& id, Resource
 
 bool ProgramFactory::post_setup(AssetId const& assetId, ProgramFactory::Handle h) {
   assert( h->loaded() );
-  glLinkProgram(h->id);
+  gx::LinkProgram( h->id );
   return gx::CheckProgramStatus( h->id, assetId);
 }
 
