@@ -440,9 +440,9 @@ void CheckError(std::string_view msg, char const* file, int line) {
   if (err != GL_NO_ERROR) {
     auto const error_string = GetErrorString(err);
     if (msg != nullptr) {
-      Logger::Get().fatal_error( file, line, "OpenGL", msg, "[", error_string, "]");
+      Logger::Get().fatal_error(file, "", line, "OpenGL", msg, "[", error_string, "]");
     } else {
-      Logger::Get().fatal_error( file, line, "OpenGL [", error_string, "]");
+      Logger::Get().fatal_error(file, "", line, "OpenGL [", error_string, "]");
     }
   }
 }
