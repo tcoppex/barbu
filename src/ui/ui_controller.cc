@@ -161,6 +161,8 @@ void UIController::render(bool show_ui) {
   if (show_ui) {
     render_frame(ImGui::GetDrawData());
   }
+
+  CHECK_GX_ERROR();
 }
 
 void UIController::render_frame(ImDrawData* draw_data) {
@@ -261,7 +263,12 @@ void UIController::render_frame(ImDrawData* draw_data) {
         pcmd->UserCallback(cmd_list, pcmd);
       } else {
         GLuint texid = static_cast<GLuint>(reinterpret_cast<intptr_t>(pcmd->TextureId));
+
+        if (!glIsTexture(texid)) continue;
         glBindTexture(GL_TEXTURE_2D, texid);
+        //glBindTextureUnit(0, texid);
+        CHECK_GX_ERROR();
+
         glScissor(static_cast<GLint>(pcmd->ClipRect.x),
                   static_cast<GLint>(fb_height - pcmd->ClipRect.w),
                   static_cast<GLint>(pcmd->ClipRect.z - pcmd->ClipRect.x),
@@ -292,6 +299,8 @@ void UIController::render_frame(ImDrawData* draw_data) {
   glPolygonMode(GL_FRONT_AND_BACK, (GLenum)last_polygon_mode[0]);
   glViewport(last_viewport[0], last_viewport[1], last_viewport[2], last_viewport[3]);
   glScissor(last_scissor_box[0], last_scissor_box[1], last_scissor_box[2], last_scissor_box[3]);
+
+  CHECK_GX_ERROR();
 }
 
 /// --------------------------------------------------------------------------
