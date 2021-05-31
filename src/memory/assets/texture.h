@@ -4,6 +4,10 @@
 #include "memory/asset_factory.h"
 #include "memory/resources/image.h"
 
+namespace views {
+class TexturesView;
+}
+
 // ----------------------------------------------------------------------------
 
 struct TextureParameters : AssetParameters {
@@ -82,6 +86,8 @@ class TextureFactory : public AssetFactory<Texture> {
   Handle createCubemap(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels = nullptr);
   // Crossed HDR Cubemap.
   Handle createCubemapHDR(AssetId const& id, int levels, ResourceId const& resource = nullptr);
+
+  friend class views::TexturesView;
 };
 
 // ----------------------------------------------------------------------------
