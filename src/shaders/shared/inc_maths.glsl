@@ -52,10 +52,11 @@ mat3 rotationZ(float radians) {
 // ----------------------------------------------------------------------------
 
 mat3 basis_from_view(in vec3 z_axis) {
-  vec3 y_axis = vec3(0.0, 1.0, 0.0);
+  // Be sure Y & Z are not colinears.
+  vec3 y_axis = abs(z_axis.y) < (1.0 - Epsilon()) ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
   vec3 x_axis = normalize(cross(y_axis, z_axis));
        y_axis = normalize(cross(z_axis, x_axis));
-       z_axis = normalize(z_axis);
+       z_axis = /*normalize*/(z_axis);
   return mat3(x_axis, y_axis, z_axis); 
 }
 
@@ -179,18 +180,27 @@ vec2 hammersley2d(int i, int N) {
   return hammersley2d(i, 1.0f / float(N));
 }
 
-vec3 hemisphereSample_uniform(float u, float v) {
+vec3 sample_hemisphere_uniform(float u, float v) {
  const float phi = v * TwoPi();
  const float cosTheta = 1.0 - u;
  const float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
  return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
 }
   
-vec3 hemisphereSample_cos(float u, float v) {
+vec3 sample_hemisphere_cos(float u, float v) {
  const float phi = v * TwoPi();
  const float cosTheta = sqrt(1.0 - u);
  const float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
  return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+}
+
+// ----------------------------------------------------------------------------
+
+// Sample an hemisphere using Hammersley pointset on a roughness dependant specular lobe
+// and return it as a direction vector in world space.
+vec3 importance_sample_GGX( in mat3 basis_ws, in vec2 pt, float roughness_sqr) {
+  pt.x = 1.0 - (1.0 - pt.x) / (1.0 + (roughness_sqr - 1.0) * pt.x);
+  return normalize(basis_ws * sample_hemisphere_cos( pt.x, pt.y ));
 }
 
 // ----------------------------------------------------------------------------
