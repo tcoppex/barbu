@@ -8,7 +8,7 @@
 namespace {
 
 void UseLinearInternalFormat(std::string const& filename, int32_t &internalFormat, bool bForce = false) {
-  std::string fn(Resource::TrimFilename(filename));
+  std::string fn(Logger::TrimFilename(filename));
 
   // Transform filename to lowercase to test matches.
   std::transform( fn.begin(), fn.end(), fn.begin(), ::tolower);
@@ -209,11 +209,12 @@ bool Texture::setup() {
         release();
         allocate();
       }
-      
       glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
     }
-
-    glTextureSubImage2D(id, 0, 0, 0, w, h, format, type, pixels);
+    
+    if (pixels) {
+      glTextureSubImage2D(id, 0, 0, 0, w, h, format, type, pixels);
+    }
   } 
   else if (GL_TEXTURE_CUBE_MAP == params.target) 
   {
