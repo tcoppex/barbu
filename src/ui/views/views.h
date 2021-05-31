@@ -4,6 +4,8 @@
 #include "ui/views/Main.h"
 #include "ui/views/RendererView.h"
 
+#include "ui/views/assets/TexturesView.h"
+
 #include "ui/views/fx/HairView.h"
 #include "ui/views/fx/MarschnerView.h"
 
