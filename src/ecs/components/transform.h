@@ -22,13 +22,13 @@ class TransformComponent final : public ComponentParams<Component::Transform> {
     matrix_ = glm::mat4(1.0f);
   }
 
-  inline glm::mat4& matrix() { return matrix_; }
-  inline glm::mat4 const& matrix() const { return matrix_; }
+  inline glm::mat4& matrix() noexcept { return matrix_; }
+  inline glm::mat4 const& matrix() const noexcept { return matrix_; }
 
-  inline glm::vec3 position() const { return matrix_[3]; }
-  inline glm::vec3 front() const { return -matrix_[2]; }
+  inline glm::vec3 position() const noexcept { return matrix_[3]; }
+  inline glm::vec3 front() const noexcept { return -matrix_[2]; }
 
-  inline void set_position(glm::vec3 const& pos) { 
+  inline void set_position(glm::vec3 const& pos) noexcept { 
     matrix_[3] = glm::vec4( pos, matrix_[3][3]); 
   }
 
