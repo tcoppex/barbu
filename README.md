@@ -98,6 +98,8 @@ The binary can be found in the project `./bin/` directory:
 
 * ["Uncharted 2: HDR Lighting"](https://gdcvault.com/play/1012351/Uncharted-2-HDR). John Hable, GDC 2012.
 
+* ["Real Shading in Unreal Engine 4"](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf). Brian Karis, Epic Games. 2013.
+
 ## License
 
 *Barbü* is released under the *MIT* license.
