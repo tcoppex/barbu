@@ -121,11 +121,9 @@ class AssetFactory {
   using Parameters_t = typename TAsset::Parameters_t;
   using Resource_t   = typename TAsset::Resource_t;
 
- public:
   // When set to true, release methods will clear the asset entry by default.
   static constexpr bool kReleaseWipeOutDefault = false;
 
- public:
   AssetFactory() = default;
 
   virtual ~AssetFactory() {}
@@ -245,7 +243,7 @@ class AssetFactory {
     // }
   }
 
- private:
+ protected:
   using AssetHashmap_t = std::unordered_map< AssetId, Handle >;
 
   AssetHashmap_t assets_;
