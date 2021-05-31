@@ -354,7 +354,8 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
     {
       MapVec3<glm::ivec3, size_t> mapVertices;
 
-      for (int i = 0; i < _raw.elementsAttribs.size(); ++i) {
+      auto const nelems = static_cast<int32_t>(_raw.elementsAttribs.size());
+      for (int i = 0; i < nelems; ++i) {
         auto const& key = _raw.elementsAttribs[i];
         auto const& it = mapVertices.find(key);  // 
 
@@ -372,7 +373,6 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
 
     // Create an unique interleaved attribute vertices buffer.
     int const nvertices = static_cast<int>(attribIndices.size());
-    LOG_INFO(meshname, "has", nvertices, "vertices.");
     
     vertices.resize(nvertices);
     for (int i = 0; i < nvertices; ++i) {

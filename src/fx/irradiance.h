@@ -121,7 +121,7 @@ class Irradiance {
   void PrefilterHDR( ResourceInfo const& resource, SHMatrices_t &M) {
     CubemapData_t<float> cubemap{nullptr};
 
-    LOG_INFO( "Prefiltering irradance matrices on CPU for :", resource.id.str() );
+    LOG_DEBUG_INFO( "Prefiltering irradance matrices on CPU for :", resource.id.str() );
 
     auto img = Resources::Get<Image>( resource.id ).data;
     for (int i=0; i<img->depth; ++i) {
@@ -131,8 +131,6 @@ class Irradiance {
     // Small scale down of the floating point value.
     auto const dColor = [](float x) { return 0.1f*x; };
     Prefilter<float>( cubemap, dColor, img->width, img->height, img->channels, M);
-
-    LOG_MESSAGE( "Irradiance matrices completed !" );
   }
 
  private:
