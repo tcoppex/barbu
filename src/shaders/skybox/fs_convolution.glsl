@@ -4,7 +4,7 @@
 
 // ----------------------------------------------------------------------------
 //
-// Calculate the convolution of an environment map.
+// Calculate the irradiance convolution of an environment map.
 //
 // ----------------------------------------------------------------------------
 
