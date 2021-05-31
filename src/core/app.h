@@ -57,6 +57,11 @@ class App {
      which does not use the renderer directly. */
   virtual void draw() {}
 
+  /* Returns the frame time change. */
+  inline float deltatime() const noexcept {
+    return deltatime_;
+  }
+
   /* Returns the window resolution. */
   inline glm::ivec2 const& resolution() const {
     return resolution_;
@@ -97,6 +102,8 @@ class App {
   // User Interface.
   UIController ui_controller_;
   Parameters_t params_;
+
+ public:
   std::shared_ptr<views::Main> ui_mainview_;
 
  private:

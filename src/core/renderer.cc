@@ -30,19 +30,22 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
 
   gizmo_.begin_frame( deltatime, camera);
 
+  user_update_cb(); //
+
   // UPDATE
   {
-    user_update_cb();
-
-    grid_.update(deltatime, camera);
-
-    // Will initialize / resize textures when needed [to improve]
+    // Postprocessing, resize textures when needed [to improve]
     postprocess_.setup_textures(camera); //
 
+    // Grid.
+    grid_.update(deltatime, camera);
+
+    // Particles.
     if (params_.enable_particle) {
       particle_.update( deltatime, camera);
     }
     
+    // Hair.
     if (params_.enable_hair && hair_.initialized()) {
       if (auto const& colliders = scene.colliders(); !colliders.empty()) {
         auto const& e = colliders.front();
@@ -55,26 +58,29 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
       hair_.update(deltatime);
     }
   }
+  CHECK_GX_ERROR();
 
   // RENDER
   {
     gx::Viewport( camera.width(), camera.height());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //
 
-    // 'Deffered'-pass, post-process the solid objects.
+    // 'Deferred'-pass, post-process the solid objects.
+   
     postprocess_.begin();
       draw_pass( RendererPassBit::PASS_DEFERRED, scene, camera);
-      user_draw_cb(); //
     postprocess_.end(camera);
 
     // Forward-pass, render the special effects.
     draw_pass(RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
 
     // [ should have a final composition pass here to tonemap the forwards ].
-
-    scene.gizmos(false);
   }
+  CHECK_GX_ERROR();
   
+  user_draw_cb(); //
+  scene.gizmos(false); //
+
   gizmo_.end_frame(camera);
 }
 

@@ -55,10 +55,9 @@ int32_t App::run(std::string_view title) {
     renderer_.frame( scene_, camera_, 
       // Update.
       [this]() {
-        // user update must be *before* scene update. [fixme]
-        camera_.update(deltatime_);
         update();
-        scene_.update(deltatime_, camera_);
+        camera_.update(deltatime_); //
+        scene_.update(deltatime_, camera_); //
       },
 
       // Render
@@ -170,6 +169,7 @@ bool App::presetup(std::string_view title) {
     LOG_ERROR( "The camera projection has not been properly initialized (￣ε￣)" );
     camera_.set_default();
   }
+  camera_.rebuild();
 
   // Resume clock.
   {
