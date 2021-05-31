@@ -4,6 +4,8 @@
 #include "core/app.h"
 #include "utils/arcball_controller.h"
 
+#include "ecs/entity-fwd.h"
+
 // ----------------------------------------------------------------------------
 
 class Application final : public App {
@@ -16,6 +18,7 @@ class Application final : public App {
 
  private:
   ArcBallController arcball_controller_;
+  EntityHandle focus_;
 };
 
 
