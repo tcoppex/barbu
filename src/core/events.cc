@@ -84,7 +84,11 @@ void keyboard_cb(GLFWwindow *window, int key, int, int action, int) {
   }
 
   if ((key == GLFW_KEY_SPACE) && (action == GLFW_PRESS)) {
-    s_Global.bSpacePressed ^= true;
+    s_Global.bSpacePressed ^= true; //
+  }
+
+  if ((key == GLFW_KEY_F1) && (action == GLFW_PRESS)) {
+    s_Global.bF1Pressed ^= true; //
   }
 
   // [temporary]

@@ -21,6 +21,7 @@ struct TEventData {
   bool bLeftAlt;
   bool bLeftShift;
   bool bKeypad;
+  bool bF1Pressed;
   uint16_t lastChar;
 
   std::vector<std::string> dragFilenames;
