@@ -41,7 +41,7 @@ void RawMeshData::recalculate_normals() {
       int const vertex_id = face.x;
       auto const& vnormal = vnormals[vertex_id];
 
-      // [ use a hashmap to avoid reusing the same normals ? ]
+      // [ use a hashmap to avoid reusing the same normals ? ]
       face.z = static_cast<uint32_t>(normals.size());
       normals.push_back( glm::vec3(vnormal.x, vnormal.y, vnormal.z) );
     }
@@ -50,6 +50,8 @@ void RawMeshData::recalculate_normals() {
 
 void RawMeshData::recalculate_tangents() {
   assert(!vertices.empty());
+
+  // -- More informations on http://www.mikktspace.com/ --
 
   if (normals.empty()) {
     LOG_DEBUG_INFO( "Tangent space not calculated : missing normals." );
@@ -60,11 +62,6 @@ void RawMeshData::recalculate_tangents() {
     LOG_DEBUG_INFO( "Tangent space not calculated : missing texcoords." );
     return;    
   }
-
-  // [to test]
-  // As tangents space is computed based on the three attributes position / normals / texcoords
-  // we index them using the same elements.
-  tangents.resize( elementsAttribs.size() ); //
 
 
   SMikkTSpaceInterface interface;
@@ -102,9 +99,8 @@ void RawMeshData::recalculate_tangents() {
     auto const& t = self.texcoords[tid];
     fvTexcOut[0] = t.x;
     fvTexcOut[1] = t.y;
+    //LOG_MESSAGE(t.x, t.y);
   };
-
-  // -- Might be incorrect due to wrong indexing, see http://www.mikktspace.com/ --
   
   interface.m_setTSpaceBasic = [](const SMikkTSpaceContext * pContext, const float fvTangent[], const float fSign, const int iFace, const int iVert) {
     auto &self = *((RawMeshData*)pContext->m_pUserData);
@@ -118,6 +114,7 @@ void RawMeshData::recalculate_tangents() {
   };
 
 
+  tangents.resize( elementsAttribs.size() ); //
   SMikkTSpaceContext context{ &interface, this };
   genTangSpaceDefault( &context );
 }
