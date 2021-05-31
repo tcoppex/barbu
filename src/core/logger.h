@@ -7,6 +7,8 @@
 #include <string>
 #include <string_view>
 
+#include "glm/gtx/string_cast.hpp" // glm::to_string
+
 #include "utils/singleton.h"
 
 // ----------------------------------------------------------------------------
