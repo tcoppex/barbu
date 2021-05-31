@@ -2,6 +2,7 @@
 
 #include <map>
 #include "glm/gtc/type_ptr.hpp"
+
 #include "memory/assets/assets.h"
 #include "utils/mathutils.h"
 
@@ -286,6 +287,8 @@ void MeshData::release() {
 // ----------------------------------------------------------------------------
 
 bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents) {
+  auto const meshname = _raw.name.empty() ? "[mesh]" : Logger::TrimFilename(_raw.name);
+
   type = _type;
   std::swap(vgroups, _raw.vgroups);
    
@@ -316,66 +319,64 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
       }
     }
 
-    // if (!_raw.tangents.empty()) {
-    //   for (int i = 0; i < nvertices; ++i) {
-    //     //vertices[i].tangent = _raw.tangents[i]; // TODO ?
-    //   }
-    // }
+    if (!_raw.tangents.empty()) {
+      for (int i = 0; i < nvertices; ++i) {
+        vertices[i].tangent = _raw.tangents[i]; // TODO ?
+      }
+    }
   }
   else 
   {
-    bool has_tangent = false;
+    bNeedTangents = bNeedTangents && _raw.tangents.empty();
 
     // Recalculate normals / tangents when none exists.
     if (!_raw.elementsAttribs.empty()) { 
       if (_raw.normals.empty()) {
-        LOG_INFO( "Recalculating normals for :", _raw.name );
+        LOG_DEBUG_INFO( "Recalculating normals for :", meshname );
 
         _raw.recalculate_normals();
-
-        LOG_MESSAGE( "Normals completed !" );
       }
 
       // [only recalculate tangent when the material contains normal map ?]
-      if (_raw.tangents.empty() && bNeedTangents) {
-        LOG_INFO( "Recalculating tangents for :", _raw.name );
-        
+      if (bNeedTangents) {
+        LOG_DEBUG_INFO( "Recalculating tangents for :", meshname );
         _raw.recalculate_tangents();
-
-        LOG_MESSAGE( "Tangents completed !" );
       }
-      has_tangent = true;
     }
+    
+    bool const has_tangent = !_raw.tangents.empty();
 
     // Reindexing vertices from sparse input.
     std::vector<glm::ivec4> attribIndices;
     attribIndices.reserve(_raw.vertices.size());
+
     indices.reserve(_raw.elementsAttribs.size());
     {
       MapVec3<glm::ivec3, size_t> mapVertices;
-      
-      int32_t tangent_index = -1; //
-      for (auto const& key : _raw.elementsAttribs) {
-        auto const& it = mapVertices.find(key);
-        ++tangent_index;
+
+      for (int i = 0; i < _raw.elementsAttribs.size(); ++i) {
+        auto const& key = _raw.elementsAttribs[i];
+        auto const& it = mapVertices.find(key);  // 
 
         int index = static_cast<int>(attribIndices.size());
         if (it == mapVertices.cend()) {
           mapVertices[key] = index;
-          attribIndices.push_back( glm::ivec4(key, tangent_index) );
+          attribIndices.push_back( glm::ivec4(key, i) );
         } else {
-          index = it->second;
+          index = it->second;  
         }
+        
         indices.push_back(index);
       }
     }
 
     // Create an unique interleaved attribute vertices buffer.
     int const nvertices = static_cast<int>(attribIndices.size());
+    LOG_INFO(meshname, "has", nvertices, "vertices.");
     
     vertices.resize(nvertices);
     for (int i = 0; i < nvertices; ++i) {
-      auto const& index = attribIndices[i];
+      auto const& index = attribIndices[ i ];
 
       // (positions)
       vertices[i].position = _raw.vertices[index.x];
@@ -389,7 +390,7 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
       }
       // (tangents)
       if (has_tangent) {
-        vertices[i].tangent = _raw.tangents[index.w]; //
+        vertices[ i ].tangent = _raw.tangents[ bNeedTangents ? index.w : i ]; // XXX XXX XXX
       }
     }
   

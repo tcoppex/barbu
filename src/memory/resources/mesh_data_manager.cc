@@ -697,8 +697,10 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
   }
 
   std::string basename(filename);
-  basename = Resource::TrimFilename(basename);
+  basename = Logger::TrimFilename(basename);
   basename = basename.substr(0, basename.find_last_of('.'));
+
+  LOG_DEBUG_INFO( "Loading mesh", basename );
 
   /* ------------ */
   bool bNeedTangents = false;
@@ -771,6 +773,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
           // Positions.
           if (attrib.type == cgltf_attribute_type_position) {
+            LOG_DEBUG( "> loading positions." );
             LOG_CHECK(attrib.data->type == cgltf_type_vec3);
             raw.vertices.reserve(attribsize);
             
@@ -783,6 +786,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           }
           // Normals.
           else if (attrib.type == cgltf_attribute_type_normal) {
+            LOG_DEBUG( "> loading normals." );
             LOG_CHECK(attrib.data->type == cgltf_type_vec3);
             raw.normals.reserve(attribsize);
             
@@ -795,6 +799,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           }
           // Tangents
           else if (attrib.type == cgltf_attribute_type_tangent) {
+            LOG_DEBUG( "> loading tangents." );
             LOG_CHECK(attrib.data->type == cgltf_type_vec4);
             raw.tangents.reserve(attribsize);
             
@@ -813,9 +818,10 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             LOG_CHECK(attrib.index == 0);
 
             if (attrib.index > 0) {
-              LOG_WARNING( "multitexturing is not supported yet." );
+              LOG_WARNING( "Multitexturing is not supported yet." );
               continue;
             }
+            LOG_DEBUG( "> loading texture coordinates." );
 
             raw.texcoords.reserve(attribsize);
 
@@ -827,6 +833,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           }
           // Joints.
           else if (attrib.type == cgltf_attribute_type_joints) {
+            LOG_DEBUG( "> loading joint indices." );
+            LOG_CHECK(attrib.data->type == cgltf_type_vec4);
             raw.joints.reserve(attribsize);
             
             glm::uvec4 joints;
@@ -838,6 +846,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           }
           // Weights.
           else if (attrib.type == cgltf_attribute_type_weights) {
+            LOG_DEBUG( "> loading joint weights." );
+            LOG_CHECK(attrib.data->type == cgltf_type_vec4);
             raw.weights.reserve(attribsize);
 
             glm::vec4 weights;
