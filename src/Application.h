@@ -3,7 +3,6 @@
 
 #include "core/app.h"
 #include "utils/arcball_controller.h"
-
 #include "ecs/entity-fwd.h"
 
 // ----------------------------------------------------------------------------
