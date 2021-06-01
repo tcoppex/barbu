@@ -18,6 +18,7 @@ list(APPEND Sources
   ecs/material.cc
   ecs/entity.cc
   ecs/components/skin.cc
+  ecs/materials/generic.cc
 
   fx/gpu_particle.cc
   fx/grid.cc
@@ -72,6 +73,7 @@ list(APPEND Headers
   ecs/components/skin.h
   ecs/components/transform.h
   ecs/components/visual.h
+  ecs/materials/generic.h
   
   fx/gpu_particle.h
   fx/grid.h
