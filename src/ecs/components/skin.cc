@@ -2,7 +2,6 @@
 
 #include "glm/gtc/type_ptr.hpp"
 #include "core/graphics.h"
-// #include "utils/gizmo.h" // tmp
 
 // ----------------------------------------------------------------------------
 
@@ -15,8 +14,6 @@ SkinComponent::~SkinComponent() {
     texture_id_ = 0u;
   }
 }
-
-// ----------------------------------------------------------------------------
 
 bool SkinComponent::update(float global_time) {
   if (skeleton_ == nullptr) {
@@ -36,7 +33,6 @@ bool SkinComponent::update(float global_time) {
 
   // Evaluate the skinning data for the given sequence.
   if (!controller_.evaluate( mode_, skeleton_, global_time, sequence_)) {
-    //LOG_WARNING( "Skinning was not computed : check for missing data." );
     return false;
   }
 
@@ -78,19 +74,5 @@ bool SkinComponent::update(float global_time) {
   
   return true;
 }
-
-// void SkinComponent::debug_draw() {
-//   for (int i=0; i < skeleton_->njoints(); ++i) {
-//     auto const& global = controller_.global_pose_matrices()[i];
-
-//     auto const pos = glm::vec3(global[3]);
-//     auto const end = glm::vec3(global * glm::vec4(0.0, 0.2, 0.0, 1.0));
-
-//     float const di = i / float(skeleton_->njoints()-1);
-//     Im3d::PushColor( Im3d::Color(glm::vec4(0.7f*di, 0.2f, 1.0f, 1.0f)) );
-//     Im3d::DrawPrism( pos, end, 0.05, 32);
-//     Im3d::PopColor();
-//   }
-// }
 
 // ----------------------------------------------------------------------------
