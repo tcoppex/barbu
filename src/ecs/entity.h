@@ -100,12 +100,12 @@ class Entity {
   inline glm::vec3 position() const { return transform().position(); }
   inline void set_position(glm::vec3 const& pos) { transform().set_position(pos); }
 
-  // Return the barycenter of an object, depending on its components. 
+  // Return the barycenter of an object in local space, depending on its components. 
   inline glm::vec3 centroid() const { 
     if (has<VisualComponent>()) {
       return get<VisualComponent>().mesh()->centroid();
     }
-    return position(); 
+    return glm::vec3(0.0f); 
   }
 
   // -- Miscs.
