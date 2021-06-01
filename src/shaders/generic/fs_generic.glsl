@@ -59,7 +59,7 @@ vec3 get_normal() {
   if (uHasNormal) {
     // TBN basis to transform from tangent-space to world-space.
     // We do not have to normalize this interpolated vectors to get the TBN.
-    const float s = 1.0; //inTangentWS.w;
+    const float s = 1.0;//inTangentWS.w;
     const vec3 T = inTangentWS.xyz;
     const vec3 B = s * cross( N, T);
     const mat3 TBN = mat3( T, B, N);
