@@ -53,6 +53,7 @@ void Hair::setup(ResourceId const& scalp_id) {
 
   nroots_ = scalp_mesh_data.nvertices();
   model_ = glm::translate( glm::mat4(1.0f), pivot);
+  params_.readonly.nroots = nroots_;
 
   init_simulation( scalp_mesh_data );
   init_mesh( scalp_mesh_data );
@@ -219,7 +220,6 @@ void Hair::render(Camera const& camera) {
 // ----------------------------------------------------------------------------
 
 void Hair::init_ui_views() {
-  params_.readonly.nroots = nroots_;
   params_.readonly.nControlPoints = kNumControlPoints;
   params_.ui_marschner = marschner_.ui_view; //
   ui_view = std::make_shared<views::HairView>(params_);
