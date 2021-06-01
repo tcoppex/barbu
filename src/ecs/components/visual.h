@@ -46,7 +46,8 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
         // Set material parameters when needed.
         uint32_t const pgm = mat->program()->id;
-        texture_unit = mat->update_uniforms(attributes, (last_pgm == pgm) ? texture_unit : 0);
+        bool const bUseSameProgram = (last_pgm == pgm); 
+        texture_unit = mat->update_uniforms(attributes, bUseSameProgram ? texture_unit : 0);
         last_pgm = pgm;
 
         // Force double-sided rendering when requested.

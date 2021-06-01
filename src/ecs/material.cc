@@ -10,7 +10,7 @@ int32_t Material::update_uniforms(RenderAttributes const& attributes, int32_t de
   texture_unit_ = default_unit; //
 
   bool const use_new_program{ texture_unit_ == 0 };
-  
+
   if (use_new_program) {
     auto const pgm = program_->id;
     gx::UseProgram( pgm );
@@ -55,7 +55,9 @@ int32_t Material::update_uniforms(RenderAttributes const& attributes, int32_t de
   }
   CHECK_GX_ERROR();
 
+  auto const last_unit = texture_unit_;
   update_internals();
+  texture_unit_ = last_unit;
 
   return texture_unit_;
 }
