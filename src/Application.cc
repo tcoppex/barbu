@@ -86,7 +86,7 @@ void Application::update() {
     break;
 
     // Show / hide UI.
-    case 'u':
+    case 'h':
       App::params().show_ui ^= true;
     break;
 
