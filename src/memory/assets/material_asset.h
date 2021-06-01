@@ -58,6 +58,10 @@ using MaterialAssetHandle = AssetHandle<MaterialAsset>;
 
 class MaterialAssetFactory : public AssetFactory<MaterialAsset> {
  public:
+  MaterialAssetFactory() {
+    bReleaseUniqueAssets_ = false;
+  }
+
   ~MaterialAssetFactory() { 
     release_all();
   }

@@ -12,12 +12,7 @@ int32_t Material::update_uniforms(RenderAttributes const& attributes, int32_t de
   bool const use_new_program{ texture_unit_ == 0 };
   
   if (use_new_program) {
-    auto pgm_handle = program();
-    if (!pgm_handle) {
-      LOG_FATAL_ERROR( "Material program \"", program_id_.c_str(), "\" not found." );
-    }
-
-    auto const pgm = pgm_handle->id;
+    auto const pgm = program_->id;
     gx::UseProgram( pgm );
 
     auto bind_texture = [this, &pgm](auto const& name, uint32_t id, gx::SamplerName samplerName = gx::SamplerName::kDefaultSampler) {

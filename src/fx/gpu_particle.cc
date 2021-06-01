@@ -143,7 +143,7 @@ void GPUParticle::render(Camera const& camera) {
   switch(params.rendermode) {
     case RENDERMODE_STRETCHED:
     {
-      auto &pgm = pgm_.render_stretched_sprite;
+      auto &pgm = pgm_.render_stretched_sprite->id;
 
       gx::UseProgram( pgm );
       gx::SetUniform( pgm, "uView",                 camera.view());
@@ -159,7 +159,7 @@ void GPUParticle::render(Camera const& camera) {
     case RENDERMODE_POINTSPRITE:
     default:
     {
-      auto &pgm = pgm_.render_point_sprite;
+      auto &pgm = pgm_.render_point_sprite->id;
       
       gx::UseProgram( pgm );
       gx::SetUniform( pgm, "uMVP",              camera.viewproj());
@@ -357,29 +357,29 @@ void GPUParticle::init_buffers() {
 }
 
 void GPUParticle::init_shaders() {
-  pgm_.emission     = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/01_emission/cs_emission.glsl" )->id;
-  pgm_.update_args  = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/02_simulation/cs_update_args.glsl" )->id;
-  pgm_.simulation   = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/02_simulation/cs_simulation.glsl" )->id;
-  pgm_.fill_indices = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_fill_indices.glsl" )->id;
-  pgm_.calculate_dp = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_calculate_dp.glsl" )->id;
-  pgm_.sort_step    = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_sort_step.glsl" )->id;
-  pgm_.sort_final   = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_sort_final.glsl" )->id;
+  pgm_.emission     = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/01_emission/cs_emission.glsl" );
+  pgm_.update_args  = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/02_simulation/cs_update_args.glsl" );
+  pgm_.simulation   = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/02_simulation/cs_simulation.glsl" );
+  pgm_.fill_indices = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_fill_indices.glsl" );
+  pgm_.calculate_dp = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_calculate_dp.glsl" );
+  pgm_.sort_step    = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_sort_step.glsl" );
+  pgm_.sort_final   = PROGRAM_ASSETS.createCompute(SHADERS_DIR "/particle/03_sorting/cs_sort_final.glsl" );
 
   pgm_.render_point_sprite = PROGRAM_ASSETS.createRender( 
-    "PointSprite",
+    "sparkle::PointSprite",
     SHADERS_DIR "/particle/04_rendering/vs_generic.glsl",
     SHADERS_DIR "/particle/04_rendering/fs_point_sprite.glsl"
-  )->id;
+  );
 
   pgm_.render_stretched_sprite = PROGRAM_ASSETS.createGeo(
-    "StretchedSprite",
+    "sparkle::StretchedSprite",
     SHADERS_DIR "/particle/04_rendering/vs_generic.glsl",
     SHADERS_DIR "/particle/04_rendering/gs_stretched_sprite.glsl",
     SHADERS_DIR "/particle/04_rendering/fs_stretched_sprite.glsl"
-  )->id;
+  );
 
   // One time uniform setting.
-  gx::SetUniform( pgm_.simulation, "uPerlinNoisePermutationSeed", rand()); // (reset after relinking ?)
+  pgm_.simulation->setUniform( "uPerlinNoisePermutationSeed", rand()); // (reset after relinking ?)
 
   CHECK_GX_ERROR();
 }
@@ -398,7 +398,7 @@ void GPUParticle::_emission(uint32_t const count) {
   //   return;
   // }
 
-  auto &pgm = pgm_.emission;
+  auto &pgm = pgm_.emission->id;
   gx::UseProgram( pgm );
   {
     auto const& params = params_.simulation;
@@ -430,7 +430,7 @@ void GPUParticle::_simulation(float const time_step) {
 
   // Update Indirect arguments buffer for simulation dispatch and draw indirect. 
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDIRECT_ARGS, gl_indirect_buffer_id_);
-  gx::UseProgram(pgm_.update_args);
+  gx::UseProgram(pgm_.update_args->id);
     gx::DispatchCompute();
   gx::UseProgram(0u);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDIRECT_ARGS, 0u);
@@ -444,7 +444,7 @@ void GPUParticle::_simulation(float const time_step) {
   //   glBindTexture(GL_TEXTURE_3D, vectorfield_.texture_id());
   // }
 
-  auto &pgm = pgm_.simulation;
+  auto &pgm = pgm_.simulation->id;
 
   gx::UseProgram( pgm );
   {
@@ -501,77 +501,84 @@ void GPUParticle::_sorting(glm::mat4 const& view) {
   // The algorithm works on buffer sized in power of two. 
   auto const max_elem_count = GetClosestPowerOfTwo(num_alive_particles_);
 
-  /// 1) Initialize indices and dotproducts buffers. 
-  // Fill first part of the indices buffer with continuous indices.
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, gl_sort_indices_buffer_id_);
-  gx::UseProgram(pgm_.fill_indices);
-    gx::DispatchCompute<kThreadsGroupWidth>(max_elem_count);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, 0u);
+  /// 1) Initialize indices and dotproducts buffers.
+  { 
+    // a) Fill first part of the indices buffer with continuous indices.
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, gl_sort_indices_buffer_id_);
+    gx::UseProgram(pgm_.fill_indices->id);
+      gx::DispatchCompute<kThreadsGroupWidth>(max_elem_count);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, 0u);
 
-  // Clear the dot product buffer.
-  float const clear_value = -FLT_MAX;
-  glClearNamedBufferSubData(
-    gl_dp_buffer_id_, GL_R32F, 0u, max_elem_count * sizeof(float), GL_RED, GL_FLOAT, &clear_value
-  );
+    // b) Clear the dot product buffer.
+    float const clear_value = -FLT_MAX;
+    glClearNamedBufferSubData(
+      gl_dp_buffer_id_, GL_R32F, 0u, max_elem_count * sizeof(float), GL_RED, GL_FLOAT, &clear_value
+    );
 
-  // Compute dot products of particles toward the camera.
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_DOT_PRODUCTS, gl_dp_buffer_id_);
-  gx::UseProgram(pgm_.calculate_dp);
-  {
-    gx::SetUniform( pgm_.calculate_dp, "uViewMatrix", view);
+    // c) Compute dot products between particles and the camera direction.
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_DOT_PRODUCTS, gl_dp_buffer_id_);
+    gx::UseProgram(pgm_.calculate_dp->id);
+    {
+      pgm_.calculate_dp->setUniform("uViewMatrix", view);
 
-    // [No kernel boundaries check are performed]
-    gx::DispatchCompute<kThreadsGroupWidth>(num_alive_particles_);
+      // [No kernel boundaries check are performed]
+      gx::DispatchCompute<kThreadsGroupWidth>(num_alive_particles_);
+    }
+
+    // Synchronize the indices and dotproducts buffers. 
+    glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
   }
-
-  // Synchronize the indices and dotproducts buffers. 
-  glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
-
   // -----------------
+  
+  auto const indices_half_size = max_elem_count * sizeof(GLuint);
+  uint32_t binding = 0u;
 
   /// 2) Sort particle indices through their dot products. 
   // [might be able to optimize early steps with one kernel, when max_block_width <= kernel_size]
-  auto const nthreads = max_elem_count / 2u;
-  auto const nsteps = GetNumTrailingBits(max_elem_count);
-  auto const indices_half_size = max_elem_count * sizeof(GLuint);
-
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_DOT_PRODUCTS, gl_dp_buffer_id_);
-  gx::UseProgram(pgm_.sort_step);
-  uint32_t binding = 0u;
-  for (uint32_t step = 0u; step < nsteps; ++step) {
-    for (uint32_t stage = 0u; stage < step + 1u; ++stage) {
-      // bind read / write indices buffers.
-      auto const offset_read  = indices_half_size * binding;
-      auto const offset_write = indices_half_size * (binding ^ 1u);
-      glBindBufferRange(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST,  gl_sort_indices_buffer_id_,  offset_read, indices_half_size);
-      glBindBufferRange(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_SECOND, gl_sort_indices_buffer_id_, offset_write, indices_half_size);
-      binding ^= 1u;
-
-      // compute kernel parameters.
-      uint32_t const block_width     = 2u << (step - stage);
-      uint32_t const max_block_width = 2u << step;
-
-      gx::SetUniform( pgm_.sort_step, "uBlockWidth",    block_width);
-      gx::SetUniform( pgm_.sort_step, "uMaxBlockWidth", max_block_width);
-      gx::DispatchCompute<kThreadsGroupWidth>(nthreads);
-
-      glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
-    }
-  }
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_DOT_PRODUCTS, 0u);
-
-  // 3) Sort particles datas with their sorted indices. 
-  // bind the sorted indices to the first binding slot.
-  auto const sorted_offset_read = indices_half_size * binding;
-  glBindBufferRange(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, gl_sort_indices_buffer_id_, sorted_offset_read, indices_half_size);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_SECOND, 0u);
-  gx::UseProgram(pgm_.sort_final);
   {
-    // [ could use the DispatchIndirect buffer ]
-    gx::DispatchCompute<kThreadsGroupWidth>(num_alive_particles_);
-  }
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, 0u);
+    auto const nthreads = max_elem_count / 2u;
+    auto const nsteps = GetNumTrailingBits(max_elem_count);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_DOT_PRODUCTS, gl_dp_buffer_id_);
+    
+    auto const pgm = pgm_.sort_step->id;
+    gx::UseProgram(pgm);
 
+    for (uint32_t step = 0u; step < nsteps; ++step) {
+      for (uint32_t stage = 0u; stage < step + 1u; ++stage) {
+        // bind read / write indices buffers.
+        auto const offset_read  = indices_half_size * binding;
+        auto const offset_write = indices_half_size * (binding ^ 1u);
+        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST,  gl_sort_indices_buffer_id_,  offset_read, indices_half_size);
+        glBindBufferRange(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_SECOND, gl_sort_indices_buffer_id_, offset_write, indices_half_size);
+        binding ^= 1u;
+
+        // compute kernel parameters.
+        uint32_t const block_width     = 2u << (step - stage);
+        uint32_t const max_block_width = 2u << step;
+
+        gx::SetUniform( pgm, "uBlockWidth",    block_width);
+        gx::SetUniform( pgm, "uMaxBlockWidth", max_block_width);
+        gx::DispatchCompute<kThreadsGroupWidth>(nthreads);
+
+        glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT );
+      }
+    }
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_DOT_PRODUCTS, 0u);
+  }
+
+  // 3) Sort particles datas with their sorted indices.
+  { 
+    // bind the sorted indices to the first binding slot.
+    auto const sorted_offset_read = indices_half_size * binding;
+    glBindBufferRange(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, gl_sort_indices_buffer_id_, sorted_offset_read, indices_half_size);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_SECOND, 0u);
+    gx::UseProgram(pgm_.sort_final->id);
+    {
+      // [ could use the DispatchIndirect buffer ]
+      gx::DispatchCompute<kThreadsGroupWidth>(num_alive_particles_);
+    }
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, STORAGE_BINDING_INDICES_FIRST, 0u);
+  }
   gx::UseProgram(0u);
 
   CHECK_GX_ERROR();

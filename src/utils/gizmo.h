@@ -5,6 +5,7 @@
 #include "im3d/im3d.h"
 
 #include "core/graphics.h"
+#include "memory/assets/program.h"
 class Camera;
 
 // ----------------------------------------------------------------------------
@@ -38,9 +39,9 @@ class Gizmo {
   GLuint vbo_;
 
   struct {
-    GLuint points    = 0;
-    GLuint lines     = 0;
-    GLuint triangles = 0;
+    ProgramHandle points;
+    ProgramHandle lines;
+    ProgramHandle triangles;
   } pgm_;
 
   // States of transforms.

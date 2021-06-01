@@ -18,21 +18,20 @@ void Gizmo::init() {
     "gizmo::point",
     SHADERS_DIR "/im3d/vs_points.glsl",
     SHADERS_DIR "/im3d/fs_points.glsl"
-  )->id;
+  );
 
   pgm_.lines = PROGRAM_ASSETS.createGeo(
     "gizmo::line",
     SHADERS_DIR "/im3d/vs_lines.glsl",
     SHADERS_DIR "/im3d/gs_lines.glsl",
     SHADERS_DIR "/im3d/fs_lines.glsl"
-  )->id;
+  );
 
   pgm_.triangles = PROGRAM_ASSETS.createRender(
     "gizmo::triangle",
     SHADERS_DIR "/im3d/vs_triangles.glsl",
     SHADERS_DIR "/im3d/fs_triangles.glsl"
-  )->id;
-
+  );
 
   // -- Attributes.
   glCreateBuffers( 1u, &vbo_);
@@ -166,7 +165,7 @@ void Gizmo::end_frame(Camera const& camera) {
  // Primitive rendering.
   glViewport(0, 0, (GLsizei)ad.m_viewportSize.x, (GLsizei)ad.m_viewportSize.y);//
   gx::Enable(gx::State::Blend);
-  glBlendEquation(GL_FUNC_ADD);
+  glBlendEquation(GL_FUNC_ADD); //
   gx::BlendFunc( gx::BlendFactor::SrcAlpha, gx::BlendFactor::OneMinusSrcAlpha);
   
   //glEnable( GL_PROGRAM_POINT_SIZE ); //
@@ -190,20 +189,20 @@ void Gizmo::end_frame(Camera const& camera) {
     {
       case Im3d::DrawPrimitive_Points:
         prim = GL_POINTS;
-        sh = pgm_.points;
+        sh = pgm_.points->id;
         gx::Disable(gx::State::CullFace); // points are view-aligned
       break;
       
       case Im3d::DrawPrimitive_Lines:
         prim = GL_LINES;
-        sh = pgm_.lines;
+        sh = pgm_.lines->id;
         gx::Disable(gx::State::CullFace); // lines are view-aligned
         gx::SetUniform( sh, "uViewport", glm::vec2(ad.m_viewportSize));
       break;
 
       case Im3d::DrawPrimitive_Triangles:
         prim = GL_TRIANGLES;
-        sh = pgm_.triangles;
+        sh = pgm_.triangles->id;
         //gx::Enable(gx::State::CullFace); // culling valid for triangles, but optional
       break;
       
@@ -218,9 +217,8 @@ void Gizmo::end_frame(Camera const& camera) {
     glNamedBufferData(vbo_, bytesize, nullptr, GL_STREAM_DRAW);
     glNamedBufferSubData(vbo_, 0, bytesize, (GLvoid*)drawList.m_vertexData);
 
-    gx::SetUniform( sh, "uViewProjMatrix", camera.viewproj());
-
     gx::UseProgram(sh);    
+    gx::SetUniform( sh, "uViewProjMatrix", camera.viewproj());
     glDrawArrays(prim, 0, (GLsizei)drawList.m_vertexCount);
   }
   gx::UseProgram();

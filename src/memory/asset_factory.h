@@ -224,7 +224,6 @@ class AssetFactory {
       // (The asset could be destroyed once its has a unique reference left.)
       if ((handle.use_count()-1) == 1) {
         release_ids.push_back(id);
-        //LOG_INFO(id.c_str());
       }
 
       // Update dependencies.
@@ -238,15 +237,20 @@ class AssetFactory {
 
     // Some code dont keep references, some assets are internals and dont have external references (eg. Default Material).
     // So we avoid clearing assets with a unique reference will for now. 
-    // for (auto id : release_ids) {
-    //   release(id);
-    // }
+    if (bReleaseUniqueAssets_) {
+      for (auto id : release_ids) {
+        LOG_DEBUG_INFO("* Releasing asset", Logger::TrimFilename(id.str()));
+        release(id);
+      }
+    }
   }
 
  protected:
   using AssetHashmap_t = std::unordered_map< AssetId, Handle >;
-
   AssetHashmap_t assets_;
+
+  // When set to true release unique assets every update (the one only belonging to the factory.)
+  bool bReleaseUniqueAssets_ = true;
 
  private:
   // Disallow copy & move constructor.

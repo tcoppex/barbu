@@ -5,6 +5,9 @@
 #include <memory>
 
 #include "core/graphics.h"
+
+#include "memory/assets/program.h" //
+#include "memory/assets/texture.h" //
 class UIView;
 
 // ----------------------------------------------------------------------------
@@ -52,7 +55,7 @@ class Marschner {
 
   struct Parameters_t {
     ShadingParameters_t shading;
-    GLuint *tex_ptr[kNumLUTs]{ nullptr, nullptr };
+    GLuint const* tex_ptr[kNumLUTs]{ nullptr, nullptr };
   };
 
 
@@ -66,25 +69,15 @@ class Marschner {
   void update(bool bForceUpdate = false);
   void generate();
 
-  void bind_lookups(int baseUnit = 0) {
-    for (int i=0; i<kNumLUTs; ++i) {
-      glBindTextureUnit(baseUnit + i, tex_[i]);
-    }
-  }
-
-  void unbind_lookups(int baseUnit = 0) {
-    for (int i=0; i<kNumLUTs; ++i) {
-      glBindTextureUnit(baseUnit + i, 0);
-    }
-  }
+  void bind_lookups(int baseUnit = 0);
+  void unbind_lookups(int baseUnit = 0);
 
  private:
   Parameters_t params_;
   ShadingParameters_t previous_shading_params_;
 
-  // TODO: use Assets instead.
-  std::array<GLuint, kNumLUTs> pgm_;
-  std::array<GLuint, kNumLUTs> tex_;
+  std::array<ProgramHandle, kNumLUTs> programs_;
+  std::array<TextureHandle, kNumLUTs> textures_;
 
  private:
   Marschner(Marschner const&) = delete;

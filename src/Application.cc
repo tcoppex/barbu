@@ -23,8 +23,8 @@ void Application::setup() {
 
   // Skybox texture.
   renderer_.skybox().setup_texture(
-    ASSETS_DIR "/textures/cross_hdr/uffizi_cross_mmp_s.hdr"
-    // ASSETS_DIR "/textures/reinforced_concrete_02_1k.hdr"
+    //ASSETS_DIR "/textures/cross_hdr/uffizi_cross_mmp_s.hdr"
+     ASSETS_DIR "/textures/reinforced_concrete_02_1k.hdr"
   );
   //renderer_.params().show_skybox = false;
 

@@ -1,7 +1,7 @@
 #ifndef BARBU_ECS_MATERIAL_H_
 #define BARBU_ECS_MATERIAL_H_
 
-#include "memory/assets/assets.h" //
+#include "memory/assets/assets.h"
 #include "memory/enum_array.h"
 
 // ----------------------------------------------------------------------------
@@ -11,6 +11,7 @@ enum class RenderMode {
   Transparent,
   CutOff,
   kCount,
+
   kDefault = RenderMode::Opaque
 };
 
@@ -41,12 +42,14 @@ class Material {
  public:
   Material() = default;
 
-  Material(AssetId program_id, RenderMode render_mode = RenderMode::kDefault)
-    : program_id_(program_id)
-    , render_mode_(render_mode)
+  Material(RenderMode render_mode = RenderMode::kDefault)
+    : render_mode_(render_mode)
+    , program_(nullptr)
     , texture_unit_(0u)
     , bDoubleSided_(false)
-  {}
+  {
+    //program_ = PROGRAM_ASSETS.get( program_id ); //
+  }
 
   virtual ~Material() {}
 
@@ -57,7 +60,7 @@ class Material {
   int32_t update_uniforms(RenderAttributes const& attributes, int32_t default_unit = 0);
 
   inline ProgramHandle program() {
-    return PROGRAM_ASSETS.get(program_id_); //
+    return program_; //
   }
 
   inline RenderMode render_mode() const noexcept {
@@ -79,20 +82,19 @@ class Material {
  protected:
   virtual void update_internals() = 0;
 
-  AssetId    program_id_; //
   RenderMode render_mode_;
+  ProgramHandle program_;
 
-  EnumArray< uint32_t, SkinningMode > skinning_subroutines_; //
-  int32_t texture_unit_; //
-  bool bDoubleSided_; //
-
- // public:
- //  UIView *ui_view_ = nullptr; // [not used yet]
+  // [to improve]
+  EnumArray< uint32_t, SkinningMode > skinning_subroutines_;
+  int32_t texture_unit_;
+  bool bDoubleSided_;
 };
 
 // ----------------------------------------------------------------------------
 
-using MaterialHandle = std::shared_ptr<Material>;
+// [confusing name with MaterialAssetHandle]
+using MaterialHandle = std::shared_ptr<Material>; //
 
 // ----------------------------------------------------------------------------
 

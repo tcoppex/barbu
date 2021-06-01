@@ -28,7 +28,7 @@ class GenericMaterial : public Material {
   static constexpr float kDefaultAlphaCutOff{ 0.5f };
 
   GenericMaterial(RenderMode render_mode = RenderMode::kDefault)
-    : Material( "GenericMaterial", render_mode)
+    : Material( render_mode ) //
     , color_mode_(kDefaultColorMode)
     , color_{kDefaultColor}
     , alpha_cutoff_(kDefaultAlphaCutOff)
@@ -41,7 +41,7 @@ class GenericMaterial : public Material {
     , tex_ao_(nullptr)
     , tex_emissive_(nullptr)
   {
-    PROGRAM_ASSETS.create( program_id_, { 
+    program_ = PROGRAM_ASSETS.create( "Material::Generic", { 
       SHADERS_DIR "/generic/vs_generic.glsl",
       SHADERS_DIR "/generic/fs_generic.glsl"
     });
@@ -81,8 +81,7 @@ class GenericMaterial : public Material {
   }
 
   void update_internals() final {
-    auto handle = program();
-    auto const pgm = handle->id;
+    auto const pgm = program()->id;
 
     float const cutoff = (render_mode() == RenderMode::CutOff) ? alpha_cutoff_ : 0.0f;
     

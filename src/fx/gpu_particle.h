@@ -11,6 +11,7 @@
 #include "core/graphics.h"
 #include "memory/random_buffer.h"
 #include "memory/pingpong_buffer.h"
+#include "memory/assets/program.h"
 
 class UIView;
 
@@ -168,15 +169,15 @@ private:
   RandomBuffer randbuffer_;                       //< StorageBuffer to hold random values.
 
   struct {
-    GLuint emission;
-    GLuint update_args;
-    GLuint simulation;
-    GLuint fill_indices;
-    GLuint calculate_dp;
-    GLuint sort_step;
-    GLuint sort_final;
-    GLuint render_point_sprite;
-    GLuint render_stretched_sprite;
+    ProgramHandle emission;
+    ProgramHandle update_args;
+    ProgramHandle simulation;
+    ProgramHandle fill_indices;
+    ProgramHandle calculate_dp;
+    ProgramHandle sort_step;
+    ProgramHandle sort_final;
+    ProgramHandle render_point_sprite;
+    ProgramHandle render_stretched_sprite;
   } pgm_;                                         //< Pipeline's shaders.
 
   GLuint query_time_;                             //< QueryObject for benchmarking.
