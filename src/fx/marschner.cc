@@ -14,8 +14,11 @@ void Marschner::init() {
   programs_[1] = PROGRAM_ASSETS.create( SHADERS_DIR "/hair/marschner/cs_marschner_n.glsl" );
 
   // Setup textures.
-  textures_[0] = TEXTURE_ASSETS.create2d( "marschner::M_LUT", 1, kTextureFormat, kTextureResolution, kTextureResolution);
-  textures_[1] = TEXTURE_ASSETS.create2d( "marschner::N_LUT", 1, kTextureFormat, kTextureResolution, kTextureResolution);
+  textures_[0] = TEXTURE_ASSETS.create2d( "Marschner::M_LUT", 1, kTextureFormat, kTextureResolution, kTextureResolution);
+  textures_[1] = TEXTURE_ASSETS.create2d( "Marschner::N_LUT", 1, kTextureFormat, kTextureResolution, kTextureResolution);
+
+  LOG_CHECK( glIsTexture(textures_[0]->id) );
+  LOG_CHECK( glIsTexture(textures_[1]->id) );
 
   // Setup the UI.
   ui_view = std::make_shared<views::MarschnerView>(params_);
@@ -36,7 +39,7 @@ void Marschner::generate() {
   auto const inv_resolution = 1.0f / kTextureResolution;
 
   for (int i = 0; i < kNumLUTs; ++i) {
-    auto const tex = textures_[i]->id;
+    auto const& tex = textures_[i]->id;
 
     // Bind destination texture.
     glBindImageTexture( 0, tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, kTextureFormat); //
@@ -61,7 +64,7 @@ void Marschner::generate() {
     gx::UseProgram(pgm);
     gx::DispatchCompute<kComputeBlockSize, kComputeBlockSize>(kTextureResolution, kTextureResolution);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT); //
-  
+
     params_.tex_ptr[i] = &tex; //
   }
   gx::UseProgram();
@@ -73,7 +76,7 @@ void Marschner::generate() {
 
 void Marschner::bind_lookups(int baseUnit) {
   for (int i=0; i<kNumLUTs; ++i) {
-    gx::BindTexture(textures_[i]->id, baseUnit+i);
+    gx::BindTexture(textures_[i]->id, baseUnit + i, gx::SamplerName::LinearRepeat);
   }
 }
 

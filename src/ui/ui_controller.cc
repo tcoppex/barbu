@@ -264,7 +264,10 @@ void UIController::render_frame(ImDrawData* draw_data) {
       } else {
         GLuint texid = static_cast<GLuint>(reinterpret_cast<intptr_t>(pcmd->TextureId));
 
-        if (!glIsTexture(texid)) continue;
+        if (!glIsTexture(texid)) {
+          LOG_DEBUG_INFO( "UI Controller : Incorrect texture id.");
+          continue;
+        }
         glBindTexture(GL_TEXTURE_2D, texid);
         //glBindTextureUnit(0, texid);
         CHECK_GX_ERROR();

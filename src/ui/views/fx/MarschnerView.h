@@ -28,8 +28,8 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
       ImGui::DragFloat("Long. shift", &params_.shading.ar, 0.01f, -10.0f, -5.0f);
       ImGui::DragFloat("Long. width", &params_.shading.br, 0.01f, 5.0f, 10.0f);
       
-      if (params_.tex_ptr[0] != nullptr) {
-        auto id = reinterpret_cast<ImTextureID>(*params_.tex_ptr[0]);
+      if (auto tex = params_.tex_ptr[0]; tex != nullptr) {
+        auto id = reinterpret_cast<ImTextureID>(*tex);
         ImGui::Image( id, ImVec2(256, 256));
       }
       ImGui::TreePop();
@@ -46,8 +46,8 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
       // ImGui::DragFloat("Azimuthal width", &params_.shading.azimuthalWidth, 0.1f, 10.0f, 25.0f);
       // ImGui::DragFloat("Delta caustic", &params_.shading.deltaCaustic, 0.001f, 0.2f, 0.4f);
       
-      if (params_.tex_ptr[1] != nullptr) {
-        auto id = reinterpret_cast<ImTextureID>(*params_.tex_ptr[1]);
+      if (auto tex = params_.tex_ptr[1]; tex != nullptr) {
+        auto id = reinterpret_cast<ImTextureID>(*tex);
         ImGui::Image( id, ImVec2(256, 256), ImVec2(0, 0), ImVec2(1,-1));
       }
       ImGui::TreePop();

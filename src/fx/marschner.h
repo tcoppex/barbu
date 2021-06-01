@@ -20,8 +20,8 @@ class Marschner {
  public:
   constexpr static int kNumLUTs = 2;
   constexpr static int kTextureResolution = 128;
+  constexpr static GLenum kTextureFormat  = GL_RGBA16F; //
   constexpr static int kComputeBlockSize  = 16; // 
-  constexpr static GLenum kTextureFormat  = GL_RGBA16F;
 
   struct ShadingParameters_t {
     // Fiber Properties.
