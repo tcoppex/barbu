@@ -8,8 +8,8 @@
 // ----------------------------------------------------------------------------
 
 // Used to debug visualize the convolution pass output.
-static bool constexpr kVisualizeIrradianceMap = false;
-static bool constexpr kVisualizeSpecularMap   = false;
+static constexpr bool kVisualizeIrradianceMap = false;
+static constexpr bool kVisualizeSpecularMap   = false;
 
 // ----------------------------------------------------------------------------
 
@@ -140,10 +140,10 @@ void Skybox::setup_texture(ResourceId resource_id) {
 
 void Skybox::calculate_integrated_brdf() {
   // Setup the 2D texture.
-  int32_t constexpr kFormat = GL_RG16F;
-  int32_t constexpr kResolution = 512;
-  int32_t constexpr kLevels = Texture::GetMaxMipLevel(kResolution);
-  int32_t constexpr kNumSamples = 1024;
+  constexpr int32_t kFormat     = GL_RG16F;
+  constexpr int32_t kResolution = 512;
+  constexpr int32_t kNumSamples = 1024;
+  int32_t const kLevels = Texture::GetMaxMipLevel(kResolution);
 
   brdf_lut_map_ = TEXTURE_ASSETS.create2d( 
     "skybox::integrate_brdf", 
@@ -208,8 +208,8 @@ void Skybox::calculate_convolution_envmaps(std::string const& basename) {
   if constexpr(true) {
     constexpr int32_t kSpecularMapNumSamples = 2048; //
     constexpr int32_t kSpecularMapResolution = 256; //
-    constexpr int32_t kSpecularMapLevel      = Texture::GetMaxMipLevel(kSpecularMapResolution);
-    constexpr float kInvMaxLevel             = 1.0f / (kSpecularMapLevel - 1.0f);
+    int32_t const kSpecularMapLevel = Texture::GetMaxMipLevel(kSpecularMapResolution);
+    float const kInvMaxLevel        = 1.0f / (kSpecularMapLevel - 1.0f);
 
     LOG_DEBUG_INFO( "Computing prefiltered convolution for :", basename );
 

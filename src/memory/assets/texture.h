@@ -32,10 +32,10 @@ struct Texture : Asset<TextureParameters, Image> {
 
  public:
   // Return the maximum mip map level for a 2d texture.
-  static constexpr int32_t GetMaxMipLevel(int32_t res) {
+  static int32_t GetMaxMipLevel(int32_t res) {
     return static_cast<int32_t>(glm::log(res) * 1.4426950408889634);
   }
-  static constexpr int32_t GetMaxMipLevel(int32_t w, int32_t h) {
+  static int32_t GetMaxMipLevel(int32_t w, int32_t h) {
     return GetMaxMipLevel(glm::min(w, h));
   }
 

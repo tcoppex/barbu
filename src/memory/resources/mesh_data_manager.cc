@@ -1,5 +1,6 @@
 #include "memory/resources/mesh_data.h"
 
+#include <clocale>
 #include "glm/gtc/type_ptr.hpp"
 
 #define CGLTF_IMPLEMENTATION

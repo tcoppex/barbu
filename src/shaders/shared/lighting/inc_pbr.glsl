@@ -134,7 +134,7 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   for (int i = 0; i < uNumLights; ++i)
   {
     // Retrieve fragment specific light parameters.
-    const FragLight_t light = get_fraglight_params( uLightInfos[i], frag_info );
+    FragLight_t light = get_fraglight_params( uLightInfos[i], frag_info );
     
     // Choose between reflection angles.
     const float cosTheta = max(dot( light.H, frag_info.V), 0); 

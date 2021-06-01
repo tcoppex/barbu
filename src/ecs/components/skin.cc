@@ -62,7 +62,7 @@ bool SkinComponent::update(float global_time) {
       glCreateBuffers(1u, &buffer_id_);
 
       // Upper boundary of skinning data.
-      int32_t constexpr kElemsize{ glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat)) };
+      int32_t const kElemsize{ static_cast<int32_t>(glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat))) };
       int32_t const kBytesize{ skeleton_->njoints() * kElemsize };
       glNamedBufferStorage(buffer_id_, kBytesize, nullptr, GL_DYNAMIC_STORAGE_BIT);
       
