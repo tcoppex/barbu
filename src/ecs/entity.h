@@ -8,7 +8,6 @@
 
 #include "ecs/component.h"
 #include "ecs/components/transform.h"
-#include "ecs/components/visual.h" //
 
 #include "ecs/entity-fwd.h"
 class SceneHierarchy;
@@ -101,12 +100,7 @@ class Entity {
   inline void set_position(glm::vec3 const& pos) { transform().set_position(pos); }
 
   // Return the barycenter of an object in local space, depending on its components. 
-  inline glm::vec3 centroid() const { 
-    if (has<VisualComponent>()) {
-      return get<VisualComponent>().mesh()->centroid();
-    }
-    return glm::vec3(0.0f); 
-  }
+  glm::vec3 centroid() const;
 
   // -- Miscs.
 
@@ -118,9 +112,9 @@ class Entity {
  protected:
   EntityHandle parent_ = nullptr;
   EntityChildren_t children_;
-
+  
   std::string name_;
-  int32_t index_ = -1;        // index in the scene hierarchy per-frame structure.
+  int32_t index_ = -1;                //< index in the scene hierarchy per-frame structure.
 
  private:
   // [ should probably use a map, and be set externally ]
