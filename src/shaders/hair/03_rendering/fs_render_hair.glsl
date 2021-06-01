@@ -78,7 +78,7 @@ void main() {
   //-------
 
   // Marschner Reflectance.
-  const vec3 light_dir = normalize(vec3(0.0, 0.0, 1.0));
+  const vec3 light_dir = normalize(vec3(-0.5, 1.0, 1.0));
   const vec3 eye_dir   = normalize(inPosition.xyz); //
   const vec3 tangent   = normalize(inTangent);
 
