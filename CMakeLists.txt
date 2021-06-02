@@ -177,8 +177,7 @@ if(USE_GCC OR USE_CLANG)
   # This is a mix of warning options not available in all GCC / Clang version.
   list(APPEND CXX_FLAGS 
     -Wall
-    # -Wextra -Wpedantic
-    # -Wold-style-cast
+    -Wextra -Wpedantic
     -Wnon-virtual-dtor
     -Woverloaded-virtual
     -Wdouble-promotion
@@ -189,7 +188,6 @@ if(USE_GCC OR USE_CLANG)
     -Wshadow
     -Wmisleading-indentation
     -Wformat=2 -Wformat-truncation -Wformat-overflow
-    #-Wduplicated-branches 
     -Wduplicated-cond
     -Wno-unknown-pragmas 
     -Wno-unused-function 
@@ -198,6 +196,8 @@ if(USE_GCC OR USE_CLANG)
     -Wzero-as-null-pointer-constant
     -Wdisabled-optimization
     -Wvector-operation-performance
+    #-Wold-style-cast
+    #-Wduplicated-branches 
   )
 
   # To avoid warnings about the previous mismatched GCC / Clang options.
@@ -334,7 +334,7 @@ if (OPT_USE_OPENMP)
 endif()
 
 # -----------------------------------------------------------------------------
-# Thirdparties Submodule dependencies.
+# Thirdparties submodule dependencies.
 # -----------------------------------------------------------------------------
 
 # GLM : math library.
@@ -448,7 +448,6 @@ list(APPEND CustomIncludeDirs
   ${OPENGL_INCLUDE_DIRS}
   ${GLEW_INCLUDE_DIRS}
   ${GLM_INCLUDE_DIR}
-  ${IMGUI_INCLUDE_DIR}
 
   # OpenGL headers, needed on Windows.
   ${BARBU_THIRD_PARTY_DIR}/include

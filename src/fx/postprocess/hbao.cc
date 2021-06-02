@@ -18,7 +18,7 @@ namespace {
 
 static void bindImageTexture(GLint unit, GLuint tex, GLenum mode, GLenum format) {
   glBindImageTexture( unit, tex, 0, GL_FALSE, 0, mode, format); //
-};
+}
 
 } // namespace
 
