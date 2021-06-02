@@ -262,7 +262,7 @@ void ClearColor(float r, float g, float b, float a, bool bGammaCorrect) {
   ClearColor(glm::vec4(r, g, b, a), bGammaCorrect);
 }
 
-void ClearColor(int8_t r, int8_t g, int8_t b, int8_t a, bool bGammaCorrect) {
+void ClearColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool bGammaCorrect) {
   float constexpr s = 1.0f / 255.0f;
   ClearColor( r * s, g * s, b * s, a * s, bGammaCorrect);
 }
@@ -271,7 +271,7 @@ void ClearColor(float c, bool bGammaCorrect) {
   ClearColor( glm::vec3(c), bGammaCorrect);
 }
 
-void ClearColor(int8_t c, bool bGammaCorrect) {
+void ClearColor(uint8_t c, bool bGammaCorrect) {
   ClearColor( c, c, c, 0xff, bGammaCorrect);
 }
 

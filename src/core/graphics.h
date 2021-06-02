@@ -104,9 +104,9 @@ void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor);
 void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect=false);
 void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect=false);
 void ClearColor(float r, float g, float b, float a = 1.0f, bool bGammaCorrect=false);
-void ClearColor(int8_t r, int8_t g, int8_t b, int8_t a = 0xff, bool bGammaCorrect=false);
+void ClearColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xff, bool bGammaCorrect=false);
 void ClearColor(float c, bool bGammaCorrect=false);
-void ClearColor(int8_t c, bool bGammaCorrect=false);
+void ClearColor(uint8_t c, bool bGammaCorrect=false);
 
 //void Clear();
 
