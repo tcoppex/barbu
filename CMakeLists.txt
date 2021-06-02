@@ -4,7 +4,7 @@
 # -----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.12)
 
-project(barbu VERSION 0.1 LANGUAGES CXX C)
+project(barbu VERSION 0.2 LANGUAGES CXX C)
 
 # -----------------------------------------------------------------------------
 # CMake policies.
@@ -72,7 +72,7 @@ list(APPEND CMAKE_MODULE_PATH       ${BARBU_TOOLS_DIR}/cmake)
 include(Helpers)
 
 # -----------------------------------------------------------------------------
-# Determine the machine total number of processors.
+# Determine the host's total number of processors.
 # -----------------------------------------------------------------------------
 
 include(ProcessorCount)
@@ -341,7 +341,7 @@ endif()
 set(GLM_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/glm)
 list(APPEND CustomDefinitions -DGLM_COMPILER_GCC61=0)
 
-# GLFW : window manager.
+# GLFW : window manager, as static library.
 set(GLFW_ROOT ${BARBU_THIRD_PARTY_DIR}/glfw)
 set(GLFW_LIBRARY glfw)
 set(GLFW_INCLUDE_DIR ${GLFW_ROOT}/include)
@@ -358,67 +358,59 @@ set(GLFW_BUILD_DOCS     OFF CACHE BOOL "Do not build GLFW documentation.")
 set(GLFW_INSTALL        OFF CACHE BOOL "Do not generate install targets.")
 add_subdirectory(${GLFW_ROOT} glfw EXCLUDE_FROM_ALL)
 
-# dear imgui : user interface.
+# dear imgui, as static library.
 set(IMGUI_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/imgui)
-set(IM3D_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/im3d)
 list(APPEND IMGUI_SOURCES 
   ${IMGUI_INCLUDE_DIR}/imgui.cpp
   ${IMGUI_INCLUDE_DIR}/imgui_draw.cpp
   ${IMGUI_INCLUDE_DIR}/imgui_widgets.cpp
   ${IMGUI_INCLUDE_DIR}/imgui_tables.cpp
-  # ${IM3D_INCLUDE_DIR}/im3d.cpp
-  # ${IM3D_INCLUDE_DIR}/im3d.h
 )
-
-# Build dear imgui as a static library (rather than internally).
-if(1)
-  set(IMGUI_LIB imgui)
-  add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
-  target_compile_options(
-    ${IMGUI_LIB}
-    PRIVATE
-      ""
-      "$<$<CONFIG:Debug>:>"
-      "$<$<CONFIG:Release>:>"
-      "$<$<CONFIG:DebugWithRelInfo>:>"
-  )
-  if (NOT ("${CustomLinkFlags}" MATCHES ""))
-    set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
-  endif()
+set(IMGUI_LIB imgui)
+add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
+target_compile_options(
+  ${IMGUI_LIB}
+  PRIVATE
+    ""
+    "$<$<CONFIG:Debug>:>"
+    "$<$<CONFIG:Release>:>"
+    "$<$<CONFIG:DebugWithRelInfo>:>"
+)
+if (NOT ("${CustomLinkFlags}" MATCHES ""))
+  set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
 endif()
 
-# MikkTSpace.
+# MikkTSpace, as static library.
 set(MIKKTSPACE_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/MikkTSpace)
 list(APPEND MIKKTSPACE_SOURCES
   ${MIKKTSPACE_INCLUDE_DIR}/mikktspace.c
   ${MIKKTSPACE_INCLUDE_DIR}/mikktspace.h
 )
-if(1)
-  set(MIKKTSPACE_LIB MikkTSpace)
-  add_library(${MIKKTSPACE_LIB} STATIC ${MIKKTSPACE_SOURCES})
-  target_compile_options(
-    ${MIKKTSPACE_LIB}
-    PRIVATE
-      ""
-      "$<$<CONFIG:Debug>:>"
-      "$<$<CONFIG:Release>:>"
-      "$<$<CONFIG:DebugWithRelInfo>:>"
-  )
-  if (NOT ("${CustomLinkFlags}" MATCHES ""))
-    set_target_properties(${MIKKTSPACE_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
-  endif()
+set(MIKKTSPACE_LIB MikkTSpace)
+add_library(${MIKKTSPACE_LIB} STATIC ${MIKKTSPACE_SOURCES})
+target_compile_options(
+  ${MIKKTSPACE_LIB}
+  PRIVATE
+    ""
+    "$<$<CONFIG:Debug>:>"
+    "$<$<CONFIG:Release>:>"
+    "$<$<CONFIG:DebugWithRelInfo>:>"
+)
+if (NOT ("${CustomLinkFlags}" MATCHES ""))
+  set_target_properties(${MIKKTSPACE_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
 endif()
 
 # Add Library dependencies.
 list(APPEND CustomLibs
+  ${STD_CXX_FILESYSTEM_LIB}
+  ${GLFW_LIBRARY}
   ${IMGUI_LIB}
   ${MIKKTSPACE_LIB}
-  ${GLFW_LIBRARY}
-  ${STD_CXX_FILESYSTEM_LIB}
 )
 
-# Third party sources dependencies (to compile along the executable). 
-# (header-only libs are optionals, and could be added here for IDE integration).
+# Third party sources dependencies to compile along the executable. 
+# (header-only libs are optionals and could be added here for IDE integration).
+set(IM3D_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/im3d)
 list(APPEND Thirdparties
   ${IM3D_INCLUDE_DIR}/im3d.cpp
   ${IM3D_INCLUDE_DIR}/im3d.h
@@ -434,12 +426,12 @@ if(OS_LINUX)
     list(APPEND CustomDefinitions NDEBUG)
   endif()
 
-  # On GNU / Linux, generate an app shortcut to be executable using the WM.
-  helpers_generateUnixShortcut(${BARBU_BINARY_DIR}) #
+  # On GNU / Linux, we generate an app shortcut to be executed using the WM.
+  helpers_generateUnixShortcut(${BARBU_BINARY_DIR})
 endif()
 
 if(OS_WIN32)
-
+  # empty
 endif()
 
 # -----------------------------------------------------------------------------
@@ -478,7 +470,7 @@ list(APPEND CustomDefinitions
 
 if(OPT_ENABLE_DEBUG_LOG)
   list(APPEND CustomDefinitions 
-    -DBARBU_ENABLE_DEBUG_LOG
+    -DBARBU_ENABLE_DEBUG_LOG=1
   )
 endif()
 
