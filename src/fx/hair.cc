@@ -49,7 +49,8 @@ void Hair::setup(ResourceId const& scalp_id) {
 
   auto &scalp_mesh_data = *scalp_resource.data;
   glm::vec3 pivot(0), bounds(0);
-  scalp_mesh_data.calculate_bounds(pivot, bounds);
+  float radius;
+  scalp_mesh_data.calculate_bounds(pivot, bounds, radius);
 
   nroots_ = scalp_mesh_data.nvertices();
   model_ = glm::translate( glm::mat4(1.0f), pivot);

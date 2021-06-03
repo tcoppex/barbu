@@ -55,6 +55,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
 
   inline glm::vec3 const& centroid() const noexcept { return centroid_; }
   inline glm::vec3 const& bounds() const noexcept { return bounds_; }
+  inline float radius() const noexcept { return radius_; }
 
  private:
   void allocate() final;
@@ -84,6 +85,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   // Axis-Aligned Bounding box.
   glm::vec3 centroid_;
   glm::vec3 bounds_;
+  float radius_;
 
  private:
   template<typename> friend class AssetFactory;

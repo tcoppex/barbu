@@ -106,7 +106,7 @@ bool Mesh::setup() {
   skeleton_ = meshdata.skeleton;
 
   // Calculate the mesh AABB.
-  meshdata.calculate_bounds( centroid_, bounds_);
+  meshdata.calculate_bounds( centroid_, bounds_, radius_);
 
   // [Recenter the mesh to its pivot ?]
   // at least horizontally / XZ plane, or alternatively suggest a default transform.
