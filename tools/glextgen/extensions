@@ -69,6 +69,7 @@ glGetAttribLocation
 glGetProgramInfoLog
 glGetProgramiv
 glGetProgramResourceIndex
+glGetQueryObjectiv
 glGetQueryObjectuiv
 glGetShaderInfoLog
 glGetShaderiv
@@ -78,8 +79,7 @@ glGetUniformBlockIndex
 glGetUniformLocation
 glIsProgram
 glLinkProgram
-glMapBuffer
-glMapBufferRange
+glMapNamedBuffer
 glMapNamedBufferRange
 glMemoryBarrier
 glNamedBufferData
@@ -125,7 +125,7 @@ glUniform4fv
 glUniformMatrix3fv
 glUniformMatrix4fv
 glUniformSubroutinesuiv
-glUnmapBuffer
+glUnmapNamedBuffer
 glUseProgram
 glValidateProgram
 glVertexArrayElementBuffer
