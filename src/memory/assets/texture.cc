@@ -172,8 +172,11 @@ bool Texture::setup() {
 
   //------------------------------------------
 
+  bool const is_2d = (GL_TEXTURE_2D == params.target);
+  bool const is_3d = (GL_TEXTURE_3D == params.target);
+
   // Target dependent texture setup.
-  if (GL_TEXTURE_2D == params.target) {
+  if (is_2d || is_3d) {
     bool bCreateStorage = false;
 
     // Retrieve the image resource.
@@ -212,13 +215,17 @@ bool Texture::setup() {
 
     // [ somes cases might have been missed ]
     if (bCreateStorage) {
-      glTextureStorage2D(id, params.levels, params.internalFormat, w, h);
+      is_2d ? glTextureStorage2D(id, params.levels, params.internalFormat, w, h) :
+      is_3d ? glTextureStorage3D(id, params.levels, params.internalFormat, w, h, z)
+            : [](){}();
     }
     
     if (pixels) {
-      glTextureSubImage2D(id, 0, 0, 0, w, h, format, type, pixels);
+      is_2d ? glTextureSubImage2D(id, 0, 0, 0, w, h, format, type, pixels) :
+      is_3d ? glTextureSubImage3D(id, 0, 0, 0, 0, w, h, z, format, type, pixels)
+            : [](){}();
     }
-  } 
+  }
   else if (GL_TEXTURE_CUBE_MAP == params.target) 
   {
     constexpr int kCubeFaces = 6;
@@ -319,7 +326,6 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, ResourceId co
 }
 
 TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels) {
-  //levels = (levels < 0) ? Texture::GetMaxMipLevel( w, h) : levels; //
   assert(levels >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_2D;
@@ -331,7 +337,18 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, i
   return create(id, params);
 }
 
-// ----------------------------------------------------------------------------
+TextureFactory::Handle TextureFactory::create3d(AssetId const& id, int levels, int internalFormat, int w, int h, int d, void *pixels) {
+  assert(levels >= 1);
+  Parameters_t params;
+  params.target         = GL_TEXTURE_3D;
+  params.levels         = levels;
+  params.internalFormat = internalFormat;
+  params.w              = w;
+  params.h              = h;
+  params.depth          = d;
+  params.pixels         = pixels;
+  return create(id, params);
+}
 
 TextureFactory::Handle TextureFactory::createCubemap(AssetId const& id, int levels, int internalFormat, ResourceInfoList const& dependencies) {
   assert(levels >= 1);

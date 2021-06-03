@@ -80,6 +80,12 @@ class TextureFactory : public AssetFactory<Texture> {
   Handle create2d(AssetId const& id, ResourceId const& resource = nullptr);                                   // external with defaults
   Handle create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels = nullptr);   // internal with params
 
+  // Texture 3d
+  Handle create3d(AssetId const& id, int levels, int internalFormat, int w, int h, int d, void *pixels = nullptr);
+  Handle create3d(AssetId const& id, int levels, int internalFormat, int res, void *pixels = nullptr) {
+    return create3d( id, levels, internalFormat, res, res, res, pixels);
+  }
+
   // Cubemap.
   Handle createCubemap(AssetId const& id, int levels, int internalFormat, ResourceInfoList const& dependencies);
   Handle createCubemap(AssetId const& id, ResourceInfoList const& dependencies);
