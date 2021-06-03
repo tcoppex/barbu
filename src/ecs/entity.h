@@ -55,6 +55,8 @@ class Entity {
 
   inline int32_t index() const { return index_; }
 
+  inline bool indexed() const { return index_ > -1; }
+
   // -- Components access.
 
   // Return true if the entity possess the component.
