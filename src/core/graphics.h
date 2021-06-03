@@ -29,6 +29,7 @@ enum class State {
   StencilTest,
   CubeMapSeamless,
   ProgramPointSize,
+  RasterizerDiscard,
   kCount
 };
 

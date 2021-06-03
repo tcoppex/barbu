@@ -98,6 +98,7 @@ EnumArray<uint32_t, State> gl_capability{
   GL_STENCIL_TEST,
   GL_TEXTURE_CUBE_MAP_SEAMLESS,
   GL_PROGRAM_POINT_SIZE,
+  GL_RASTERIZER_DISCARD,
   
   //GL_LINE_SMOOTH, // [do not use]
 };
