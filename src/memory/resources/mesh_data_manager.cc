@@ -473,56 +473,6 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
 
 namespace {
 
-void DisplayStatsGLTF(cgltf_data* data) {
-  assert( data->scenes_count > 0 );
-  assert( data->nodes_count > 0 );
-
-  LOG_INFO( "Scenes :     ", data->scenes_count    );
-  LOG_INFO( "Nodes :      ", data->nodes_count     );
-  LOG_INFO( "Meshes :     ", data->meshes_count    );
-  LOG_INFO( "Skins :      ", data->skins_count     );
-  LOG_INFO( "Materials :  ", data->materials_count );
-  LOG_INFO( "Textures :   ", data->textures_count  );
-
-  //LOG_MESSAGE( "", "ia->offset", "ia->count", "ia->stride", "data_view->offset", "data_view->size");
-  for (cgltf_size i=0; i < data->nodes_count; ++i) {
-    auto node = data->nodes[i];
-    LOG_INFO( "* Node ", node.name );
-
-    auto *mesh = node.mesh;
-    if (!mesh) {
-      continue;
-    }
-
-    if (mesh->name) {
-      LOG_MESSAGE( "  ", "Mesh name : ", mesh->name );
-    }
-
-    // Primitive are actual submesh, with specific material.
-    LOG_MESSAGE( "  ", "Mesh primitives : ", mesh->primitives_count );
-    LOG_MESSAGE("");
-    for (cgltf_size j=0; j < mesh->primitives_count; ++j) {
-      auto prim = mesh->primitives[j];  
-      
-      // if (prim.material) {
-      //   LOG_MESSAGE( "  * material : ", prim.material->name);
-      // }
-      if (prim.indices) LOG_MESSAGE( "  * indices : ", prim.indices->component_type);
-
-      for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) { 
-        LOG_MESSAGE( "  * attribs : ", prim.attributes[attrib_index].name);
-      }
-      // auto ia = prim.indices;
-      // LOG_MESSAGE( "  ", prim.material->name, ia->offset, ia->count, ia->stride, ia->buffer_view->offset, ia->buffer_view->size);
-      
-      // auto buf = ia->buffer_view->buffer;
-      // LOG_MESSAGE( "  ", buf->size, buf->data );
-      
-      LOG_MESSAGE("");
-    }
-  }
-}
-
 std::string SetupTextureGLTF(cgltf_texture *tex, std::string const& dirname, std::string const &default_name) {
   std::string texname;
 
@@ -704,6 +654,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
   LOG_DEBUG_INFO( "Loading mesh", basename );
 
   /* ------------ */
+
   bool bNeedTangents = false;
 
   RawMeshFile meshfile;
@@ -745,18 +696,44 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
       // When meshes are not joined, we should probably reset this to 0.
       //last_vertex_index = 0;
 
+      // Morph Targets.
+      if (auto ntargets = mesh->target_names_count; ntargets) {
+        LOG_DEBUG_INFO( basename, "has", ntargets, "targets :");
+        for (cgltf_size j = 0; j < ntargets; ++j) {
+          LOG_DEBUG_INFO( j, mesh->target_names[j]);
+        }
+      }
+
       // Primitives / submeshes.
       for (cgltf_size j = 0; j < mesh->primitives_count; ++j) {
         auto const& prim = mesh->primitives[j];
 
         if (prim.has_draco_mesh_compression) {
-          LOG_WARNING( "GLTF Draco mesh compression is not supported." );
+          LOG_WARNING( "GLTF : Draco mesh compression is not supported." );
           continue;
         }
 
         if (prim.type != cgltf_primitive_type_triangles) {
-          LOG_WARNING( "GLTF non TRIANGLES primitives are not implemented :", raw.name );
+          LOG_WARNING( "GLTF : non TRIANGLES primitives are not implemented :", raw.name );
         }
+
+        /*
+        if (prim.targets_count > 0) {
+          LOG_WARNING( "GLTF : morph targets are not supported.");
+          LOG_MESSAGE(j, prim.targets_count, "morph targets available.");
+        }
+
+        for (cgltf_size target_index = 0; target_index < prim.targets_count; ++target_index) {
+          auto target = prim.targets[target_index];
+          // LOG_MESSAGE( target_index, target.attributes_count);
+
+          for (cgltf_size attrib_index = 0; attrib_index < target.attributes_count; ++attrib_index) {
+            auto attrib = target.attributes[attrib_index];
+            // LOG_MESSAGE( "  ", attrib.name ? attrib.name : "", attrib.type, attrib.index, attrib.data);
+            LOG_MESSAGE( attrib.data->buffer_view->name ? attrib.data->buffer_view->name : "-" );
+          }    
+        }
+        */
 
         // Attributes.
         for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) {
@@ -764,7 +741,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
           // Check accessors layout.
           if (attrib.data->is_sparse) {
-            LOG_WARNING( "GLTF sparse attributes are not supported." );
+            LOG_WARNING( "GLTF : sparse attributes are not supported." );
             continue;
           }
           //LOG_MESSAGE("Accessor type :", attrib.data->component_type);

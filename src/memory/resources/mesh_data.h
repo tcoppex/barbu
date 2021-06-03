@@ -113,7 +113,7 @@ struct MeshData : public Resource {
   }
 
   /* Calculate the pivot and bound for the current vertices data. */
-  void calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds) const;
+  void calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const;
 
   inline int32_t nvertices() const { 
     return static_cast<int32_t>(vertices.size()); 

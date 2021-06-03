@@ -420,7 +420,7 @@ bool MeshData::setup(RawMeshFile &meshfile, bool bNeedTangents) {
 
 // ----------------------------------------------------------------------------
 
-void MeshData::calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds) const {
+void MeshData::calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const {
   auto const resultX = std::minmax_element(vertices.begin(), vertices.end(), 
     [](auto const &a, auto const &b) { return a.position.x < b.position.x; }
   );
@@ -439,7 +439,8 @@ void MeshData::calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds) const {
   );
 
   pivot  = (maxBound + minBound) / 2.0f;
-  bounds = maxBound; 
+  bounds = glm::max(glm::abs(maxBound), glm::abs(minBound));
+  radius = glm::max(glm::max(bounds.x, bounds.y), bounds.z);
 }
 
 // ----------------------------------------------------------------------------
