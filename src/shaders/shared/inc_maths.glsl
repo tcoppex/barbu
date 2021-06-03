@@ -199,8 +199,10 @@ vec3 sample_hemisphere_cos(float u, float v) {
 // Sample an hemisphere using Hammersley pointset on a roughness dependant specular lobe
 // and return it as a direction vector in world space.
 vec3 importance_sample_GGX( in mat3 basis_ws, in vec2 pt, float roughness_sqr) {
-  pt.x = 1.0 - (1.0 - pt.x) / (1.0 + (roughness_sqr - 1.0) * pt.x);
-  return normalize(basis_ws * sample_hemisphere_cos( pt.x, pt.y ));
+  const float a = roughness_sqr*roughness_sqr * pt.y;
+  const float u = a / (1.0 + a - pt.y);
+  const float v = pt.x;
+  return normalize(basis_ws * sample_hemisphere_cos( u, v ));
 }
 
 // ----------------------------------------------------------------------------
