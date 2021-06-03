@@ -210,8 +210,11 @@ class ArcBallController : public Camera::ViewController {
     pitch_  = (bNoSmooth) ? v : pitch_;
   }
 
-  inline void set_dolly(double const value) { 
-    dolly_ = dolly2_ = value; 
+  inline void set_dolly(double const value, bool const bNoSmooth=false) { 
+    dolly2_ = value; 
+    if (bNoSmooth) {
+      dolly_ = dolly2_;
+    }
   }
 
   //---------------
