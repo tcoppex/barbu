@@ -3,13 +3,14 @@
 
 // ----------------------------------------------------------------------------
 
-void Mesh::draw(MeshData::PrimitiveType primitive) const {
+void Mesh::draw(int32_t count, MeshData::PrimitiveType primitive) const {
+  
   for (auto i = 0; i < nsubgeometry(); ++i) {
-    draw_submesh(i, primitive);
+    draw_submesh(i, count, primitive);
   }
 }
 
-void Mesh::draw_submesh(int32_t index, MeshData::PrimitiveType primitive) const {
+void Mesh::draw_submesh(int32_t index, int32_t count, MeshData::PrimitiveType primitive) const {
   assert( loaded() );
 
   auto const mode = get_draw_mode(primitive);
@@ -17,14 +18,11 @@ void Mesh::draw_submesh(int32_t index, MeshData::PrimitiveType primitive) const 
   glBindVertexArray(vao_);
   if (!vgroups_.empty()) {
     auto const& vg = vgroups_.at(index);
-    glDrawElements( mode, vg.nelems(), GL_UNSIGNED_INT, reinterpret_cast<void*>(vg.start_index*sizeof(uint32_t)));
-    //glDrawRangeElements(mode, vg.start_index, vg.end_index, vg.nelems() * sizeof(uint32_t), GL_UNSIGNED_INT, nullptr); // XXX    
-    //glDrawArrays( mode, vg.start_index, vg.nelems());
-
+    glDrawElementsInstanced( mode, vg.nelems(), GL_UNSIGNED_INT, reinterpret_cast<void*>(vg.start_index*sizeof(uint32_t)), count);
   } else if (nelems_ <= 0) {
-    glDrawArrays(mode, 0u, nvertices_);
+    glDrawArraysInstanced(mode, 0u, nvertices_, count);
   } else if (index <= 0) {
-    glDrawElements(mode, nelems_, GL_UNSIGNED_INT, nullptr);
+    glDrawElementsInstanced(mode, nelems_, GL_UNSIGNED_INT, nullptr, count);
   } else {
     LOG_WARNING( __FUNCTION__, ": invalid parameters." );
   }  

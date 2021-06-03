@@ -38,8 +38,8 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   }
 
   // Draw the mesh using its internal mode when kInternal is set or the one provided otherwise.
-  void draw(MeshData::PrimitiveType primitive = MeshData::kInternal) const;
-  void draw_submesh(int32_t index, MeshData::PrimitiveType primitive = MeshData::kInternal) const;
+  void draw(int32_t count = 1, MeshData::PrimitiveType primitive = MeshData::kInternal) const;
+  void draw_submesh(int32_t index, int32_t count = 1, MeshData::PrimitiveType primitive = MeshData::kInternal) const;
 
   inline int32_t nfaces() const noexcept { return nfaces_; }
   inline int32_t nvertices() const noexcept { return nvertices_; }
