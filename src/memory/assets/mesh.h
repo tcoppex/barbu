@@ -107,10 +107,11 @@ class MeshFactory : public AssetFactory<Mesh> {
   Handle add_object(std::string const& basename, MeshData const& meshdata);
 
   // Prebuilt meshes to create.
-  Handle createGrid(int resolution, float size = MeshData::kGridDefaultSize);
-  Handle createCube(float size = MeshData::kCubeDefaultSize);
-  Handle createWireCube(float size = MeshData::kCubeDefaultSize);
-  Handle createSphere(int xres = MeshData::kSphereDefaultXResolution, int yres = MeshData::kSphereDefaultYResolution, float radius = MeshData::kSphereDefaultRadius);
+  Handle createPlane(float size = MeshData::kDefaultSize);
+  Handle createGrid(int resolution, float size = MeshData::kDefaultSize);
+  Handle createCube(float size = MeshData::kDefaultSize);
+  Handle createWireCube(float size = MeshData::kDefaultSize);
+  Handle createSphere(int xres = MeshData::kSphereDefaultXResolution, int yres = MeshData::kSphereDefaultYResolution, float radius = MeshData::kDefaultSize);
 };
 
 // ----------------------------------------------------------------------------

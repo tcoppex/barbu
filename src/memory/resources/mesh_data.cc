@@ -12,6 +12,34 @@
 // The specialized mesh generators could be simplified by using the MeshData 
 // structure directly but were kept for simplicity, due to legacy.
 
+void MeshData::Plane(MeshData &mesh, float size) {
+  RawMeshData raw;
+
+  float const c{ 0.5f * size };
+  raw.vertices = {
+    glm::vec3{ -c, 0.0f, -c },   
+    glm::vec3{ -c, 0.0f, +c },   
+    glm::vec3{ +c, 0.0f, +c },   
+    glm::vec3{ +c, 0.0f, -c },
+  };
+
+  raw.texcoords = {
+    glm::vec2{ 0.0f, 0.0f },  
+    glm::vec2{ 0.0f, 1.0f }, 
+    glm::vec2{ 1.0f, 1.0f },  
+    glm::vec2{ 1.0f, 0.0f },
+  };
+
+  constexpr std::array<int32_t, 4> indices{ 0, 1, 3, 2 };
+  for (auto &index : indices) {
+    raw.elementsAttribs.push_back( glm::ivec3(index) );
+  }
+
+  mesh.setup( PrimitiveType::TRIANGLE_STRIP, raw );
+}
+
+// ----------------------------------------------------------------------------
+
 void MeshData::Grid(MeshData &mesh, int resolution, float size) {
   int const nvertices   = 4 * (resolution + 1);
   int const ncomponents = 2;

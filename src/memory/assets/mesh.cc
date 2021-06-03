@@ -210,6 +210,12 @@ MeshFactory::Handle MeshFactory::add_object(std::string const& basename, MeshDat
   return create( id, params );
 }
 
+MeshFactory::Handle MeshFactory::createPlane(float size) {
+  MeshData meshdata;
+  MeshData::Plane( meshdata, size);
+  return add_object( "PlaneMesh", meshdata);
+}
+
 MeshFactory::Handle MeshFactory::createGrid(int resolution, float size) {
   MeshData meshdata;
   MeshData::Grid( meshdata, resolution, size);

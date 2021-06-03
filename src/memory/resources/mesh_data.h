@@ -146,16 +146,15 @@ struct MeshData : public Resource {
   }
 
   // -- Canonical Meshes ---
-  static constexpr float kGridDefaultSize         = 1.0f;
-  static constexpr float kCubeDefaultSize         = 1.0f;
-  static constexpr float kSphereDefaultRadius     = 1.0f;
+  static constexpr float kDefaultSize             = 1.0f;
   static constexpr int kSphereDefaultXResolution  = 32;
   static constexpr int kSphereDefaultYResolution  = kSphereDefaultXResolution;
 
-  static void Grid(MeshData &mesh, int resolution, float size = kGridDefaultSize);
-  static void Cube(MeshData &mesh, float size = kCubeDefaultSize);
-  static void WireCube(MeshData &mesh, float size = kCubeDefaultSize);
-  static void Sphere(MeshData &mesh, int xres = kSphereDefaultXResolution, int yres = kSphereDefaultYResolution, float radius = kSphereDefaultRadius);
+  static void Plane(MeshData &mesh, float size = kDefaultSize);
+  static void Grid(MeshData &mesh, int resolution, float size = kDefaultSize);
+  static void Cube(MeshData &mesh, float size = kDefaultSize);
+  static void WireCube(MeshData &mesh, float size = kDefaultSize);
+  static void Sphere(MeshData &mesh, int xres = kSphereDefaultXResolution, int yres = kSphereDefaultYResolution, float radius = kDefaultSize);
 };
 
 // ----------------------------------------------------------------------------
