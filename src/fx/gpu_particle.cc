@@ -483,13 +483,12 @@ void GPUParticle::_simulation(float const time_step) {
 
   // Retrieve the number of alive particles to be used in the next frame. 
   /// @note Needed if we want to emit new particles.
-  glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, gl_atomic_buffer_ids_[1u]);
   {
+    auto const buffer = gl_atomic_buffer_ids_[1u];
     /// @warning most costly call.
-    num_alive_particles_ = *reinterpret_cast<GLuint*>(glMapBuffer(GL_ATOMIC_COUNTER_BUFFER, GL_READ_ONLY));
-    glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+    num_alive_particles_ = *reinterpret_cast<GLuint*>(glMapNamedBuffer( buffer, GL_READ_ONLY));
+    glUnmapNamedBuffer( buffer );
   }
-  glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0u);
   CHECK_GX_ERROR();
 
   simulated_ = true;
