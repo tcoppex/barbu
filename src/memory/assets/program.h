@@ -63,7 +63,7 @@ class ProgramFactory : public AssetFactory<Program> {
 
   Handle createFull(AssetId const& id, ResourceId const& vs, ResourceId const& tcs, ResourceId const& gs, ResourceId const& tes, ResourceId const& fs);
   Handle createTess(AssetId const& id, ResourceId const& vs, ResourceId const& tcs, ResourceId const& tes, ResourceId const& fs);
-  Handle createGeo(AssetId const& id, ResourceId const& vs, ResourceId const& gs, ResourceId const& fs);
+  Handle createGeo(AssetId const& id, ResourceId const& vs, ResourceId const& gs, ResourceId const& fs = nullptr);
   Handle createRender(AssetId const& id, ResourceId const& vs, ResourceId const& fs);
   Handle createCompute(AssetId const& id, ResourceId const& cs = nullptr);
 

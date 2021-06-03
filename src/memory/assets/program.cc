@@ -106,7 +106,7 @@ ProgramFactory::Handle ProgramFactory::createTess(AssetId const& id, ResourceId 
 }
 
 ProgramFactory::Handle ProgramFactory::createGeo(AssetId const& id, ResourceId const& vs, ResourceId const& gs, ResourceId const& fs) {
-  return create( id, {vs, gs, fs} );  
+  return fs ? create( id, {vs, gs, fs}) : create( id, {vs, gs} );  
 }
 
 ProgramFactory::Handle ProgramFactory::createRender(AssetId const& id, ResourceId const& vs, ResourceId const& fs) {
@@ -114,10 +114,7 @@ ProgramFactory::Handle ProgramFactory::createRender(AssetId const& id, ResourceI
 }
 
 ProgramFactory::Handle ProgramFactory::createCompute(AssetId const& id, ResourceId const& cs) {
-  if (0 == cs.h) {
-    return create(id);
-  }
-  return create( id, { cs } );
+  return cs ? create( id, { cs } ) : create(id);
 }
 
 bool ProgramFactory::post_setup(AssetId const& assetId, ProgramFactory::Handle h) {
