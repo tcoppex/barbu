@@ -26,6 +26,9 @@ list(APPEND Sources
   fx/marschner.cc
   fx/probe.cc
   fx/skybox.cc
+
+  fx/marching_cube.cc
+
   fx/postprocess/hbao.cc
   fx/postprocess/postprocess.cc
 
