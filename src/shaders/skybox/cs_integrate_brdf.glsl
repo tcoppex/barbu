@@ -27,23 +27,24 @@ uniform layout(rg16f) image2D uDstImg;
 
 vec2 integrate_brdf(float n_dot_v, float roughness) {
   const float inv_samples   = 1.0f / float(uNumSamples);
-  const mat3 basis_ws       = basis_from_view(vec3(0.0, 0.0, 1.0));
   const float roughness_sqr = pow( roughness, 2.0);
+  const mat3 basis_ws       = basis_from_view(vec3(0.0, 0.0, 1.0));
 
   const vec3 V = vec3(sqrt(1.0 - pow(n_dot_v, 2.0)), 0.0, n_dot_v);
 
-  vec2 brdf = vec2(0.0);
 
+  vec2 brdf = vec2(0.0);
   for (int i = 0; i < uNumSamples; ++i) {
     const vec2 pt = hammersley2d( i, inv_samples);
-    const vec3 H  = importance_sample_GGX( basis_ws, pt, roughness_sqr);
-    const vec3 L  = normalize(2.0 * dot(V, H) * H - V);
 
-    const float n_dot_l = max( L.z, 0.0);
+    const vec3 H  = importance_sample_GGX( basis_ws, pt, roughness_sqr);
+    const vec3 L  = /*normalize*/(2.0 * dot(V, H) * H - V);
+
+    const float n_dot_l = saturate( L.z );
 
     if (n_dot_l > 0.0) {
-      const float n_dot_h = max( H.z, 0.0);
-      const float v_dot_h = max(dot(V, H), 0.0);
+      const float n_dot_h = saturate( H.z );
+      const float v_dot_h = saturate( dot(V, H) );
 
       const float G     = gf_SmithGGX( n_dot_v, n_dot_l, roughness_sqr);
       const float G_Vis = G * v_dot_h / (n_dot_h * n_dot_v);
@@ -74,7 +75,7 @@ void main()
   }
 
   const vec2 uv = vec2(coords.xy) / float(uResolution);
-  vec2 data = integrate_brdf(uv.x, uv.y);
+  const vec2 data = integrate_brdf(uv.x, uv.y);
 
   imageStore( uDstImg, coords, vec4( data, 0.0, 1.0));
 }
