@@ -128,9 +128,13 @@ glUniformSubroutinesuiv
 glUnmapNamedBuffer
 glUseProgram
 glValidateProgram
+glVertexArrayAttribBinding
+glVertexArrayAttribFormat
+glVertexArrayAttribIFormat
 glVertexArrayElementBuffer
 glVertexArrayVertexBuffer
 glVertexAttribBinding
 glVertexAttribFormat
 glVertexAttribIFormat
+glVertexAttribIPointer
 glVertexAttribPointer
