@@ -23,39 +23,41 @@ void Application::setup() {
 
   // Skybox texture.
   renderer_.skybox().setup_texture(
-    ASSETS_DIR "/textures/cross_hdr/uffizi_cross_mmp_s.hdr"
-    // ASSETS_DIR "/textures/reinforced_concrete_02_1k.hdr"
+    // ASSETS_DIR "/textures/cross_hdr/uffizi_cross_mmp_s.hdr"
+    ASSETS_DIR "/textures/reinforced_concrete_02_1k.hdr"
   );
   //renderer_.params().show_skybox = false;
 
   // Scene Hierarchy.
-  if constexpr (true) {
-    // -- Hair sample --
+  if constexpr(true) {
+    if constexpr (true) {
+      // -- Hair sample --
 
-    focus_ = scene_.import_model( ASSETS_DIR "/models/InfiniteScan/Head.glb" );
-    renderer_.hair().setup( ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" ); //
-    scene_.add_bounding_sphere(0.25f);
-  } else {
-    // -- Simple model sample --
+      focus_ = scene_.import_model( ASSETS_DIR "/models/InfiniteScan/Head.glb" );
+      renderer_.hair().setup( ASSETS_DIR "/models/InfiniteScan/Head_scalp.obj" ); //
+      scene_.add_bounding_sphere(0.25f);
+    } else {
+      // -- Simple model sample --
 
-    focus_ =
-    scene_.import_model( 
-      // ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf"
-      // ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
-      ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
-      // ASSETS_DIR "/models/glb-heads/DigitalIra.glb" 
-    );
+      focus_ = scene_.import_model( 
+        // ASSETS_DIR "/models/gltf_samples/MetalRoughSpheres/MetalRoughSpheres.gltf"
+        // ASSETS_DIR "/models/gltf_samples/CesiumMan.glb"
+        // ASSETS_DIR "/models/gltf_samples/DamagedHelmet.glb"
+        // ASSETS_DIR "/models/glb-heads/DigitalIra.glb"
+        ASSETS_DIR "/models/sintel/sintel_blendshapes.glb" 
+      );
+    }
   }
+  bRefocus_ = true;
 
   // Recenter the view on the focus centroid.
-  auto const centroid = focus_ ? scene_.entity_global_centroid(focus_) : scene_.centroid();
-  arcball_controller_.set_target( centroid, true);
+  //refocus_camera( focus_, /*FocusOnCentroid*/true, /*NoTransition*/false);
 }
 
 void Application::update() {
   auto const& eventData{ GetEventData() };
   auto const& selected = scene_.selected();  
-  EntityHandle new_focus = nullptr;
+
 
   // -- Key bindings.
   switch (eventData.lastChar) {
@@ -66,23 +68,28 @@ void Application::update() {
     
     // Focus on entities.
     case 'C':
-      arcball_controller_.set_target(scene_.pivot());
+      refocus_camera( false, false);
     break;
     case 'c':
-      arcball_controller_.set_target(scene_.centroid());
+      refocus_camera( true, false);
     break;
     case GLFW_KEY_1:
     case GLFW_KEY_3:
     case GLFW_KEY_7:
-      arcball_controller_.set_target(scene_.centroid(), true);
+      refocus_camera( true, true);
+
     break;
 
     // Cycle through entities.
     case 'j':
-      new_focus = selected.front() ? scene_.next(selected.front(), +1) : scene_.first();
+      refocus_camera( false, false, 
+        selected.front() ? scene_.next(selected.front(), +1) : scene_.first()
+      );
     break;
     case 'k':
-      new_focus = selected.front() ? scene_.next(selected.front(), -1) : scene_.first();
+      refocus_camera( false, false, 
+        selected.front() ? scene_.next(selected.front(), -1) : scene_.first()
+      );
     break;
 
     // Show / hide UI.
@@ -99,13 +106,11 @@ void Application::update() {
     break;
   } 
 
-  // Recenter camera on focus.
-  if (new_focus) {
-    focus_ = new_focus;
-    scene_.select_all(false);
-    scene_.select(focus_, true);
-    auto const& target = scene_.entity_global_position(focus_);
-    arcball_controller_.set_target(target); 
+  if (bRefocus_) {
+    refocus_camera(true, true, focus_);
+    bRefocus_ = false;
+  } else {
+    focus_ = selected.empty() ? nullptr : focus_ ? focus_ : selected.front();
   }
 
   // --------------------------
@@ -144,6 +149,36 @@ void Application::update() {
       }
     }
   }
+}
+
+void Application::refocus_camera(bool bCentroid, bool bNoSmooth, EntityHandle new_focus) {
+  glm::vec3 target;
+  float radius = 3.5f;
+
+  // FIXME : issue due to scene reindexing ordering !
+
+  // Select new focus & retrieve target position.
+  if (new_focus && new_focus->indexed()) {
+    focus_ = new_focus;
+    scene_.select_all(false);
+    scene_.select(new_focus, true);
+    target = bCentroid ? scene_.entity_global_centroid(new_focus) 
+                       : scene_.entity_global_position(new_focus)
+                       ;
+  } else {
+    target = bCentroid ? scene_.centroid() : scene_.pivot();
+  }
+
+  // Set camera view controller target.
+  arcball_controller_.set_target(target, bNoSmooth);
+  
+  // Distance to focus point.
+  if (focus_ && focus_->has<VisualComponent>()) {
+    // radius should be scale with entity global scale.
+    auto visual = focus_->get<VisualComponent>();
+    radius = visual.mesh()->radius();
+  }
+  arcball_controller_.set_dolly(1.25f * radius, bNoSmooth);
 }
 
 // ----------------------------------------------------------------------------

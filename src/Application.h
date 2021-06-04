@@ -16,8 +16,12 @@ class Application final : public App {
   void update() final;
 
  private:
+  void refocus_camera(bool bCentroid, bool bNoSmooth, EntityHandle new_focus = nullptr);
+
   ArcBallController arcball_controller_;
+
   EntityHandle focus_;
+  bool bRefocus_ = false;
 };
 
 
