@@ -17,20 +17,21 @@ void MeshData::Plane(MeshData &mesh, float size) {
 
   float const c{ 0.5f * size };
   raw.vertices = {
-    glm::vec3{ -c, 0.0f, -c },   
     glm::vec3{ -c, 0.0f, +c },   
+    glm::vec3{ -c, 0.0f, -c },   
     glm::vec3{ +c, 0.0f, +c },   
     glm::vec3{ +c, 0.0f, -c },
   };
 
   raw.texcoords = {
-    glm::vec2{ 0.0f, 0.0f },  
     glm::vec2{ 0.0f, 1.0f }, 
+    glm::vec2{ 0.0f, 0.0f },  
     glm::vec2{ 1.0f, 1.0f },  
     glm::vec2{ 1.0f, 0.0f },
   };
 
-  constexpr std::array<int32_t, 4> indices{ 0, 1, 3, 2 };
+  // (this elements arrays could be discarded)
+  constexpr std::array<int32_t, 4> indices{ 0, 1, 2, 3 };
   for (auto &index : indices) {
     raw.elementsAttribs.push_back( glm::ivec3(index) );
   }
