@@ -137,6 +137,8 @@ void Hair::render(Camera const& camera) {
 
   if (!params_.render.bShowDebugCP)
   {
+    gx::Enable( gx::State::RasterizerDiscard );
+
     // 1) Stream tesselated hairs to buffer [put in update stage ?].
     {
       auto const pgm = pgm_.tess_stream->id;
@@ -164,6 +166,8 @@ void Hair::render(Camera const& camera) {
         randbuffer_.unbind(SSBO_HAIR_TF_RANDOMBUFFER);
       gx::UseProgram(0);
     }
+
+    gx::Disable( gx::State::RasterizerDiscard );
 
     // 2) Render hair as camera aligned ribbons.
     {
