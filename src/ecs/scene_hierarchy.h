@@ -124,6 +124,7 @@ class SceneHierarchy {
 
     // Entities with colliders.
     EntityList_t colliders;
+
     
     void clear() {
       assert(matrices_stack.empty());

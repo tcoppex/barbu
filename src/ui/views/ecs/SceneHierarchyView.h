@@ -107,7 +107,9 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
   }
 
   int32_t node_clicked_;
-  std::vector<bool> selected_;
+
+ public:
+  std::vector<bool> selected_; // should be in SceneHierarchy
 };
 
 }  // namespace views

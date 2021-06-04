@@ -41,6 +41,9 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
   // Update the scene entities hierarchically.
   update_hierarchy(dt);
 
+  // Update UI selection size.
+  ui_view->selected_.resize(entities_.size(), false); //
+
   // Retrieve specific entities.
   for (auto& e : entities_) {
     if (is_selected(e)) {
@@ -115,8 +118,7 @@ void SceneHierarchy::add_entity(EntityHandle entity, EntityHandle parent) {
   // One obvious solution would be to update the subhierarchy after every add.
   // + Or use two updates : one pre-user_update & one pre-use_draw calls.
   // + Or don't allow indexing use externally.
-
-  entity->index_ = entities_.empty() ? 0 : static_cast<int32_t>(entities_.size()-1);
+  entity->index_ = -1; //entities_.empty() ? 0 : static_cast<int32_t>(entities_.size()-1);
 
   entity->parent_ = parent;
   parent->children_.push_back( entity );
