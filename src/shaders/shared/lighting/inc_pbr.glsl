@@ -157,8 +157,8 @@ vec3 colorize_pbr(in FragInfo_t frag_info, in Material_t mat) {
   vec3 ambient = vec3(0.0);
   {
     const vec3 F = f_SchlickRoughness( frag_info.n_dot_v, brdf_mat.F0, mat.roughness);
-    const vec3 kD = (1.0 - F) * brdf_mat.albedo; //
-    const vec3 kS = mat.prefiltered * (F * mat.BRDF.x + mat.BRDF.y);
+    const vec3 kD = (1.0 - F) * mat.color.rgb;//, brdf_mat.albedo;
+    const vec3 kS = mat.prefiltered * (F * mat.BRDF.x + mat.BRDF.y) * 1; //
     
     ambient += (mat.irradiance * kD + kS) * mat.ao;
   }

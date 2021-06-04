@@ -88,10 +88,12 @@ FragInfo_t get_worldspace_fraginfo() {
   frag.V        = normalize( uEyePosWS - frag.P );
   frag.R        = reflect( -frag.V, frag.N);
   frag.uv       = inTexcoord.xy;
-  frag.n_dot_v  = saturate(dot(frag.N, frag.V)); //
+  frag.n_dot_v  = dot(frag.N, frag.V); //
 
   // [fixme] Deal with double sided plane.
-  // frag.N *= sign(dot(frag.N, frag.V));
+  // frag.N *= sign(frag.n_dot_v);
+
+  frag.n_dot_v = saturate(frag.n_dot_v);
 
   return frag;
 }
@@ -153,9 +155,12 @@ Material_t get_material(in FragInfo_t frag) {
     const float roughness_level = mat.roughness * log(textureSize(uPrefilterEnvmap, 0).x);
     mat.prefiltered = textureLod( uPrefilterEnvmap, frag.R, roughness_level).rgb;
 
-    // Roughness based BRDF specular values. [weird issue on edges].
-    const vec2 brdf_uv = vec2( frag.n_dot_v, mat.roughness);
-    mat.BRDF = texture( uBRDFMap, brdf_uv).rg;
+    // Roughness based BRDF specular values. 
+    // [weird issue on edges, check cs_integrate_brdf].
+    vec2 brdf_uv = vec2( frag.n_dot_v, mat.roughness).xy;
+    mat.BRDF = texture( uBRDFMap, brdf_uv).xy;
+    mat.BRDF.x = saturate(mat.BRDF.x);
+    mat.BRDF.y = saturate(mat.BRDF.y);
   }
 
   return mat;
@@ -219,6 +224,8 @@ void main() {
   Material_t material = get_material(fraginfo);
 
   fragColor = colorize( uColorMode, fraginfo, material);
+
+  //fragColor.rgb = vec3( material.BRDF, 0.0 );
 }
 
 // ----------------------------------------------------------------------------
