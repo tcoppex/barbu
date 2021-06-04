@@ -164,6 +164,8 @@ bool App::presetup(std::string_view title) {
   // User initialization.
   setup();
 
+  // ---------------------
+
   // Check camera settings.
   if (!camera_.initialized()) {
     LOG_ERROR( "The camera projection has not been properly initialized (￣ε￣)" );
@@ -179,6 +181,9 @@ bool App::presetup(std::string_view title) {
     // Start the FPS chrono (the framerate is regulated through a local timer).
     time_ = std::chrono::steady_clock::now();
   }
+
+  // Reindex import objects.
+  scene_.update(deltatime_, camera_); //
 
   return true;
 }
