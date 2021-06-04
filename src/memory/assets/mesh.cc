@@ -4,7 +4,6 @@
 // ----------------------------------------------------------------------------
 
 void Mesh::draw(int32_t count, MeshData::PrimitiveType primitive) const {
-  
   for (auto i = 0; i < nsubgeometry(); ++i) {
     draw_submesh(i, count, primitive);
   }

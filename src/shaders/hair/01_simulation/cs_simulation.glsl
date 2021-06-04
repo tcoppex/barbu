@@ -206,3 +206,5 @@ void main() {
   // Save back particles to global memory.
   PackParticle(gid, p);
 }
+
+// ----------------------------------------------------------------------------
