@@ -40,7 +40,7 @@ int32_t Material::update_uniforms(RenderAttributes const& attributes, int32_t de
     }
 
     // (fragment)
-    bind_texture( "uBRDFMap",           attributes.brdf_lut_texid,   gx::SamplerName::LinearClamp);
+    bind_texture( "uBRDFMap",           attributes.brdf_lut_texid,   gx::SamplerName::LinearMipmapClamp); //
     bind_texture( "uPrefilterEnvmap",   attributes.prefilter_texid,  gx::SamplerName::LinearMipmapClamp);
     bind_texture( "uIrradianceEnvmap",  attributes.irradiance_texid, gx::SamplerName::LinearClamp);
 
