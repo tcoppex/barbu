@@ -54,6 +54,7 @@ struct Texture : Asset<TextureParameters, Image> {
   int32_t levels() const { return params.levels; }
   int32_t width() const { return params.w; }
   int32_t height() const { return params.h; }
+  int32_t internal_format() const { return params.internalFormat; } //
 
   uint32_t id = 0u; //
 
@@ -79,6 +80,12 @@ class TextureFactory : public AssetFactory<Texture> {
   Handle create2d(AssetId const& id, int levels, int internalFormat, ResourceId const& resource = nullptr);   // external with params
   Handle create2d(AssetId const& id, ResourceId const& resource = nullptr);                                   // external with defaults
   Handle create2d(AssetId const& id, int levels, int internalFormat, int w, int h, void *pixels = nullptr);   // internal with params
+
+  // Texture 2d Array
+  Handle create2dArray(AssetId const& id, int levels, int internalFormat, int w, int h, int d, void *pixels = nullptr);
+  Handle create2dArray(AssetId const& id, int levels, int internalFormat, int res, void *pixels = nullptr) {
+    return create2dArray( id, levels, internalFormat, res, res, res, pixels);
+  }
 
   // Texture 3d
   Handle create3d(AssetId const& id, int levels, int internalFormat, int w, int h, int d, void *pixels = nullptr);

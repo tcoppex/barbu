@@ -173,7 +173,7 @@ bool Texture::setup() {
   //------------------------------------------
 
   bool const is_2d = (GL_TEXTURE_2D == params.target);
-  bool const is_3d = (GL_TEXTURE_3D == params.target);
+  bool const is_3d = (GL_TEXTURE_3D == params.target) || (GL_TEXTURE_2D_ARRAY == params.target);
 
   // Target dependent texture setup.
   if (is_2d || is_3d) {
@@ -337,8 +337,23 @@ TextureFactory::Handle TextureFactory::create2d(AssetId const& id, int levels, i
   return create(id, params);
 }
 
+TextureFactory::Handle TextureFactory::create2dArray(AssetId const& id, int levels, int internalFormat, int w, int h, int d, void *pixels) {
+  assert(levels >= 1);
+  assert(w >= 1 && h >= 1 && d >= 1);
+  Parameters_t params;
+  params.target         = GL_TEXTURE_2D_ARRAY;
+  params.levels         = levels;
+  params.internalFormat = internalFormat;
+  params.w              = w;
+  params.h              = h;
+  params.depth          = d;
+  params.pixels         = pixels;
+  return create(id, params);
+}
+
 TextureFactory::Handle TextureFactory::create3d(AssetId const& id, int levels, int internalFormat, int w, int h, int d, void *pixels) {
   assert(levels >= 1);
+  assert(w >= 1 && h >= 1 && d >= 1);
   Parameters_t params;
   params.target         = GL_TEXTURE_3D;
   params.levels         = levels;
