@@ -6,7 +6,6 @@
 #include "core/graphics.h"
 #include "memory/assets/texture.h"
 #include "memory/assets/program.h"
-#include "memory/assets/mesh.h"
 
 class Camera;
 
@@ -25,8 +24,7 @@ class MarchingCube {
   // Number of voxel in a slice
   static constexpr int32_t kVoxelsPerSlice = kChunkDim * kChunkDim;
 
-  // We need to use a marge for algorithm looking on border chunk.
-  // (eg. normal calculation)
+  // We need to use a marge for algorithm looking on border chunk, like normal calculation.
   static constexpr int32_t kMargin       = 1u;
   static constexpr int32_t kWindowDim    = kChunkDim + 2u * kMargin;
   static constexpr float kInvWindowDim   = 1.0f / static_cast<float>(kWindowDim);
@@ -55,6 +53,10 @@ class MarchingCube {
   void deinit();
 
   void generate(glm::ivec3 const& grid_dimension);
+  void generate(int32_t grid_width, int32_t grid_height, int32_t grid_depth) {
+    generate( glm::ivec3(grid_width, grid_height, grid_depth) );
+  }
+
   void render(Camera const& camera);
 
  private:
@@ -72,7 +74,6 @@ class MarchingCube {
     ChunkTriState_t state;
   };
 
-  void init_geometry();
   void init_textures();
   void init_buffers();
   void init_shaders();
@@ -92,13 +93,9 @@ class MarchingCube {
     ProgramHandle render_chunk;
   } programs_;
 
-  MeshHandle slice_mesh_;
-
   TextureHandle density_tex_;
   
   //-------------------
-
-  GLuint density_rt_;
 
   struct {
     GLuint vao;

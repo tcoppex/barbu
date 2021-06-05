@@ -9,7 +9,7 @@ uniform float uTime = 1.0;
 float terrain(in vec3 ws) {
   float d = 0.0f;
 
-  d = sdPlane(ws, vec4(0.0f, 1.0f, 0.0f, 0.0f));
+  //d = sdPlane(ws, vec4(0.0f, 1.0f, 0.0f, 0.0f));
 
   const float scale = 5.0f;
   const float radius = 20.0f;
@@ -31,18 +31,18 @@ float terrain(in vec3 ws) {
 float compute_density(in vec3 ws) {
   float d = 0.0f;
 
-#if 0
+#if 1
   d = terrain(ws);
 #else
   //ws = ws * rotX(radians(90.0f));
   //d += sdPlane(ws, vec4(0.0f, 1.0f, 0.0f, 0.0f));
   //d += sdCylinder(ws-vec3(0.0f), 1.0f);
-  d += sdTorus(ws + 0.25f*fbm_3d(ws), vec2(20.0f, 1.0f));
+  d += sdTorus(ws + sin(PiOverTwo()*uTime*0.1)*0.25f*fbm_3d(ws+uTime), vec2(20.0f, 1.0f));
 
   ws *= 1.0f / 2.5f;
 
   float dx = 10.5f;
-  vec3 ws2 = ws + fbm_3d(dx*ws) / 55.f;
+  vec3 ws2 = ws + fbm_3d(dx*ws + uTime) / 55.f;
 
   ws2 += opDisplacement(ws, 0.7f);
   //ws2 = opRepeat(ws, vec3(16.0f + 0.2f*fbm_3d(ws)));

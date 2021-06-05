@@ -6,6 +6,8 @@
 #include "core/global_clock.h"
 #include "memory/assets/assets.h"
 
+#define USE_COMPUTE_SHADERS 1
+
 // ----------------------------------------------------------------------------
 
 static constexpr int8_t s_caseToNumpolys[]{
@@ -285,7 +287,6 @@ static constexpr int16_t s_packedEdgesIndicesPerCase[]{
 void MarchingCube::init() {
   assert(!bInitialized_);
 
-  init_geometry();
   init_textures();
   init_buffers();
   init_shaders();
@@ -329,9 +330,11 @@ void MarchingCube::generate(glm::ivec3 const& grid_dimension) {
 
   //aer::opengl::StatesInfo gl_states = aer::opengl::PopStates();
 
-  gx::Disable( gx::State::DepthTest );
-  gx::DepthMask( false );
-  gx::Viewport( kTextureRes, kTextureRes);
+  if constexpr (!USE_COMPUTE_SHADERS) {
+    gx::Disable( gx::State::DepthTest );
+    gx::DepthMask( false );
+    gx::Viewport( kTextureRes, kTextureRes);
+  }
 
   for (int k = 0; k < grid_dim_.z; ++k) {
     for (int j = 0; j < grid_dim_.y; ++j) {
@@ -407,20 +410,11 @@ void MarchingCube::render(Camera const& camera) {
   CHECK_GX_ERROR();
 }
 
-void MarchingCube::init_geometry() { 
-  slice_mesh_ = MESH_ASSETS.createPlane(2.0f);
-
-  CHECK_GX_ERROR();
-}
-
 void MarchingCube::init_textures() {
+  // [ Try using a 2D Array instead for faster texturing fetching ]
   density_tex_ = TEXTURE_ASSETS.create3d( 
     "MarchingCube::Tex::Density", 1, GL_R32F, kTextureRes
   );
-
-  glCreateFramebuffers( 1, &density_rt_);
-  glNamedFramebufferTexture( density_rt_, GL_COLOR_ATTACHMENT0, density_tex_->id, 0);
-  LOG_CHECK( gx::CheckFramebufferStatus() );
 
   CHECK_GX_ERROR();
 }
@@ -562,11 +556,8 @@ void MarchingCube::init_buffers() {
 void MarchingCube::init_shaders() {
   // 1) build the density volume.
   {
-    programs_.build_density = PROGRAM_ASSETS.createGeo(
-      "MarchingCube::BuildDensity",
-      SHADERS_DIR "/marching_cube/01_density_volume/vs_build_density.glsl",
-      SHADERS_DIR "/marching_cube/01_density_volume/gs_build_density.glsl",
-      SHADERS_DIR "/marching_cube/01_density_volume/fs_build_density.glsl"
+    programs_.build_density = PROGRAM_ASSETS.createCompute(
+      SHADERS_DIR "/marching_cube/01_density_volume/cs_build_density_volume.glsl"
     );
 
     int32_t const seed = 4567891 * (rand() / static_cast<float>(RAND_MAX)); //
@@ -671,30 +662,25 @@ void MarchingCube::create_chunk( glm::ivec3 const& coords ) {
 }
 
 void MarchingCube::build_density_volume(ChunkInfo_t &chunk) {
-  float const scale_coord = kTextureRes * kInvWindowDim;
-  float const texel_size  = 1.0f / static_cast<float>(kTextureRes);
-
   auto &pgm = programs_.build_density->id;
-  gx::SetUniform( pgm, "uChunkPositionWS", chunk.ws_coords);
-  gx::SetUniform( pgm, "uChunkSizeWS",     kChunkSize);
+
+  float const t = GlobalClock::Get().application_time();
+  gx::SetUniform( pgm, "uTime",       t);
+
   gx::SetUniform( pgm, "uInvChunkDim",     kInvChunkDim);
-  gx::SetUniform( pgm, "uScaleCoord",      scale_coord);
-  gx::SetUniform( pgm, "uTexelSize",       texel_size);
   gx::SetUniform( pgm, "uMargin",          static_cast<float>(kMargin));
-  gx::SetUniform( pgm, "uWindowDim",       static_cast<float>(kWindowDim));
+  gx::SetUniform( pgm, "uChunkSizeWS",     kChunkSize);
+  gx::SetUniform( pgm, "uChunkPositionWS", chunk.ws_coords);
 
-  // float const t = GlobalClock::Get().application_time();
-  // gx::SetUniform( pgm, "uTime",       t);
+  constexpr int32_t image_unit = 0;
+  glBindImageTexture( image_unit, density_tex_->id, 0, GL_FALSE, 0, GL_WRITE_ONLY, density_tex_->internal_format()); //
+  gx::SetUniform( pgm, "uDstImg", image_unit);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, density_rt_);
-  gx::UseProgram( pgm );
-  {
-    /// Compute the density on each voxels' corners,
-    /// thus rendering N+1 slices.
-    slice_mesh_->draw(kTextureRes);
-  }
-  gx::UseProgram(0);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  gx::UseProgram(pgm);
+    gx::DispatchCompute<4, 4, 4>( kTextureRes, kTextureRes, kTextureRes); //
+  gx::UseProgram(0u);
+
+  glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
 
   CHECK_GX_ERROR();
 }
