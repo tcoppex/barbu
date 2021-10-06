@@ -352,7 +352,7 @@ void DepthMask(bool state) {
 }
 
 void LineWidth(float width) {
-  LOG_ERROR( "glLineWidth is inconsistent. Do not use it ヽ(￣～￣　)ノ" );
+  LOG_ERROR( "glLineWidth is deprecated (not forward compatible). Do not use it ヽ(￣～￣　)ノ" );
   //glLineWidth( width );
 }
 
