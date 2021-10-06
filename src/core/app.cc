@@ -1,9 +1,5 @@
 #include "app.h"
 
-#include <cstdlib>
-#include <thread>
-
-#include "core/glfw.h"
 #include "core/events.h"
 #include "core/global_clock.h"
 #include "core/logger.h"
@@ -12,143 +8,131 @@
 
 // ----------------------------------------------------------------------------
 
-App::~App() {
-  if (!window_) {
-    return;
-  }
+App::App()
+  : window_{std::make_shared<Window>()} 
+  , camera_{nullptr}
+  , is_running_{true}
+  , exit_status_{EXIT_SUCCESS}
+  , rand_seed_{0u}
+{}
 
+App::~App() {
+  // UI.
   ui_controller_.deinit();
 
-  glfwTerminate();
-  window_ = nullptr;
-
+  // Resources.
   Assets::ReleaseAll();
   Resources::ReleaseAll();
+
+  // Graphics.
   gx::Deinitialize();
 
+  // Singletons.
+  Events::Deinitialize();
   Logger::Deinitialize();
   GlobalClock::Deinitialize();
 }
 
 int32_t App::run(std::string_view title) {
-  // Pre-Initialization.
+  // Initialization.
   if (!presetup(title)) {
+    LOG_ERROR( "The application fails to be initialized properly（￣□||||" );
     return EXIT_FAILURE;
   }
+  
+  // User's custom initialization.
+  setup();
+
+  // Check & update internal structures.
+  postsetup();
+
+  // Prepare a new frame for the mainloop, returns true when it continues.
+  auto &events{ Events::Get() };
+  auto const nextFrame{ [this, &events]() {
+    // Update internal data for the next frame.
+    events.prepareNextFrame();
+
+    // Check and dispatch events.
+    return is_running_ && window_->poll(events);
+  }};
 
   // Mainloop.
-  while (!glfwWindowShouldClose(window_)) {
-    // Events.
-    HandleEvents();
+  while (nextFrame()) {
+    // Update global clock and control the framerate.
+    GlobalClock::Update(params_.regulate_fps);
 
-    // User interface.
-    ui_controller_.update();
+    // Resources watchers for live-reload.
+    Resources::WatchUpdate(Assets::UpdateAll);    
+    
+    // Update User interface.
+    ui_controller_.update(window_); //
 
-    // Clock (with framerate control).
-    update_time();
-
-    // Resources watchers (for live reload).
-    Resources::WatchUpdate(deltatime_, Assets::UpdateAll);
-
-    // ------------------------------------------
     // Frame magick.
-    renderer_.frame( scene_, camera_, 
-      // Update.
-      [this]() {
-        update();
-        camera_.update(deltatime_); //
-        scene_.update(deltatime_, camera_); //
-      },
-
-      // Render
-      [this]() {
-        draw();
-      }
+    renderer_.frame( scene_, camera_,
+      [this]() { update(); },
+      [this]() { draw(); }
     );
-    // ------------------------------------------
 
-    // Render User Interface.
+    // Draw User interface..
     ui_controller_.render(params_.show_ui);
 
     // Swap front & back buffers.
-    glfwSwapBuffers(window_);
+    window_->flush();
   }
 
-  return EXIT_SUCCESS;
+  // User's custom finalization.
+  finalize();
+
+  return exit_status_;
 }
 
 // ----------------------------------------------------------------------------
 
 bool App::presetup(std::string_view title) {
-  // System parameters.
+  // Force stderr to flush automatically (ala GNU / Linux).
   std::setbuf(stderr, nullptr);
-  rand_seed_ = static_cast<uint32_t>(std::time(nullptr));
-  std::srand(rand_seed_); //
 
-  // Initialize singletons.
+  // Initialize the standard C RNG seed, in case any third party use it.
+  rand_seed_ = static_cast<uint32_t>(std::time(nullptr));
+  std::srand(rand_seed_);
+
+  // Singletons.
   GlobalClock::Initialize();
   Logger::Initialize();
+  Events::Initialize(); //
 
-  // Initialize Window Management API.
-  if (!glfwInit()) {
-    LOG_ERROR( "GLFW failed to be initialized." );
-    return false;
-  }
+  // Register the app for events callbacks dispatch.
+  Events::Get().registerCallbacks(this);
 
-  // Initialize OpenGL context flags.
-  glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR,  4);
-  glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR,  6);
-  glfwWindowHint( GLFW_OPENGL_PROFILE,         GLFW_OPENGL_CORE_PROFILE);
-  glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT,  GLFW_TRUE);
-  glfwWindowHint( GLFW_DOUBLEBUFFER,           GLFW_TRUE);
-  glfwWindowHint( GLFW_SAMPLES,                GLFW_DONT_CARE);
-  glfwWindowHint( GLFW_RESIZABLE,              GLFW_FALSE);
-
-  // Compute window resolution from the main monitor's.
-  float constexpr kScreenScale = 0.82f;
-  GLFWvidmode const* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-  resolution_.x = glm::trunc(kScreenScale * mode->width);
-  resolution_.y = glm::trunc(kScreenScale * mode->height);
-
-  // Create the window and OpenGL context.
-  window_ = glfwCreateWindow( resolution_.x, resolution_.y, title.data(), nullptr, nullptr);
-  if (!window_) {
-    LOG_ERROR( "The window creation failed." );
-    glfwTerminate();
-    return false;
-  }
-
-  // Make the window's context current.
-  glfwMakeContextCurrent(window_);
-  glfwSwapInterval(0);
-  
-  // Init the event manager.
-  InitEvents(window_);
-
-  // Initialize the Graphics API.
-  gx::Initialize();
-
-  // Preclean the screen.
+  // Window and Graphics.
   {
-    gx::Viewport( resolution_.x, resolution_.y);
-    gx::ClearColor(0.75f, 0.27f, 0.23f);
-    glClear(GL_COLOR_BUFFER_BIT); //
-    glfwSwapBuffers(window_);
+    // Create the main window surface.
+    if (!window_->create( Display(), title)) {
+      LOG_ERROR( "The window creation failed (／。＼)" );
+      return false;
+    }
+
+    // Initialize the Graphics API.
+    gx::Initialize(window_);
   }
 
-  // User Interface init.
-  ui_controller_.init(window_);
-  ui_mainview_ = std::make_shared<views::Main>(params_);
-  ui_controller_.set_mainview( ui_mainview_ );
- 
-  // Entity-Component Scene handler.
+  // -------------------
+
+  // Setup the Renderer.
+  renderer_.init();
+
+  // Setup the entity-components scene hierarchy.
   scene_.init();
 
-  // Renderer.
-  renderer_.init();
-  
-  // Setup renderer UI with mainview [improve].
+  // -------------------
+
+  // [improve] Setup the User Interface.
   {
+    ui_controller_.init();
+    ui_mainview_ = std::make_shared<views::Main>(params_);
+    ui_controller_.set_mainview( ui_mainview_ );
+    
+    // Setup the renderer's UI with mainview.
     renderer_.params().sub_view = scene_.ui_view;
     if (auto ui = renderer_.ui_view; ui) {
       ui_mainview_->push_view( ui );
@@ -157,77 +141,26 @@ bool App::presetup(std::string_view title) {
       ui_mainview_->push_view( ui );
     }
     if (auto ui = renderer_.particle().ui_view; ui) {
-      //ui_mainview_->push_view( ui );
+      ui_mainview_->push_view( ui );
     }
   }
-
-  // User initialization.
-  setup();
-
-  // ---------------------
-
-  // Check camera settings.
-  if (!camera_.initialized()) {
-    LOG_ERROR( "The camera projection has not been properly initialized (￣ε￣)" );
-    camera_.set_default();
-  }
-  camera_.rebuild();
-
-  // Resume clock.
-  {
-    // Resume the clock post-initialization to skip initialization overhead. 
-    GlobalClock::Get().resume();
-
-    // Start the FPS chrono (the framerate is regulated through a local timer).
-    time_ = std::chrono::steady_clock::now();
-  }
-
-  // Reindex import objects.
-  scene_.update(deltatime_, camera_); //
 
   return true;
 }
 
-// ----------------------------------------------------------------------------
-
-void App::update_time() {
-  auto constexpr kMaxFPS = 90.0;
-  auto constexpr fps_time = std::chrono::duration<double>(1.0 / (1.015 * kMaxFPS));
-
-  // Regulate FPS.
-  {
-    auto local_update_time = [this]() {
-      auto const tick      = std::chrono::steady_clock::now();
-      auto const time_span = std::chrono::duration_cast<std::chrono::duration<double>>(tick - time_);
-      time_ = tick;
-      //deltatime_ = static_cast<float>(time_span.count()); // [overwritten]
-      return time_span;
-    };
-
-    auto const time_span = local_update_time();
-    if (params_.regulate_fps && (time_span < fps_time)) {
-      std::this_thread::sleep_for(fps_time - time_span);
-      local_update_time();
-    }
+void App::postsetup() {
+  // Check camera settings.
+  if (!camera_.initialized()) {
+    LOG_WARNING( "The camera's projection has not been initialized (￣ε￣). Using the default one instead." );
+    camera_.set_default();
   }
+  camera_.rebuild();
 
-  // Update the global clock.  
-  {
-    auto &gc = GlobalClock::Get();
+  // Start the global clock post-initialization to avoid overhead.
+  GlobalClock::Start();
 
-    // The first few clock updates can occurs a very long time after the app initialization.
-    // Therefore we stabilize the dt the first few frames. [ improve ? ]
-    if (gc.framecount_total() < 2) {
-      gc.stabilize_delta_time( 1000.0 / kMaxFPS );
-    }
-    gc.update();
-
-    // Bypass previous "precise" deltatime using global clock.
-    deltatime_ = gc.delta_time();
-    
-    // LOG_INFO( gc.delta_time(), gc.application_delta_time(), gc.frame_elapsed_time(), gc.application_time()  );
-    // LOG_INFO( gc.time_scale(), gc.fps(), gc.framecount_total() ); 
-  }
+  // Reindex imported objects.
+  scene_.update( 0.0f, camera_); //
 }
 
 // ----------------------------------------------------------------------------
