@@ -67,7 +67,7 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
 // The example below shows how to do this, in particular how to generate the 'cursor ray' from a mouse position
 // which is necessary for interacting with gizmos.
 
-  TEventData const event = GetEventData();
+  auto const& events = Events::Get();
 
   AppData& ad = GetAppData();
 
@@ -89,7 +89,7 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
     ;  
   ad.m_projScaleY *= kGizmoScaling;
 
-  Vec2 cursorPos(event.mouseX, event.mouseY);
+  Vec2 cursorPos( events.mouseX(), events.mouseY());
   cursorPos = (cursorPos / ad.m_viewportSize) * 2.0f - Vec2(1.0f);
   cursorPos.y = -cursorPos.y;
   
@@ -119,11 +119,11 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
  // im3d_config.h, or if any of the IsVisible() functions are called.
   //ad.setCullFrustum(g_Example->m_camViewProj, true);
 
-  bool const bSelect           = event.bLeftMouse;
-  bool const bSnap             = event.bLeftCtrl; 
-  bool const bGizmoTranslation = (event.lastChar == 't');
-  bool const bGizmoRotation    = (event.lastChar == 'r');
-  bool const bGizmoScale       = (event.lastChar == 's');
+  bool const bSelect           = events.buttonDown(0); //bLeftMouse;
+  bool const bSnap             = events.keyDown(341); // bLeftCtrl; 
+  bool const bGizmoTranslation = (events.lastInputChar() == 't'); // events.keyDown(symbols::Keyboard::T);
+  bool const bGizmoRotation    = (events.lastInputChar() == 'r');
+  bool const bGizmoScale       = (events.lastInputChar() == 's');
 
   // Handle switching from local / global space.
   // ---------------
