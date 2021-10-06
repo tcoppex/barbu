@@ -2,14 +2,17 @@
 #define BARBU_UTILS_MATHUTILS_H_
 
 #include <cmath>
-#include <map>
 #include "glm/glm.hpp"
 
 // ----------------------------------------------------------------------------
 
-// Vertex ordering operator used to reindex vertices from raw data.
-namespace {
+/* Helps build bitmask from / to enum class. */
+template<typename T>
+static constexpr uint32_t BitMask(T const n) { return 1u << static_cast<uint8_t>(n); }
 
+// ----------------------------------------------------------------------------
+
+/* Check if two float points value are almost equal */
 template<typename T>
 constexpr bool almost_equal(T const& a, T const& b, T const eps = std::numeric_limits<T>::epsilon()) {
   //static_assert( std::is_floating_point<T>::value );
@@ -19,6 +22,8 @@ constexpr bool almost_equal(T const& a, T const& b, T const eps = std::numeric_l
 }
 
 // ----------------------------------------------------------------------------
+
+/* Vertex ordering functor, used to reindex vertices from raw data. */
 
 template<typename T>
 struct vec2_ordering {
@@ -65,7 +70,10 @@ struct vec4_ordering {
   }
 };
 
-// ----------------------------------------------------------------------------
+/* std::map wrappers */
+#ifdef MATHUTILS_MAP_VECTOR
+
+#include <map>
 
 template<typename K, typename V>
 using MapVec2 = std::map<K, V, vec2_ordering<K>>;
@@ -76,7 +84,7 @@ using MapVec3 = std::map<K, V, vec3_ordering<K>>;
 template<typename K, typename V>
 using MapVec4 = std::map<K, V, vec4_ordering<K>>;
 
-} // namespace
+#endif // MATHUTILS_VECORDERING
 
 // ----------------------------------------------------------------------------
 
