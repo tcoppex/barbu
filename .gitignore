@@ -3,6 +3,6 @@ assets/
 bin/
 build/
 BUILDs/
-src/core/ext/
+src/core/impl/opengl/_*
 CMakeLists.txt.user
 .travis.yml
