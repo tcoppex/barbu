@@ -51,7 +51,7 @@ namespace fs = std::experimental::filesystem;
 //
 class Resource {
  protected:
-  virtual ~Resource() {}
+  virtual ~Resource() = default;
 
   // Release the internal memory of the resource.
   virtual void release() = 0;

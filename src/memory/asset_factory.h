@@ -125,8 +125,8 @@ class AssetFactory {
   static constexpr bool kReleaseWipeOutDefault = false;
 
   AssetFactory() = default;
-
-  virtual ~AssetFactory() {}
+  
+  virtual ~AssetFactory() = default;
 
   // Create an asset from its parameters.
   Handle create(AssetId const& id, Parameters_t const& params) {

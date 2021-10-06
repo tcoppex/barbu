@@ -42,6 +42,7 @@ struct ResourceInfo {
 class ResourceInfoList : public std::null_vector<ResourceInfo> {
  public:  
   ResourceInfoList() = default;
+  ResourceInfoList(ResourceInfoList const&) = default;
 
   ResourceInfoList(std::nullptr_t) {
     set_to_nullptr();
