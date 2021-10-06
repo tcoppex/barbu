@@ -15,19 +15,22 @@ void Mesh::draw_submesh(int32_t index, int32_t count, MeshData::PrimitiveType pr
   auto const mode = get_draw_mode(primitive);
 
   glBindVertexArray(vao_);
-  if (!vgroups_.empty()) {
-    auto const& vg = vgroups_.at(index);
-    glDrawElementsInstanced( mode, vg.nelems(), GL_UNSIGNED_INT, reinterpret_cast<void*>(vg.start_index*sizeof(uint32_t)), count);
-  } else if (nelems_ <= 0) {
-    glDrawArraysInstanced(mode, 0u, nvertices_, count);
-  } else if (index <= 0) {
-    glDrawElementsInstanced(mode, nelems_, GL_UNSIGNED_INT, nullptr, count);
-  } else {
-    LOG_WARNING( __FUNCTION__, ": invalid parameters." );
-  }  
-  CHECK_GX_ERROR();
+  if (nelems_ > 0) {
+    int32_t nelems{ nelems_ };
+    void* offset{ nullptr };
 
+    if (!vgroups_.empty()) {
+      auto const& vg = vgroups_.at(index);
+      nelems = vg.nelems();
+      offset = reinterpret_cast<void*>(vg.start_index * sizeof(uint32_t));
+    }
+    glDrawElementsInstanced( mode, nelems, GL_UNSIGNED_INT, offset, count);
+  } else {
+    glDrawArraysInstanced(mode, 0u, nvertices_, count);
+  }
   glBindVertexArray(0u);
+
+  CHECK_GX_ERROR();
 }
 
 // ----------------------------------------------------------------------------
@@ -63,10 +66,10 @@ uint32_t Mesh::get_draw_mode(MeshData::PrimitiveType primitive) const {
 
 void Mesh::allocate() {
   if (!loaded()) {
+    glCreateVertexArrays(1u, &vao_);
     glCreateBuffers(1u, &vbo_);
     glCreateBuffers(1u, &skin_vbo_);
     glCreateBuffers(1u, &ibo_);
-    glCreateVertexArrays(1u, &vao_);
   }
   CHECK_GX_ERROR();
 }
@@ -77,7 +80,7 @@ void Mesh::release() {
     glDeleteBuffers(1u, &skin_vbo_);
     glDeleteBuffers(1u, &ibo_);
     glDeleteVertexArrays(1u, &vao_);
-    vbo_ = ibo_ = vao_ = 0u;
+    vbo_ = skin_vbo_ = ibo_ = vao_ = 0u;
   }
   CHECK_GX_ERROR();
 }
@@ -113,62 +116,58 @@ bool Mesh::setup() {
     release();
     allocate();
   }
-  
-  // Setup internal buffers.
-  uint32_t bytesize = static_cast<uint32_t>(nvertices_ * sizeof(meshdata.vertices[0u]));
-  glNamedBufferStorage(vbo_, bytesize, meshdata.vertices.data(), 0);
 
   // [use bindless vao instead ?]
   glBindVertexArray(vao_);
   {
-    auto binding_index = 0u;
-    glBindVertexBuffer(binding_index, vbo_, 0u, sizeof(MeshData::Vertex_t));
+    uint32_t binding_index = 0u;
+    
+    // 1) Generic Vertex Attribs.
     {
-      uint32_t attrib_index, num_component;
+      uint32_t const bytesize{
+        static_cast<uint32_t>(nvertices_ * (sizeof meshdata.vertices[0u]))
+      };
+      glNamedBufferStorage(vbo_, bytesize, meshdata.vertices.data(), 0);
+      
+      glBindVertexBuffer(binding_index, vbo_, 0u, sizeof(MeshData::Vertex_t));
+      {
+        #define MESH_SetupAttrib(tAttrib, tComponent) \
+        { \
+          auto const ncomp{ static_cast<uint32_t>((sizeof MeshData::Vertex_t::tComponent) / (sizeof MeshData::Vertex_t::tComponent[0u]))}; \
+          glVertexAttribFormat( Mesh::tAttrib, ncomp, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, tComponent)); \
+          glVertexAttribBinding( Mesh::tAttrib, binding_index); \
+          glEnableVertexAttribArray( Mesh::tAttrib ); \
+        }
 
-      attrib_index = Mesh::ATTRIB_POSITION;
-      num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::position) / sizeof(MeshData::Vertex_t::position[0u]));
-      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, position));
-      glVertexAttribBinding(attrib_index, binding_index);
-      glEnableVertexAttribArray(attrib_index);
+        MESH_SetupAttrib( ATTRIB_POSITION,  position );
+        MESH_SetupAttrib( ATTRIB_TEXCOORD,  texcoord );
+        MESH_SetupAttrib( ATTRIB_NORMAL,    normal );
+        MESH_SetupAttrib( ATTRIB_TANGENT,   tangent );
 
-      attrib_index = Mesh::ATTRIB_TEXCOORD;
-      num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::texcoord) / sizeof(MeshData::Vertex_t::texcoord[0u]));
-      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, texcoord));
-      glVertexAttribBinding(attrib_index, binding_index);
-      glEnableVertexAttribArray(attrib_index);
-
-      attrib_index = Mesh::ATTRIB_NORMAL;
-      num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::normal) / sizeof(MeshData::Vertex_t::normal[0u]));
-      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, normal));
-      glVertexAttribBinding(attrib_index, binding_index);
-      glEnableVertexAttribArray(attrib_index);
-
-      attrib_index = Mesh::ATTRIB_TANGENT;
-      num_component = static_cast<uint32_t>((sizeof MeshData::Vertex_t::tangent) / sizeof(MeshData::Vertex_t::tangent[0u]));
-      glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(MeshData::Vertex_t, tangent));
-      glVertexAttribBinding(attrib_index, binding_index);
-      glEnableVertexAttribArray(attrib_index);
+        #undef MESH_SetupAttrib
+      }
+      ++binding_index;
     }
-    ++binding_index;
 
+    // 2) Skinning Attribs.
     if (!meshdata.skinnings.empty()) {
-      // Skinning buffer.
-      uint32_t const skin_bytesize = static_cast<uint32_t>(nvertices_ * sizeof(meshdata.skinnings[0u]));
-      glNamedBufferStorage(skin_vbo_, skin_bytesize, meshdata.skinnings.data(), 0);
+      uint32_t const bytesize{
+        static_cast<uint32_t>(nvertices_ * (sizeof meshdata.skinnings[0u]))
+      };
+      glNamedBufferStorage(skin_vbo_, bytesize, meshdata.skinnings.data(), 0);
 
       glBindVertexBuffer(binding_index, skin_vbo_, 0, sizeof(MeshData::Skinning_t));
       {
         uint32_t attrib_index, num_component;
 
         attrib_index = Mesh::ATTRIB_JOINT_INDICES;
-        num_component = static_cast<uint32_t>((sizeof MeshData::Skinning_t::joint_indices) / sizeof(MeshData::Skinning_t::joint_indices[0u]));
+        num_component = static_cast<uint32_t>((sizeof MeshData::Skinning_t::joint_indices) / (sizeof MeshData::Skinning_t::joint_indices[0u]));
         glVertexAttribIFormat(attrib_index, num_component, GL_UNSIGNED_INT, offsetof(MeshData::Skinning_t, joint_indices));
         glVertexAttribBinding(attrib_index, binding_index);
         glEnableVertexAttribArray(attrib_index);
 
         attrib_index = Mesh::ATTRIB_JOINT_WEIGHTS;
-        num_component = static_cast<uint32_t>((sizeof MeshData::Skinning_t::joint_weights) / sizeof(MeshData::Skinning_t::joint_weights[0u]));
+        num_component = static_cast<uint32_t>((sizeof MeshData::Skinning_t::joint_weights) / (sizeof MeshData::Skinning_t::joint_weights[0u]));
         glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_TRUE/**/, offsetof(MeshData::Skinning_t, joint_weights));
         glVertexAttribBinding(attrib_index, binding_index);
         glEnableVertexAttribArray(attrib_index);
@@ -180,7 +179,9 @@ bool Mesh::setup() {
 
   // Faces indices.
   if (!meshdata.indices.empty()) {
-    bytesize = static_cast<uint32_t>(nelems_ * sizeof(meshdata.indices[0u]));
+    uint32_t const bytesize{
+      static_cast<uint32_t>(nelems_ * (sizeof meshdata.indices[0u]))
+    };
     glNamedBufferStorage(ibo_, bytesize, meshdata.indices.data(), 0);
     glVertexArrayElementBuffer(vao_, ibo_);
   }
@@ -194,7 +195,7 @@ bool Mesh::setup() {
 
 MeshFactory::Handle MeshFactory::add_object(std::string const& basename, MeshData const& meshdata) {
   // The Resource id and asset id could be different, but at least we are sure
-  // they do not collide any others.
+  // they do not collide with any others mesh asset.
   auto const id = AssetId::FindUnique( basename, 
     [this](AssetId const& _id) {
       return has(_id);
