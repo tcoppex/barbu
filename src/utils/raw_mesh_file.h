@@ -66,21 +66,30 @@ struct RawMeshData {
     tangents.reserve(capacity); //
     elementsAttribs.reserve(capacity);
   }
+  
+  inline void addVertex(glm::vec3 const& v) {
+    vertices.push_back(v);
+  }
+  
+  inline void addTexcoord(glm::vec3 const& v) {
+    texcoords.push_back(v);
+  }
 
-  // Use elementsAttribs & vertices to fill the normals attributes.
-  void recalculate_normals();
+  inline void addNormal(glm::vec3 const& v) {
+    normals.push_back(v);
+  }
 
-  // Calculate tangent space based on vertices position, texcoords & normals,
-  // and index them on elementsAttribs.
-  void recalculate_tangents(); //
-
-  // inline int32_t nvertices() const {
-  //   return static_cast<int32_t>(vertices.size()); //
-  // }
+  inline void addIndex(int index) {
+    elementsAttribs.push_back(glm::ivec3(index));
+  }
   
   inline int32_t nfaces() const { 
     return static_cast<int32_t>(elementsAttribs.size()/3); // 
   }
+
+  // inline int32_t nvertices() const {
+  //   return static_cast<int32_t>(vertices.size()); //
+  // }
 
   bool has_vertex_groups() const { 
     return !vgroups.empty();
@@ -90,6 +99,13 @@ struct RawMeshData {
     joints.reserve(vertices.capacity());
     weights.reserve(vertices.capacity());
   }
+  
+  // Use elementsAttribs & vertices to fill the normals attributes.
+  void recalculate_normals();
+
+  // Calculate tangent space based on vertices position, texcoords & normals,
+  // and index them on elementsAttribs.
+  void recalculate_tangents(); //
 };
 
 // ----------------------------------------------------------------------------
