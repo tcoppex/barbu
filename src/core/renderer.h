@@ -50,6 +50,9 @@ class Renderer {
     std::shared_ptr<UIView> sub_view = nullptr; //
   };
 
+  using UpdateCallback_t = std::function<void()>;
+  using DrawCallback_t   = std::function<void()>;
+
   std::shared_ptr<UIView> ui_view = nullptr;
 
  public:
@@ -58,7 +61,7 @@ class Renderer {
 
   void init();
 
-  void frame(SceneHierarchy &scene, Camera const& camera, std::function<void()> user_update_cb, std::function<void()> user_draw_cb);
+  void frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb);
 
   inline Parameters_t& params() { return params_; }
 

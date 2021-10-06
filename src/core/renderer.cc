@@ -25,12 +25,17 @@ void Renderer::init() {
   ui_view = std::make_shared<views::RendererView>(params_);
 }
 
-void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<void()> user_update_cb, std::function<void()> user_draw_cb) {
-  float const deltatime = GlobalClock::Get().delta_time();
+void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb) {
+  float const dt = GlobalClock::Get().delta_time();
 
-  gizmo_.begin_frame( deltatime, camera);
+  gizmo_.begin_frame( dt, camera);
 
-  user_update_cb(); //
+  // User's update.
+  update_cb(); //
+
+  // [ should this be updated before or after user's ? ]
+  camera.update(dt);
+  scene.update(dt, camera);
 
   // UPDATE
   {
@@ -38,11 +43,11 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
     postprocess_.setup_textures(camera); //
 
     // Grid.
-    grid_.update(deltatime, camera);
+    grid_.update(dt, camera);
 
     // Particles.
     if (params_.enable_particle) {
-      particle_.update( deltatime, camera);
+      particle_.update( dt, camera);
     }
     
     // Hair.
@@ -55,7 +60,7 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
         data.w = bsphere.radius();
         hair_.set_bounding_sphere( data );  
       }
-      hair_.update(deltatime);
+      hair_.update(dt);
     }
   }
   CHECK_GX_ERROR();
@@ -78,7 +83,9 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
   }
   CHECK_GX_ERROR();
   
-  user_draw_cb(); //
+  // User's draw.
+  draw_cb(); //
+
   scene.gizmos(false); //
 
   gizmo_.end_frame(camera);
@@ -177,7 +184,7 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
     gx::Enable( gx::State::Blend );
     gx::Disable( gx::State::CullFace );
 
-    if constexpr (true) {
+    if constexpr (false) {
       gx::BlendFunc( gx::BlendFactor::SrcAlpha, gx::BlendFactor::One);
       particle_.set_sorting(false);
     } else {
