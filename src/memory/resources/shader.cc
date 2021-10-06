@@ -41,7 +41,7 @@ ShaderType GetShaderTypeFromName(std::string const& basename) {
     }
   }
 
-  return ShaderType::kNone;
+  return ShaderType::kShaderTypeNone;
 }
 
 // ----------------------------------------------------------------------------

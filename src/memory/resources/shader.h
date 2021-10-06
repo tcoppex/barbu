@@ -14,8 +14,8 @@
 //
 // ----------------------------------------------------------------------------
 
-enum ShaderType {
-  kNone = -1,
+enum /*class*/ ShaderType {
+  kShaderTypeNone = -1,
 
   kVertex, 
   kTessControl, 
