@@ -2,17 +2,17 @@
 
 #include <cstdlib>
 
-//#include "core/glfw.h"
+#include "core/global_clock.h"
 #include "core/graphics.h" //
+#include "core/logger.h"
+#include "core/window.h"
 
 #include "ui/imgui_wrapper.h"
 #include "ui/ui_view.h"
 
 // -----------------------------------------------------------------------------
 
-void UIController::init(GLFWwindow* window) {
-  window_ptr_ = window;
-
+void UIController::init(/*GLFWwindow* window*/) {
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO();
 
@@ -20,32 +20,35 @@ void UIController::init(GLFWwindow* window) {
   io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
   io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 
+
   // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
-  io.KeyMap[ImGuiKey_Tab] = GLFW_KEY_TAB;
-  io.KeyMap[ImGuiKey_LeftArrow] = GLFW_KEY_LEFT;
-  io.KeyMap[ImGuiKey_RightArrow] = GLFW_KEY_RIGHT;
-  io.KeyMap[ImGuiKey_UpArrow] = GLFW_KEY_UP;
-  io.KeyMap[ImGuiKey_DownArrow] = GLFW_KEY_DOWN;
-  io.KeyMap[ImGuiKey_PageUp] = GLFW_KEY_PAGE_UP;
-  io.KeyMap[ImGuiKey_PageDown] = GLFW_KEY_PAGE_DOWN;
-  io.KeyMap[ImGuiKey_Home] = GLFW_KEY_HOME;
-  io.KeyMap[ImGuiKey_End] = GLFW_KEY_END;
-  io.KeyMap[ImGuiKey_Insert] = GLFW_KEY_INSERT;
-  io.KeyMap[ImGuiKey_Delete] = GLFW_KEY_DELETE;
-  io.KeyMap[ImGuiKey_Backspace] = GLFW_KEY_BACKSPACE;
-  io.KeyMap[ImGuiKey_Space] = GLFW_KEY_SPACE;
-  io.KeyMap[ImGuiKey_Enter] = GLFW_KEY_ENTER;
-  io.KeyMap[ImGuiKey_Escape] = GLFW_KEY_ESCAPE;
-  io.KeyMap[ImGuiKey_A] = GLFW_KEY_A;
-  io.KeyMap[ImGuiKey_C] = GLFW_KEY_C;
-  io.KeyMap[ImGuiKey_V] = GLFW_KEY_V;
-  io.KeyMap[ImGuiKey_X] = GLFW_KEY_X;
-  io.KeyMap[ImGuiKey_Y] = GLFW_KEY_Y;
-  io.KeyMap[ImGuiKey_Z] = GLFW_KEY_Z;
+  io.KeyMap[ImGuiKey_Tab]         = symbols::Keyboard::Tab;
+  io.KeyMap[ImGuiKey_LeftArrow]   = symbols::Keyboard::Left;
+  io.KeyMap[ImGuiKey_RightArrow]  = symbols::Keyboard::Right;
+  io.KeyMap[ImGuiKey_UpArrow]     = symbols::Keyboard::Up;
+  io.KeyMap[ImGuiKey_DownArrow]   = symbols::Keyboard::Down;
+  io.KeyMap[ImGuiKey_PageUp]      = symbols::Keyboard::PageUp;
+  io.KeyMap[ImGuiKey_PageDown]    = symbols::Keyboard::PageDown;
+  io.KeyMap[ImGuiKey_Home]        = symbols::Keyboard::Home;
+  io.KeyMap[ImGuiKey_End]         = symbols::Keyboard::End;
+  io.KeyMap[ImGuiKey_Insert]      = symbols::Keyboard::Insert;
+  io.KeyMap[ImGuiKey_Delete]      = symbols::Keyboard::Delete;
+  io.KeyMap[ImGuiKey_Backspace]   = symbols::Keyboard::BackSpace;
+  io.KeyMap[ImGuiKey_Space]       = symbols::Keyboard::Space;
+  io.KeyMap[ImGuiKey_Enter]       = symbols::Keyboard::Return;
+  io.KeyMap[ImGuiKey_Escape]      = symbols::Keyboard::Escape;
+  io.KeyMap[ImGuiKey_A]           = symbols::Keyboard::A;
+  io.KeyMap[ImGuiKey_C]           = symbols::Keyboard::C;
+  io.KeyMap[ImGuiKey_V]           = symbols::Keyboard::V;
+  io.KeyMap[ImGuiKey_X]           = symbols::Keyboard::X;
+  io.KeyMap[ImGuiKey_Y]           = symbols::Keyboard::Y;
+  io.KeyMap[ImGuiKey_Z]           = symbols::Keyboard::Z;
+
 
   //io.SetClipboardTextFn = cb_SetClipboardText;
   //io.GetClipboardTextFn = cb_GetClipboardText;
-  io.ClipboardUserData = window_ptr_;
+  
+  // io.ClipboardUserData = window_ptr_;
 
 #ifdef _WIN32
   //io.ImeWindowHandle = glfwGetWin32Window(window_ptr_);
@@ -61,7 +64,7 @@ void UIController::deinit() {
   ImGui::DestroyContext();
 }
 
-void UIController::update() {
+void UIController::update(std::shared_ptr<AbstractWindow> window) {
   if (!device_.fontTexture) {
     create_device_objects();
   }
@@ -69,50 +72,47 @@ void UIController::update() {
   ImGuiIO& io = ImGui::GetIO();
 
   // Setup display size (every frame to accommodate for window resizing)
-  int w, h;
-  int display_w, display_h;
-  glfwGetWindowSize(window_ptr_, &w, &h);
-  glfwGetFramebufferSize(window_ptr_, &display_w, &display_h);
+  int const w = window->width();
+  int const h = window->height();
+  int const display_w = window->width(); //
+  int const display_h = window->height(); //
+
   io.DisplaySize = ImVec2(static_cast<float>(w), static_cast<float>(h));
   io.DisplayFramebufferScale = ImVec2((w > 0) ? (static_cast<float>(display_w) / w) : 0.0f,
                                       (h > 0) ? (static_cast<float>(display_h) / h) : 0.0f);
 
   // Setup time step
-  const double current_time = glfwGetTime();
-  io.DeltaTime = static_cast<float>((time_ > 0.0) ? (current_time - time_) : (1.0/60.0));
-  time_ = current_time;
+  auto& gc = GlobalClock::Get();
+  io.DeltaTime = gc.delta_time();
+
+  // [TODO] Setup special keys.
+  // io.KeyCtrl  = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
+  // io.KeyShift = io.KeysDown[GLFW_KEY_LEFT_SHIFT]   || io.KeysDown[GLFW_KEY_RIGHT_SHIFT];
+  // io.KeyAlt   = io.KeysDown[GLFW_KEY_LEFT_ALT]     || io.KeysDown[GLFW_KEY_RIGHT_ALT];
+  // io.KeySuper = io.KeysDown[GLFW_KEY_LEFT_SUPER]   || io.KeysDown[GLFW_KEY_RIGHT_SUPER];
 
   // Setup inputs
   // (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
-  if (glfwGetWindowAttrib(window_ptr_, GLFW_FOCUSED)) {
+  if (window->hasFocus()) {
     if (io.WantSetMousePos) {
-      glfwSetCursorPos(window_ptr_, (double)io.MousePos.x, (double)io.MousePos.y);
+      window->setCursorPosition(io.MousePos.x, io.MousePos.y);
     } else {
-      double mouse_x, mouse_y;
-      glfwGetCursorPos(window_ptr_, &mouse_x, &mouse_y);
+      int mouse_x, mouse_y;
+      window->getCursorPosition(&mouse_x, &mouse_y);
       io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
     }
   } else {
     io.MousePos = ImVec2(-FLT_MAX,-FLT_MAX);
   }
 
-  for (int i = 0; i < 3; i++) {
-      // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-      io.MouseDown[i] = /*g_MouseJustPressed[i] ||*/ glfwGetMouseButton(window_ptr_, i) != 0;
-      //g_MouseJustPressed[i] = false;
-  }
-
   // Update OS/hardware mouse cursor if imgui isn't drawing a software cursor
-  if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) == 0 && glfwGetInputMode(window_ptr_, GLFW_CURSOR) != GLFW_CURSOR_DISABLED) {
-      ImGuiMouseCursor cursor = ImGui::GetMouseCursor();
-      if (io.MouseDrawCursor || cursor == ImGuiMouseCursor_None) {
-        glfwSetInputMode(window_ptr_, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-      } else {
-        //glfwSetCursor(window_ptr_, g_MouseCursors[cursor] ? g_MouseCursors[cursor] : g_MouseCursors[ImGuiMouseCursor_Arrow]);
-        glfwSetInputMode(window_ptr_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-      }
+  if ((io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange) == 0) {
+    ImGuiMouseCursor cursor = ImGui::GetMouseCursor();
+    bool const bShowCursor = !(io.MouseDrawCursor || cursor == ImGuiMouseCursor_None);
+    window->showCursor(bShowCursor);
   }
 
+#if 0
   // Gamepad navigation mapping [BETA]
   memset(io.NavInputs, 0, sizeof(io.NavInputs));
   if (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) {
@@ -146,6 +146,7 @@ void UIController::update() {
         io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
       }
   }
+#endif
 
   ImGui::NewFrame();
 }
