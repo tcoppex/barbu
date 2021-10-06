@@ -6,7 +6,7 @@
 // ----------------------------------------------------------------------------
 
 SkinComponent::~SkinComponent() {
-  if (buffer_id_ != 0u) {
+  if (0u != buffer_id_) {
     glDeleteBuffers(1u, &buffer_id_);
     buffer_id_ = 0u;
 
@@ -16,7 +16,7 @@ SkinComponent::~SkinComponent() {
 }
 
 bool SkinComponent::update(float global_time) {
-  if (skeleton_ == nullptr) {
+  if (nullptr == skeleton_) {
     LOG_WARNING( "A skeleton was not provided for SkinComponent." );
     return false;
   }
@@ -31,48 +31,55 @@ bool SkinComponent::update(float global_time) {
   blend_tree_->evaluate(1.0f, sequence_);
 #endif
 
-  // Evaluate the skinning data for the given sequence.
-  if (!controller_.evaluate( mode_, skeleton_, global_time, sequence_)) {
-    return false;
+  // Evaluate the skinning data for the given sequence. 
+  bool const hasData{
+    controller_.evaluate( mode_, skeleton_, global_time, sequence_)
+  };
+
+  if (hasData) {
+    updateSkinningBuffer();
   }
+  
+  return hasData;
+}
 
-  int32_t bytesize(0);
-  float const*data_ptr(nullptr);
+void SkinComponent::updateSkinningBuffer() {
+  // [ TODO : use an external wrapper, eg. 'TextureBuffer' ]
 
-  if (SkinningMode::DualQuaternion == mode_) {
-    // DUAL QUATERNION BLENDING
-    auto *const data = controller_.dual_quaternions().data();
-    bytesize = skeleton_->njoints() * sizeof(data[0]);
-    data_ptr = reinterpret_cast<float const*>(data);
-  } else {
-    // LINEAR BLENDING
-    auto const& skinning = controller_.skinning_matrices();
-    bytesize = skeleton_->njoints() * sizeof(skinning[0]);
-    data_ptr = glm::value_ptr(skinning[0]);
-  }
+  // 1) Create an *immutable* device buffer with texture buffer.
+  if (0u == buffer_id_) {
+    glCreateBuffers(1u, &buffer_id_);
 
-  // [ use an external wrapper, eg. 'TextureBuffer' ]
-  {
-    // Create an *immutable* device buffer with texture buffer.
-    if (buffer_id_ == 0) {
-      glCreateBuffers(1u, &buffer_id_);
+    // Upper boundary of skinning data.
+    int32_t constexpr kElemsize{ static_cast<int32_t>(glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat))) };
+    int32_t const kBytesize{ skeleton_->njoints() * kElemsize };
 
-      // Upper boundary of skinning data.
-      int32_t const kElemsize{ static_cast<int32_t>(glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat))) };
-      int32_t const kBytesize{ skeleton_->njoints() * kElemsize };
-      glNamedBufferStorage(buffer_id_, kBytesize, nullptr, GL_DYNAMIC_STORAGE_BIT);
-      
-      glCreateTextures( GL_TEXTURE_BUFFER, 1u, &texture_id_);
-      glTextureBuffer(texture_id_, GL_RGBA32F, buffer_id_);
-    }
+    glNamedBufferStorage( buffer_id_, kBytesize, nullptr, GL_DYNAMIC_STORAGE_BIT);
+    glCreateTextures( GL_TEXTURE_BUFFER, 1u, &texture_id_);
+    glTextureBuffer( texture_id_, GL_RGBA32F, buffer_id_);
 
-    // Upload skinning data.
-    glNamedBufferSubData(buffer_id_, 0, bytesize, data_ptr);
-    
     CHECK_GX_ERROR();
   }
   
-  return true;
+  // 2) Retrieve the underlying data depending on the skinning blending mode.
+  float const* data_ptr{nullptr};
+  int32_t bytesize{0};
+  if (SkinningMode::DualQuaternion == mode_) {
+    // DUAL QUATERNION BLENDING
+    auto *const data = controller_.dual_quaternions().data();
+    data_ptr = reinterpret_cast<float const*>(data);
+    bytesize = skeleton_->njoints() * sizeof(data[0]);
+  } else {
+    // LINEAR BLENDING
+    auto const& skinning = controller_.skinning_matrices();
+    data_ptr = glm::value_ptr(skinning[0]);
+    bytesize = skeleton_->njoints() * sizeof(skinning[0]);
+  }
+
+  // 3) Upload skinning data.
+  glNamedBufferSubData(buffer_id_, 0, bytesize, data_ptr);
+  
+  CHECK_GX_ERROR();
 }
 
 // ----------------------------------------------------------------------------

@@ -19,53 +19,51 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
   VisualComponent() = default;
 
   // Render parts of the mesh matching the RenderMode.
-  void render(RenderAttributes const& attributes, RenderMode render_mode) {
+  void render(RenderAttributes const& attributes, RenderMode const render_mode) {
+    
+    // Special Case : the mesh has no materials.
     if (!mesh_->has_materials()) {
-      // Case 1 : Mesh with no materials.
-
       if (render_mode == RenderMode::kDefault) {
         material()->update_uniforms(attributes);
         mesh_->draw();
       }
-    } else {
-      // Case 2 : Mesh with sub materials.
-
-      // Keep tracks of previous program to avoid useless uniform setup mesh wised.
-      uint32_t last_pgm = 0u;
-      int32_t texture_unit = 0;
-
-      auto const nsubgeometry = mesh_->nsubgeometry();
-      for (auto i = 0; i < nsubgeometry; ++i) {
-        auto const mat = material(i);
-        assert(mat != nullptr);
-
-        // Check the material render mode.
-        if (render_mode != mat->render_mode()) {
-          continue;
-        }
-
-        // Set material parameters when needed.
-        uint32_t const pgm = mat->program()->id;
-        bool const bUseSameProgram = (last_pgm == pgm); 
-        texture_unit = mat->update_uniforms(attributes, bUseSameProgram ? texture_unit : 0);
-        last_pgm = pgm;
-
-        // Force double-sided rendering when requested.
-        bool const bCullFace = gx::IsEnabled( gx::State::CullFace );
-        if (mat->double_sided()) {
-          gx::Disable( gx::State::CullFace );
-        }
-
-        // Draw submesh.
-        mesh_->draw_submesh(i);
-
-        // Restore pipeline state.
-        if (bCullFace) {
-          gx::Enable( gx::State::CullFace );
-        }
-      }
+      return;
     }
 
+    // Keep tracks of previous program to avoid useless uniform setup mesh wised.
+    uint32_t last_pgm = 0u;
+    int32_t texture_unit = 0;
+    int32_t const nsubgeometry{ mesh_->nsubgeometry() };
+    for (int32_t i = 0; i < nsubgeometry; ++i) {
+      auto const mat{ material(i) };
+
+      // Check the material render mode.
+      assert(mat != nullptr); //
+      if (render_mode != mat->render_mode()) {
+        continue;
+      }
+
+      // Set material parameters when needed.
+      uint32_t const pgm{ mat->program()->id };
+      bool const bUseSameProgram{ last_pgm == pgm }; 
+      texture_unit = mat->update_uniforms(attributes, bUseSameProgram ? texture_unit : 0);
+      last_pgm = pgm;
+
+      // Force double-sided rendering when requested.
+      bool const bCullFace{ gx::IsEnabled(gx::State::CullFace) };
+      if (mat->double_sided()) {
+        gx::Disable( gx::State::CullFace );
+      }
+
+      // Draw submesh.
+      mesh_->draw_submesh(i);
+
+      // Restore pipeline state.
+      if (bCullFace) {
+        gx::Enable( gx::State::CullFace );
+      }
+    }
+  
     CHECK_GX_ERROR();
   }
 
@@ -80,36 +78,35 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     // }
   }
 
-  inline void set_rig(EntityHandle rig) {
+  inline void set_rig(EntityHandle rig) noexcept {
     rig_ = rig;
   }
 
-  inline MeshHandle mesh() { 
+  inline MeshHandle mesh() noexcept { 
     return mesh_; 
   }
 
-  inline MeshHandle mesh() const { 
+  inline MeshHandle mesh() const noexcept { 
     return mesh_; 
   }
 
-  inline EntityHandle rig() const {
+  inline EntityHandle rig() const noexcept {
     return rig_;
   }
 
  private:
-  inline MaterialHandle material(int32_t index=0) {
-    auto const default_material = MATERIAL_ASSETS.get_default()->get();
+  inline MaterialHandle material(int32_t index = 0) {
+    auto const default_material{ MATERIAL_ASSETS.get_default()->get() };
 
     if (!mesh_->has_materials()) {
       return default_material;
     }
-    auto const& vg = mesh_->vertex_group(index);
-    auto const material_id = AssetId(vg.name);
-
-    return (MATERIAL_ASSETS.has(material_id)) ?
-      MATERIAL_ASSETS.get(material_id)->get() :
-      default_material
-    ;
+    
+    auto const& vg{ mesh_->vertex_group(index) };
+    auto const material_id{ AssetId(vg.name) };
+    return (MATERIAL_ASSETS.has(material_id)) ? MATERIAL_ASSETS.get(material_id)->get()
+                                              : default_material
+                                              ;
   }
 
   MeshHandle mesh_ = nullptr; 

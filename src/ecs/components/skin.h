@@ -29,47 +29,55 @@ class SkinComponent final : public ComponentParams<Component::Skin> {
 
   bool update(float global_time);
 
-  // void debug_draw(); //
-
-  inline void set_skinning_mode(SkinningMode mode) {
+  inline void set_skinning_mode(SkinningMode const mode) noexcept {
     mode_ = mode;
   }
 
-  inline void set_skeleton(SkeletonHandle skeleton) {
+  inline void set_skeleton(SkeletonHandle skeleton) noexcept {
     skeleton_ = skeleton;
   }
 
-  inline SkinningMode skinning_mode() const {
+  inline SkinningMode skinning_mode() const noexcept {
     return mode_;
   }
 
-  inline SkeletonHandle skeleton() const {
+  inline SkeletonHandle skeleton() const noexcept {
     return skeleton_;
   }
 
-  inline Sequence_t& sequence() {
+  inline SkeletonMap_t& skeleton_map() noexcept { 
+    return skeleton_map_; 
+  }
+
+  inline Sequence_t& sequence() noexcept {
     return sequence_;
   }
 
-  inline SkeletonController const& controller() {
+
+  inline SkeletonController const& controller() const noexcept {
     return controller_;
   }
 
-  inline uint32_t texture_id() const { return texture_id_; } //
 
-  inline SkeletonMap_t& skeleton_map() { return skeleton_map_; } 
+  inline uint32_t texture_id() const noexcept { 
+    return texture_id_; 
+  }
 
 
  private:
+  /* Create the skinning data device buffer if needed and upload data to it. */
+  void updateSkinningBuffer(); // [fixme]
+
   // Inputs.
-  SkinningMode    mode_       = SkinningMode::DualQuaternion;
-  SkeletonHandle  skeleton_   = nullptr;
-  SkeletonMap_t   skeleton_map_; //
-  Sequence_t      sequence_; //
+  SkinningMode    mode_;
+  SkeletonHandle  skeleton_;
+  /*mutable*/ SkeletonMap_t   skeleton_map_; //
+  /*mutable*/ Sequence_t      sequence_; //
 
   // Outputs.
   SkeletonController controller_;
 
+  // [ fixme : raw texture buffer handles ]
   uint32_t buffer_id_  = 0;
   uint32_t texture_id_ = 0;
 };
