@@ -7,6 +7,7 @@
 // ----------------------------------------------------------------------------
 
 //
+//  Add a bounding sphere to test collision. 
 //
 class SphereColliderComponent final : public ComponentParams<Component::SphereCollider> {
  public:
@@ -20,15 +21,15 @@ class SphereColliderComponent final : public ComponentParams<Component::SphereCo
   //inline glm::vec4 data() const { return glm::vec4( center_, radius_); }
 
 
-  inline void set_center(glm::vec3 const& center) {
+  inline void set_center(glm::vec3 const& center) noexcept {
     center_ = center;
   }
 
-  inline void set_radius(float radius) {
+  inline void set_radius(float radius) noexcept {
     radius_ = radius;
   }
 
-  inline void set(glm::vec3 const& center, float radius) {
+  inline void set(glm::vec3 const& center, float radius) noexcept {
     set_center(center);
     set_radius(radius);    
   }
