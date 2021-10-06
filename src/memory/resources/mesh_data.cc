@@ -1,9 +1,10 @@
 #include "memory/resources/mesh_data.h"
 
-#include <map>
 #include "glm/gtc/type_ptr.hpp"
 
 #include "memory/assets/assets.h"
+
+#define MATHUTILS_MAP_VECTOR
 #include "utils/mathutils.h"
 
 // ----------------------------------------------------------------------------
@@ -33,7 +34,8 @@ void MeshData::Plane(MeshData &mesh, float size) {
   // (this elements arrays could be discarded)
   constexpr std::array<int32_t, 4> indices{ 0, 1, 2, 3 };
   for (auto &index : indices) {
-    raw.elementsAttribs.push_back( glm::ivec3(index) );
+    raw.addIndex(index);
+    //raw.elementsAttribs.push_back( glm::ivec3(index) );
   }
 
   mesh.setup( PrimitiveType::TRIANGLE_STRIP, raw );
@@ -70,8 +72,7 @@ void MeshData::Grid(MeshData &mesh, int resolution, float size) {
   // Indices (as lines).
   RawMeshData raw;
   raw.vertices.resize(nvertices);
-  for (int i = 0; i < nvertices; ++i)
-  { 
+  for (int i = 0; i < nvertices; ++i) { 
     auto& dst = raw.vertices[i];
     dst[0] = lines[i*ncomponents + 0];
     dst[1] = lines[i*ncomponents + 1];
@@ -133,8 +134,7 @@ void MeshData::Cube(MeshData &mesh, float size) {
   raw.vertices.resize(vertices.size());
   raw.texcoords.resize(texcoords.size());
   raw.normals.resize(normals.size());
-  for (int i = 0; i < nvertices; ++i)
-  { 
+  for (int i = 0; i < nvertices; ++i) { 
     // Positions  
     {
       auto const& src = vertices[i];
@@ -206,10 +206,9 @@ void MeshData::WireCube(MeshData &mesh, float size) {
   }
 
   // Indices (as lines).
-  raw.elementsAttribs.resize(indices.size());
-  for (int i = 0; i < nelems; ++i) {
-    auto const& index = indices[i];
-    raw.elementsAttribs[i] = glm::ivec3( index );
+  raw.elementsAttribs.reserve(indices.size());
+  for (auto &index : indices) {
+    raw.addIndex( index );
   }
 
   // -----
