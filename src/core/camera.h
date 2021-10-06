@@ -6,16 +6,16 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#ifdef WIN32
-  // MSVC like to define those for some reasons.
-  // (could be bypassed if windows.h is included afterward)
-  #ifdef far
-    #undef far
-  #endif
-  #ifdef near
-    #undef near
-  #endif
-#endif
+// #ifdef WIN32
+//   // MSVC likes to define those for some reasons.
+//   // (could be bypassed if windows.h is included afterwards)
+//   #ifdef far
+//     #undef far
+//   #endif
+//   #ifdef near
+//     #undef near
+//   #endif
+// #endif
 
 // ----------------------------------------------------------------------------
 
@@ -36,11 +36,11 @@ class Camera {
 
  public:
   Camera()
-    : controller_(nullptr)
+    : controller_{nullptr}
     , fov_(0.0f)
     , width_(0)
     , height_(0)
-    , linear_params_{0.0f} 
+    , linear_params_{0.0f, 0.0f, 0.0f, 0.0f} 
   {}
 
   Camera(ViewController *controller) 
@@ -49,25 +49,29 @@ class Camera {
     controller_ = controller;
   }
 
-  inline bool initialized() const {
+  inline bool initialized() const noexcept {
     return (fov_ > 0.0f) && (width_ > 0) && (height_ > 0);
   }
 
-  void set_perspective(float fov, int32_t w, int32_t h, float near, float far) {
+  void set_perspective(float fov, int32_t w, int32_t h, float znear, float zfar) {
     assert( fov > 0.0f );
     assert( (w > 0) && (h > 0) );
-    assert( (far - near) > 0.0f );
+    assert( (zfar - znear) > 0.0f );
 
     fov_    = fov;
     width_  = w;
     height_ = h;
     // Projection matrix.
     float const ratio = static_cast<float>(width_) / static_cast<float>(height_);
-    proj_ = glm::perspective( fov_, ratio, near, far);
+    proj_ = glm::perspective( fov_, ratio, znear, zfar);
     bUseOrtho_ = false;
     // Linearization parameters.
-    float const A  = far / (far - near);
-    linear_params_ = glm::vec4( near, far, A, - near * A);
+    float const A  = zfar / (zfar - znear);
+    linear_params_ = glm::vec4( znear, zfar, A, - znear * A);
+  }
+
+  void set_perspective(float fov, glm::ivec2 const& res, float znear, float zfar) {
+    set_perspective( fov, res.x, res.y, znear, zfar);
   }
 
   void set_default() {
@@ -83,7 +87,7 @@ class Camera {
   }
 
   // Rebuild all matrices.
-  void rebuild(bool bRetrieveView=true) {
+  void rebuild(bool bRetrieveView = true) {
     if (controller_ && bRetrieveView) {
       controller_->get_view_matrix(glm::value_ptr(view_));
     }
@@ -102,8 +106,8 @@ class Camera {
   inline int32_t height() const noexcept { return height_; }
   inline float aspect() const { return static_cast<float>(width_) / static_cast<float>(height_); }
 
-  inline float near() const noexcept { return linear_params_.x; }
-  inline float far() const noexcept { return linear_params_.y; }
+  inline float znear() const noexcept { return linear_params_.x; }
+  inline float zfar() const noexcept { return linear_params_.y; }
 
   inline glm::vec4 const& linearization_params() const {
     return linear_params_;
