@@ -2,17 +2,14 @@
 # Sources.
 # -----------------------------------------------------------------------------
 
-set(TARGET_NAME "${CMAKE_PROJECT_NAME}")
-
 list(APPEND Sources
-  main.cc
-  Application.cc
-
   core/app.cc
   core/events.cc
   core/global_clock.cc
   core/graphics.cc
   core/renderer.cc
+
+  #core/_backend/opengl/gl_device.cc
 
   ecs/scene_hierarchy.cc
   ecs/material.cc
@@ -26,12 +23,9 @@ list(APPEND Sources
   fx/marschner.cc
   fx/probe.cc
   fx/skybox.cc
-
   fx/marching_cube.cc
-
   fx/postprocess/hbao.cc
   fx/postprocess/postprocess.cc
-
   # fx/animation/blend_tree.cc
   fx/animation/common.cc
   fx/animation/skeleton.cc
@@ -54,15 +48,12 @@ list(APPEND Sources
   utils/raw_mesh_file.cc
 
   ui/ui_controller.cc
-
   ui/views/Main.cc
   ui/views/RendererView.cc
   ui/views/fx/SparkleView.cc
 )
 
 list(APPEND Headers
-  Application.h
-
   core/app.h
   core/events.h
   core/global_clock.h
@@ -84,13 +75,11 @@ list(APPEND Headers
   fx/irradiance.h
   fx/marschner.h
   fx/skybox.h
-
   # fx/animation/blend_tree.h
   # fx/animation/blend_node.h
   fx/animation/skeleton.h
   fx/animation/skeleton_controller.h
   fx/animation/common.h
-
   fx/postprocess/postprocess.h
   fx/postprocess/hbao.h
 
@@ -122,7 +111,6 @@ list(APPEND Headers
   ui/imgui_wrapper.h
   ui/ui_controller.h
   ui/ui_view.h
-
   ui/views/Main.h
   ui/views/RendererView.cc
   ui/views/views.h
@@ -133,26 +121,56 @@ list(APPEND Headers
 
 file(GLOB_RECURSE Miscs 
   ${BARBU_SHADERS_DIR}/*.glsl 
-  ${BARBU_SHADERS_DIR}/hair/interop.h
+  ${BARBU_SHADERS_DIR}/*.h
 )
 
-# -----------------------------------------------------------------------------
-# Target properties and build parameters.
-# -----------------------------------------------------------------------------
+# Platform dependent.
+if (OS_ANDROID)
+  list(APPEND Sources 
+    core/impl/android/window.cc
+  )
+  list(APPEND Headers
+    core/impl/android/window.h
+  )
+else() # DESKTOP
+  list(APPEND Sources 
+    core/impl/desktop/window.cc
+  )
+  list(APPEND Headers
+    core/impl/desktop/window.h
+  )
+endif()
 
-# All dependencies files.
-set(Dependencies 
+set(FrameworkSources
   ${Sources}
   ${Headers}
   ${Miscs}
   ${Thirdparties}
 )
 
-add_executable(${TARGET_NAME} ${Dependencies})
+list(APPEND AppSources
+  main.cc
+  Application.cc
+  Application.h
+)
+
+# -----------------------------------------------------------------------------
+# Target properties and build parameters.
+# -----------------------------------------------------------------------------
+
+set(TARGET_BASENAME "${CMAKE_PROJECT_NAME}")
+
+# Framework library.
+set(TARGET_LIB ${TARGET_BASENAME}Framework)
+add_library(${TARGET_LIB} ${BARBU_LIB_TYPE} ${FrameworkSources})
+
+# Application executable.
+set(TARGET_APP ${TARGET_BASENAME})
+add_executable(${TARGET_APP} ${AppSources})
+target_link_libraries(${TARGET_APP} ${TARGET_LIB})
 
 # Set targets properties.
-list(APPEND Targets ${TARGET_NAME})
-
+list(APPEND Targets ${TARGET_APP} ${TARGET_LIB})
 foreach(target ${Targets})
   target_compile_options(
     ${target}
