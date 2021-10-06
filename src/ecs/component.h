@@ -13,12 +13,13 @@ class Component {
     Visual,
     Skin,
     SphereCollider,
-    kNumComponentType,
+
+    kCount,
     kUndefined
   };
 
  public:
-  virtual ~Component() {}
+  virtual ~Component() = default;
 
   virtual Type type() const noexcept = 0;
 };
