@@ -2,7 +2,7 @@
 # CMake configuration file (2021 - unlicense.org)
 # 
 # -----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.12.0)
 
 project(barbu VERSION 0.2 LANGUAGES CXX C)
 
@@ -41,6 +41,16 @@ option(OPT_USE_OPENMP               "Use OpenMP for pragma concurrency ?"   OFF)
 # Verbose logs are disabled by default.
 option(OPT_ENABLE_DEBUG_LOG         "Enable complementary debug log ?"      OFF)
 
+# -----------------------------------------------------------------------------
+
+option(OPT_BUILD_SHARED_LIBS        "Compile libraries as shared ?"         ON)
+
+if (OPT_BUILD_SHARED_LIBS)
+  set(BARBU_LIB_TYPE SHARED)
+else()
+  set(BARBU_LIB_TYPE STATIC)
+endif()
+
 
 # -----------------------------------------------------------------------------
 # Project paths.
@@ -58,7 +68,7 @@ set(BARBU_TOOLS_DIR                 ${BARBU_ROOT_PATH}/tools)
 # Created (output) directories.
 set(BARBU_BINARY_DIR                ${BARBU_ROOT_PATH}/bin)
 
-# Mark the binary directory for removal using 'clean' (be cautious !).
+# [ Dangerous ] Mark the binary directory for removal using 'clean'.
 #set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES ${BARBU_BINARY_DIR})
 
 # -----------------------------------------------------------------------------
@@ -71,10 +81,7 @@ list(APPEND CMAKE_MODULE_PATH       ${BARBU_TOOLS_DIR}/cmake)
 # Custom CMake helpers functions.
 include(Helpers)
 
-# -----------------------------------------------------------------------------
 # Determine the host's total number of processors.
-# -----------------------------------------------------------------------------
-
 include(ProcessorCount)
 ProcessorCount(BARBU_NPROC_MAX)
 
@@ -129,6 +136,11 @@ if(UNIX AND NOT APPLE AND NOT ANDROID AND NOT WEBGL)
 elseif(WIN32)
   set(OS_NAME "Windows")
   set(OS_WIN32 TRUE)
+elseif(ANDROID)
+  set(OS_NAME "Android")
+  set(OS_ANDROID TRUE)
+
+  message(WARNING "\"${CMAKE_SYSTEM_NAME}\" support is a Work In Progress.")
 else()
   message(WARNING "The \"${CMAKE_SYSTEM_NAME}\" platform is not officially supported.")
 endif()
@@ -165,11 +177,12 @@ endif()
 
 # Check the compiler version.
 if(USE_GCC)
-  helpers_checkCompilerVersion(CMAKE_CXX_COMPILER_ID 7.5)
+  # https://gcc.gnu.org/onlinedocs/libstdc++/manual/status.html#status.iso.2017
+  helpers_checkCompilerVersion(${CMAKE_CXX_COMPILER_ID} 7.1)
 elseif(USE_CLANG)
-  helpers_checkCompilerVersion(CMAKE_CXX_COMPILER_ID 11.0)
+  helpers_checkCompilerVersion(${CMAKE_CXX_COMPILER_ID} 11.0)
 elseif(USE_MSVC)
-  helpers_checkCompilerVersion(CMAKE_CXX_COMPILER_ID 14.0) #15.7 is ideal
+  helpers_checkCompilerVersion(${CMAKE_CXX_COMPILER_ID} 14.0) # 15.7 is ideal
 endif()
 
 # Specify custom compiler and linker flags.
@@ -208,7 +221,7 @@ if(USE_GCC OR USE_CLANG)
   # Features.
   list(APPEND CXX_FLAGS
     -fdiagnostics-color
-    -fvisibility=hidden 
+    # -fvisibility=hidden 
     -fno-strict-aliasing 
     -fno-builtin-memcmp
     -fno-common
@@ -226,10 +239,15 @@ if(USE_GCC OR USE_CLANG)
   
   # Linker flags.
   list(APPEND CustomLinkFlags 
-    -Wl,--no-undefined 
     -Wl,--gc-sections 
     -Wl,--color-diagnostics
   )
+
+  # [improve] Used only for static library compilation.
+  if(NOT OPT_BUILD_SHARED_LIBS)
+    list(APPEND CXX_FLAGS         -fvisibility=hidden)
+    list(APPEND CustomLinkFlags   -Wl,--no-undefined)
+  endif()
 
   # For C++17 filesystem support, might became depecrated.
   set(STD_CXX_FILESYSTEM_LIB stdc++fs)
@@ -275,90 +293,111 @@ endif()
 # Defines LIBM_LIBRARIES for mathematics, if needed.
 helpers_findLibM()
 
-# OpenGL
-find_package(OpenGL REQUIRED)
+if(OS_ANDROID)
 
-# Extensions loader.
-if(OPT_USE_GLEW)
-  find_package(GLEW 1.13 REQUIRED)
-  if(${GLEW_FOUND})
-    list(APPEND CustomDefinitions -DUSE_GLEW=1)
-  endif()
-else()
-  # Automatically generate header to load OpenGL extensions.
-  find_package(PythonInterp)
-  if(PYTHONINTERP_FOUND AND PYTHON_EXECUTABLE)
-    set(GLEXTGEN_PATH "${BARBU_TOOLS_DIR}/glextgen")
-    set(GLEXTGEN_OUTPUT_DIR "${BARBU_SOURCE_DIR}/core/ext")
-    list(APPEND GLEXTGEN_OUTPUTS
-      ${GLEXTGEN_OUTPUT_DIR}/_extensions.h
-      ${GLEXTGEN_OUTPUT_DIR}/_extensions.inl
-    )
-    add_custom_command(
-      OUTPUT
-        ${GLEXTGEN_OUTPUTS}
-      COMMAND
-        ${PYTHON_EXECUTABLE} "${GLEXTGEN_PATH}/main.py"
-                             "${GLEXTGEN_PATH}/extensions"
-                             "${GLEXTGEN_OUTPUT_DIR}"
-      DEPENDS
-        "${GLEXTGEN_PATH}/main.py"
-        "${GLEXTGEN_PATH}/extensions"
-      WORKING_DIRECTORY
-        ${CMAKE_SOURCE_DIR}
-      COMMENT
-        "Generate OpenGL extensions headers." VERBATIM
-    )
-    add_custom_target(OpenGLExtensionGenerator
-      ALL
-      DEPENDS
-        ${GLEXTGEN_OUTPUTS}
-      SOURCES
-        "${GLEXTGEN_PATH}/main.py"
-        "${GLEXTGEN_PATH}/extensions"
-    )
+  # [Work In Progress]
+
+  # To compile for Android, run CMake with :
+  # -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK/build/cmake/android.toolchain.cmake -DANDROID_NATIVE_API_LEVEL=24
+
+  # (OpenGL setting example from Android NDK samples). 
+  # if (${ANDROID_PLATFORM_LEVEL} LESS 12)
+  #   message(FATAL_ERROR "OpenGL 2 is not supported before API level 11 \
+  #                       (currently using ${ANDROID_PLATFORM_LEVEL}).")
+  #   return()
+  # elseif (${ANDROID_PLATFORM_LEVEL} LESS 18)
+  #   add_definitions("-DDYNAMIC_ES3")
+  #   set(GL3STUB_SRC gl3stub.c)
+  #   set(OPENGL_LIB GLESv2)
+  # else ()
+  #   set(OPENGL_LIB GLESv3)
+  # endif (${ANDROID_PLATFORM_LEVEL} LESS 12)
+
+  if (${ANDROID_PLATFORM_LEVEL} LESS 18)
+    message(FATAL_ERROR "OpenGL ES 3 is not supported before API level 18 \
+                        (currently using ${ANDROID_PLATFORM_LEVEL}).")
   else()
-    message(FATAL_ERROR "You need either the Python interpreter "
-                        "or the GLEW library to handle OpenGL extensions.")
+    set(OPENGL_LIBRARIES EGL) #
   endif()
-  list(APPEND ADDITIONAL_MAKE_CLEAN_FILES "${GLEXTGEN_OUTPUT_DIR}")
-endif(OPT_USE_GLEW)
 
-# OpenMP
-if (OPT_USE_OPENMP)
-  find_package(OpenMP)
-  if(OPENMP_FOUND)
-    list(APPEND CXX_FLAGS       "${OpenMP_CXX_FLAGS}")
-    list(APPEND CustomLibs      "${OpenMP_CXX_LIBRARIES}")
+  # Android logger.
+  list(APPEND CustomLibs log)
+
+else()
+  
+  # OpenGL
+  find_package(OpenGL REQUIRED)
+
+  # Extensions loader.
+  if(OPT_USE_GLEW)
+    find_package(GLEW 1.13 REQUIRED)
+    if(${GLEW_FOUND})
+      list(APPEND CustomDefinitions -DUSE_GLEW=1)
+    endif()
+  else()
+    # Automatically generate header to load OpenGL extensions.
+    find_package(PythonInterp)
+    if(PYTHONINTERP_FOUND AND PYTHON_EXECUTABLE)
+      set(GLEXTGEN_PATH "${BARBU_TOOLS_DIR}/glextgen")
+      set(GLEXTGEN_OUTPUT_DIR "${BARBU_SOURCE_DIR}/core/impl/opengl")
+      list(APPEND GLEXTGEN_OUTPUTS
+        ${GLEXTGEN_OUTPUT_DIR}/_extensions.h
+        ${GLEXTGEN_OUTPUT_DIR}/_extensions.inl
+      )
+      add_custom_command(
+        OUTPUT
+          ${GLEXTGEN_OUTPUTS}
+        COMMAND
+          ${PYTHON_EXECUTABLE} "${GLEXTGEN_PATH}/main.py"
+                               "${GLEXTGEN_PATH}/extensions"
+                               "${GLEXTGEN_OUTPUT_DIR}"
+        DEPENDS
+          "${GLEXTGEN_PATH}/main.py"
+          "${GLEXTGEN_PATH}/extensions"
+        WORKING_DIRECTORY
+          ${CMAKE_SOURCE_DIR}
+        COMMENT
+          "Generate OpenGL extensions headers." VERBATIM
+      )
+      add_custom_target(OpenGLExtensionGenerator
+        ALL
+        DEPENDS
+          ${GLEXTGEN_OUTPUTS}
+        SOURCES
+          "${GLEXTGEN_PATH}/main.py"
+          "${GLEXTGEN_PATH}/extensions"
+      )
+    else()
+      message(FATAL_ERROR "You need either the Python interpreter "
+                          "or the GLEW library to handle OpenGL extensions.")
+    endif()
+    list(APPEND ADDITIONAL_MAKE_CLEAN_FILES "${GLEXTGEN_OUTPUT_DIR}")
+  endif(OPT_USE_GLEW)
+
+  # OpenMP
+  if (OPT_USE_OPENMP)
+    find_package(OpenMP)
+    if(OPENMP_FOUND)
+      list(APPEND CXX_FLAGS       "${OpenMP_CXX_FLAGS}")
+      list(APPEND CustomLibs      "${OpenMP_CXX_LIBRARIES}")
+    endif()
   endif()
+
 endif()
 
 # -----------------------------------------------------------------------------
 # Thirdparties submodule dependencies.
 # -----------------------------------------------------------------------------
 
-# GLM : math library.
+#-------------------------
+# GLM : math algebra.
+#-------------------------
 set(GLM_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/glm)
 list(APPEND CustomDefinitions -DGLM_COMPILER_GCC61=0)
 
-# GLFW : window manager, as static library.
-set(GLFW_ROOT ${BARBU_THIRD_PARTY_DIR}/glfw)
-set(GLFW_LIBRARY glfw)
-set(GLFW_INCLUDE_DIR ${GLFW_ROOT}/include)
-if(NOT EXISTS ${GLFW_INCLUDE_DIR})
-  message(FATAL_ERROR "A third party was not found, please initialize git submodules via the commands : \n"
-                      "git submodule init\n"
-                      "git submodule update"
-  )
-endif()
-set(BUILD_SHARED_LIBS   OFF CACHE BOOL "Build GLFW as shared library.")
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Do not build GLFW examples.")
-set(GLFW_BUILD_TESTS    OFF CACHE BOOL "Do not run GLFW tests.")
-set(GLFW_BUILD_DOCS     OFF CACHE BOOL "Do not build GLFW documentation.")
-set(GLFW_INSTALL        OFF CACHE BOOL "Do not generate install targets.")
-add_subdirectory(${GLFW_ROOT} glfw EXCLUDE_FROM_ALL)
-
-# dear imgui, as static library.
+#-------------------------
+# dear imgui : user interface.
+#-------------------------
 set(IMGUI_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/imgui)
 list(APPEND IMGUI_SOURCES 
   ${IMGUI_INCLUDE_DIR}/imgui.cpp
@@ -367,7 +406,7 @@ list(APPEND IMGUI_SOURCES
   ${IMGUI_INCLUDE_DIR}/imgui_tables.cpp
 )
 set(IMGUI_LIB imgui)
-add_library(${IMGUI_LIB} STATIC ${IMGUI_SOURCES})
+add_library(${IMGUI_LIB} ${BARBU_LIB_TYPE} ${IMGUI_SOURCES})
 target_compile_options(
   ${IMGUI_LIB}
   PRIVATE
@@ -380,14 +419,16 @@ if (NOT ("${CustomLinkFlags}" MATCHES ""))
   set_target_properties(${IMGUI_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
 endif()
 
-# MikkTSpace, as static library.
+#-------------------------
+# MikkTSpace : tangent-space calculation.
+#-------------------------
 set(MIKKTSPACE_INCLUDE_DIR ${BARBU_THIRD_PARTY_DIR}/MikkTSpace)
 list(APPEND MIKKTSPACE_SOURCES
   ${MIKKTSPACE_INCLUDE_DIR}/mikktspace.c
   ${MIKKTSPACE_INCLUDE_DIR}/mikktspace.h
 )
 set(MIKKTSPACE_LIB MikkTSpace)
-add_library(${MIKKTSPACE_LIB} STATIC ${MIKKTSPACE_SOURCES})
+add_library(${MIKKTSPACE_LIB} ${BARBU_LIB_TYPE} ${MIKKTSPACE_SOURCES})
 target_compile_options(
   ${MIKKTSPACE_LIB}
   PRIVATE
@@ -400,7 +441,28 @@ if (NOT ("${CustomLinkFlags}" MATCHES ""))
   set_target_properties(${MIKKTSPACE_LIB} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
 endif()
 
-# Add Library dependencies.
+if (NOT OS_ANDROID)
+  #-------------------------
+  # GLFW : window manager.
+  #-------------------------
+  set(GLFW_ROOT ${BARBU_THIRD_PARTY_DIR}/glfw)
+  set(GLFW_LIBRARY glfw)
+  set(GLFW_INCLUDE_DIR ${GLFW_ROOT}/include)
+  if(NOT EXISTS ${GLFW_INCLUDE_DIR})
+    message(FATAL_ERROR "A third party was not found, please initialize git submodules via the commands : \n"
+                        "git submodule init\n"
+                        "git submodule update"
+    )
+  endif()
+  set(BUILD_SHARED_LIBS   OPT_BUILD_SHARED_LIBS CACHE BOOL "Build GLFW as shared library.")
+  set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Do not build GLFW examples.")
+  set(GLFW_BUILD_TESTS    OFF CACHE BOOL "Do not run GLFW tests.")
+  set(GLFW_BUILD_DOCS     OFF CACHE BOOL "Do not build GLFW documentation.")
+  set(GLFW_INSTALL        OFF CACHE BOOL "Do not generate install targets.")
+  add_subdirectory(${GLFW_ROOT} glfw EXCLUDE_FROM_ALL)
+endif()
+
+# Add the libraries as dependencies.
 list(APPEND CustomLibs
   ${STD_CXX_FILESYSTEM_LIB}
   ${GLFW_LIBRARY}
@@ -428,9 +490,9 @@ if(OS_LINUX)
 
   # On GNU / Linux, we generate an app shortcut to be executed using the WM.
   helpers_generateUnixShortcut(${BARBU_BINARY_DIR})
-endif()
-
-if(OS_WIN32)
+elseif(OS_WIN32)
+  # empty
+elseif(OS_ANDROID)
   # empty
 endif()
 
