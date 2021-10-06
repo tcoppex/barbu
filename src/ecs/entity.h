@@ -4,6 +4,7 @@
 #include <cassert>
 #include <array>
 #include <vector>
+#include <string>
 #include <string_view>
 
 #include "ecs/component.h"
@@ -60,24 +61,28 @@ class Entity {
   // -- Components access.
 
   // Return true if the entity possess the component.
-  template<typename T> bool has() const noexcept {
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, bool> has() const noexcept {
     return static_cast<bool>(components_[T::Type]);
   }
   
   // Return a reference to the component [ return shared_ptr<T> instead ? ].
-  template<typename T> T & get() {
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, T&> get() {
     assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
   // Return a constant reference to the component.
-  template<typename T> T const& get() const {
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, T const&> get() const {
     assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
   // Add then return the given component to the entity.
-  template<typename T> T & add() {
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, T&> add() {
     if (!has<T>()) {
       components_[T::Type] = std::make_unique<T>();
     }
@@ -85,7 +90,8 @@ class Entity {
   }
 
   // Remove the given component.
-  template<typename T> void remove() {
+  template<typename T>
+  std::enable_if_t<std::is_base_of_v<Component, T>> remove() {
     static_assert(T::Type != Component::Type::Transform);
     components_[T::Type].reset();
   }
@@ -120,7 +126,7 @@ class Entity {
 
  private:
   // [ should probably use a map, and be set externally ]
-  using ComponentBuffer = std::array< ComponentHandle, Component::kNumComponentType >;
+  using ComponentBuffer = std::array< ComponentHandle, Component::kCount >;
 
   ComponentBuffer components_;
 };
