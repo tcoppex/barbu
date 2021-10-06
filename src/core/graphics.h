@@ -13,11 +13,15 @@
 //
 // ----------------------------------------------------------------------------
 
-#include "glm/vec4.hpp"
-#include "glm/vec3.hpp"
+#include <string_view>
 
-#include "core/logger.h"
-#include "core/glfw.h"
+#include "glm/vec3.hpp"
+#include "glm/vec4.hpp"
+
+#include "core/impl/opengl/opengl.h"
+#include "core/window.h" // [tmp : for WindowHandle]
+
+// ----------------------------------------------------------------------------
 
 namespace gx {
 
@@ -40,6 +44,7 @@ enum class Face {
   kCount
 };
 
+/* Not available in GLES */
 enum class RenderMode {
   Point, 
   Line,
@@ -86,8 +91,9 @@ enum SamplerName {
   kDefaultSampler = LinearMipmapRepeat
 };
 
+// ----------------------------------------------------------------------------
 
-void Initialize();
+void Initialize(WindowHandle window);
 void Deinitialize();
 
 // Pipeline -------------------------------------------------------------------
@@ -102,20 +108,20 @@ void Viewport(float w, float h);
 
 void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor);
 
-void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect=false);
-void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect=false);
-void ClearColor(float r, float g, float b, float a = 1.0f, bool bGammaCorrect=false);
-void ClearColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xff, bool bGammaCorrect=false);
-void ClearColor(float c, bool bGammaCorrect=false);
-void ClearColor(uint8_t c, bool bGammaCorrect=false);
+void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect = false);
+void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect = false);
 
-//void Clear();
+void ClearColor(float r, float g, float b, float a = 1.0f, bool bGammaCorrect = false);
+void ClearColor(float c, bool bGammaCorrect = false);
+
+void ClearColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xff, bool bGammaCorrect = false);
+void ClearColor(uint8_t c, bool bGammaCorrect = false);
 
 void CullFace(Face mode);
 
 void DepthMask(bool state);
 
-void LineWidth(float width);
+void LineWidth(float width); //
 
 void PolygonMode(Face face, RenderMode mode);
 
@@ -148,8 +154,7 @@ void SetUniform(uint32_t pgm, int32_t loc, T const& value);
 
 template<typename T>
 void SetUniform(uint32_t pgm, std::string_view name, T const& value) {
-  int32_t const loc = UniformLocation( pgm, name);
-  if (loc > -1) {
+  if (auto loc = UniformLocation( pgm, name); loc > -1) {
     SetUniform<T>( pgm, loc, value);
   }
 }
@@ -159,8 +164,7 @@ void SetUniform(uint32_t pgm, int32_t loc, T const* value, int32_t n);
 
 template<typename T>
 void SetUniform(uint32_t pgm, std::string_view name, T const* value, int32_t n) {
-  int32_t const loc = UniformLocation( pgm, name);
-  if (loc > -1) {
+  if (auto loc = UniformLocation( pgm, name); loc > -1) {
     SetUniform<T>( pgm, loc, value, n);
   }
 }
@@ -196,7 +200,7 @@ void CheckError(std::string_view errMsg, char const* file, int line);
 #ifdef NDEBUG
 # define CHECK_GX_ERROR()
 #else
-# define CHECK_GX_ERROR(s)    gx::CheckError( "" #s, __FILE__, __LINE__)
+# define CHECK_GX_ERROR(tString)    gx::CheckError( "" # tString, __FILE__, __LINE__)
 #endif
 
 // ----------------------------------------------------------------------------

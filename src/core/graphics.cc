@@ -1,30 +1,37 @@
 #include "core/graphics.h"
 
 #include <array>
+#include <algorithm>
+#include <vector>
+
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
 #include "core/logger.h"
+#include "core/window.h"
 #include "memory/enum_array.h"
 
 // ----------------------------------------------------------------------------
 // Load Extensions.
 // ----------------------------------------------------------------------------
 
-#ifndef USE_GLEW
+#if !defined(USE_GLEW) && !defined(__ANDROID__)
 
-GLFWglproc getAddress(char const* name) {
-  GLFWglproc ptr = glfwGetProcAddress(name);
-  if (nullptr == ptr) {
-    LOG_ERROR("Extension function \"", name, "\" was not found.");
-  }
-  return ptr;
-}
+/* Redefines GLEXTGEN macro to catch missing extensions. */
+#ifndef NDEBUG
+#define GLEXTGEN_GET_PROC_ADDRESS(tName) \
+  ([] (auto *addr) { \
+    if (!addr) { \
+      LOG_ERROR( "Extension function \"", tName, "\" was not found." ); \
+    } \
+    return addr; \
+  })(getProcAddress(tName))
+#endif
 
-/* Automatically generated pointers to extension's function */
-#include "core/ext/_extensions.inl"
+/* Automatically generated pointers to extensions's entrypoints. */
+#include "core/impl/opengl/_extensions.inl"
 
-#endif  // USE_GLEW
+#endif  // USE_GLEW && __ANDROID__
 
 // ----------------------------------------------------------------------------
 // Local utility functions.
@@ -32,53 +39,51 @@ GLFWglproc getAddress(char const* name) {
 
 namespace {
 
+// [move] Default gamma correction factor.
+constexpr float kGammaFactor{2.2f};
+constexpr glm::vec3 kGammaRGBFactor{kGammaFactor};
+
+// Loading screen clear color. Zoidberg-ish-red.
+constexpr glm::vec3 kDefaultScreenCleanColor{ 0.75f, 0.27f, 0.23f };
+
+// Buffer for errors retrieval.
+static constexpr int32_t kErrorBufferSize{1024};
+static std::array<char, kErrorBufferSize> s_errorBuffer{}; //
+
+#ifndef GX_STRINGIFY
+#define GX_STRINGIFY(x) #x
+#endif
+
 // Return an OpenGL error enum as a string.
 char const* GetErrorString(GLenum err) {
-#ifndef STRINGIFY
-#define STRINGIFY(x) #x
-#endif
   switch (err) {
     case GL_NO_ERROR:
-      return STRINGIFY(GL_NO_ERROR);
+      return GX_STRINGIFY(GL_NO_ERROR);
       
     case GL_INVALID_ENUM:
-      return STRINGIFY(GL_INVALID_ENUM);
+      return GX_STRINGIFY(GL_INVALID_ENUM);
       
     case GL_INVALID_VALUE:
-      return STRINGIFY(GL_INVALID_VALUE);
+      return GX_STRINGIFY(GL_INVALID_VALUE);
       
     case GL_INVALID_OPERATION:
-      return STRINGIFY(GL_INVALID_OPERATION);
+      return GX_STRINGIFY(GL_INVALID_OPERATION);
       
     case GL_STACK_OVERFLOW:
-      return STRINGIFY(GL_STACK_OVERFLOW);
+      return GX_STRINGIFY(GL_STACK_OVERFLOW);
       
     case GL_STACK_UNDERFLOW:
-      return STRINGIFY(GL_STACK_UNDERFLOW);
+      return GX_STRINGIFY(GL_STACK_UNDERFLOW);
       
     case GL_OUT_OF_MEMORY:
-      return STRINGIFY(GL_OUT_OF_MEMORY);
+      return GX_STRINGIFY(GL_OUT_OF_MEMORY);
       
     default:
       return "GetErrorString : Unknown constant";
   }
-#undef STRINGIFY
 }
 
-// Return true if all extensions are supported, false otherwhise.
-bool checkExtensions(char const* extensions[]) {
-  bool valid = true;
-  for (int i = 0; extensions && (extensions[i] != nullptr); ++i) {
-    if (!glfwExtensionSupported(extensions[i])) {
-      LOG_WARNING("Extension \"", extensions[i], "\" is not supported.");
-      valid = false;
-    }
-  }
-  return valid;
-}
-
-static constexpr int32_t kErrorBufferSize = 1024;
-static char s_errorBuffer[kErrorBufferSize]; //
+#undef GX_STRINGIFY
 
 } // namespace
 
@@ -96,13 +101,22 @@ EnumArray<uint32_t, State> gl_capability{
   GL_DEPTH_TEST,
   GL_SCISSOR_TEST,
   GL_STENCIL_TEST,
-  GL_TEXTURE_CUBE_MAP_SEAMLESS,
-  GL_PROGRAM_POINT_SIZE,
+
+#ifndef GL_ES_VERSION_2_0
+  GL_TEXTURE_CUBE_MAP_SEAMLESS, // [!GLes]
+  GL_PROGRAM_POINT_SIZE,        // [!GLes]
+#else
+  std::numeric_limits<uint32_t>::max(),
+  std::numeric_limits<uint32_t>::max(),
+#endif
+
   GL_RASTERIZER_DISCARD,
   
   //GL_LINE_SMOOTH, // [do not use]
 };
 
+#ifndef GL_ES_VERSION_2_0
+ // [!GLes]
 static const
 EnumArray<uint32_t, Face> gl_facemode{
   GL_FRONT,
@@ -110,12 +124,14 @@ EnumArray<uint32_t, Face> gl_facemode{
   GL_FRONT_AND_BACK,
 };
 
+ // [!GLes]
 static const
 EnumArray<uint32_t, RenderMode> gl_polygonmode{
   GL_POINT, 
   GL_LINE,
   GL_FILL,
 };
+#endif // GL_ES_VERSION_2_0
 
 static const
 EnumArray<uint32_t, BlendFactor> gl_blendfactor{
@@ -146,16 +162,20 @@ void InitializeSamplers() {
     GLenum wrap;
   };
 
-  std::array<Params_t, kNumSamplerName> params{
-    GL_NEAREST,               GL_NEAREST,   GL_CLAMP_TO_EDGE,
-    GL_NEAREST,               GL_NEAREST,   GL_REPEAT,
-    GL_LINEAR,                GL_LINEAR,    GL_CLAMP_TO_EDGE,
-    GL_LINEAR,                GL_LINEAR,    GL_REPEAT,
-    GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,    GL_CLAMP_TO_EDGE,
-    GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,    GL_REPEAT,
-  };
+  std::array<Params_t, kNumSamplerName> params{{
+    { GL_NEAREST,               GL_NEAREST,   GL_CLAMP_TO_EDGE },
+    { GL_NEAREST,               GL_NEAREST,   GL_REPEAT },
+    { GL_LINEAR,                GL_LINEAR,    GL_CLAMP_TO_EDGE },
+    { GL_LINEAR,                GL_LINEAR,    GL_REPEAT },
+    { GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,    GL_CLAMP_TO_EDGE },
+    { GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,    GL_REPEAT },
+  }};
 
+#ifdef GL_ES_VERSION_2_0
+  glGenSamplers( kNumSamplerName, sSamplers.data());
+#else
   glCreateSamplers( kNumSamplerName, sSamplers.data());
+#endif
 
   for (int i = 0; i < kNumSamplerName; ++i) {
     auto const id = sSamplers[i];
@@ -167,11 +187,11 @@ void InitializeSamplers() {
     glSamplerParameteri( id, GL_TEXTURE_WRAP_T,     p.wrap);
     glSamplerParameteri( id, GL_TEXTURE_WRAP_R,     p.wrap);
 
+#ifndef GL_ES_VERSION_2_0
     glSamplerParameterf( id, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8.0f); //
+    LOG_DEBUG_INFO( "All samplers have anisotropy set to 8.0" );
+#endif
   }
-  LOG_DEBUG_INFO( "All samplers have anisotropy set to 8.0" );
-
-  //atexit([](){gx::Deinitialize();});
 
   CHECK_GX_ERROR();
 }
@@ -185,41 +205,85 @@ void InitializeSamplers() {
 
 namespace gx {
 
-void Initialize() {
-  char const* s_extensions[]{
-    "GL_ARB_compute_shader",
-    "GL_ARB_seamless_cubemap_per_texture",
-    "GL_ARB_separate_shader_objects",
-    "GL_ARB_shader_image_load_store",
-    "GL_ARB_shader_storage_buffer_object",
-    "GL_EXT_texture_filter_anisotropic",
-    nullptr
-  };
+void Initialize(WindowHandle window) {
+  // Retrieve generic info.
+  {
+    char const* const vendor   = (char const*)glGetString(GL_VENDOR);
+    char const* const renderer = (char const*)glGetString(GL_RENDERER);
+    char const* const version  = (char const*)glGetString(GL_VERSION);
+    char const* const shader   = (char const*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+    LOG_INFO( "Vendor :", vendor);
+    LOG_INFO( "Renderer :", renderer);
+    LOG_INFO( "Version :", version);
+    LOG_INFO( "Shader :", shader);
+  }
+
+  // Extensions utils functions from the Window Manager (platform specific).
+  auto extLoaderFuncs{ window->getExtensionLoaderFuncs() };
 
   // Check if specific extensions exists.
-  checkExtensions(s_extensions);
+  if (extLoaderFuncs.isExtensionSupported) {
+    std::vector<const char*> extensions{
+      "GL_ARB_bindless_texture",
+      "GL_ARB_compute_shader",
+      "GL_ARB_gl_spirv",
+      "GL_ARB_gpu_shader5",
+      "GL_ARB_seamless_cubemap_per_texture",
+      "GL_ARB_separate_shader_objects",
+      "GL_ARB_shader_image_load_store",
+      "GL_ARB_shader_storage_buffer_object",
+      "GL_EXT_texture_filter_anisotropic",
+      "GL_EXT_texture_sRGB"
 
-#ifdef USE_GLEW
-  // Load GLEW.
+      // "GL_ARB_ES3_1_compatibility",
+      // "GL_ARB_ES3_2_compatibility", 
+    };
+    std::for_each( extensions.cbegin(), extensions.cend(), [&](auto const &ext) {
+      if (!extLoaderFuncs.isExtensionSupported(ext)) {
+        LOG_WARNING( "Extension \"", ext, "\" is not supported." );
+      }
+    });
+  } else {
+    LOG_ERROR( "Cannot check extensions support." );
+  }
+
+  // Load extensions functions pointers.
+#if !defined(__ANDROID__)
+#if defined(USE_GLEW)
   glewExperimental = GL_TRUE;
-  GLenum result = glewInit();
-
-  // flush doubtful error.
-  glGetError();
-
-  if (GLEW_OK != result) {
+  if (GLenum result = glewInit(); GLEW_OK != result) {
     LOG_ERROR( glewGetErrorString(result) );
   }
+  // flush out doubtful error.
+  glGetError();
 #else
-  // Load function pointers.
-  LoadExtensionFuncPtrs();
-#endif
+  if (extLoaderFuncs.getProcAddress) {
+    glextgen_LoadExtensionFuncPtrs( extLoaderFuncs.getProcAddress );
+  } else {
+    LOG_ERROR( "Cannot load extensions functions." );
+  }
+#endif // USE_GLEW
+#endif // !__ANDROID__
 
+  // Initialize custom samplers.
   InitializeSamplers();
+  
+  // PreClean the screen.
+  {
+    gx::Viewport(window->width(), window->height());
+    gx::ClearColor(kDefaultScreenCleanColor);
+    glClear( GL_COLOR_BUFFER_BIT ); //
+    window->flush();
+  }
 }
 
 void Deinitialize() {
-  glDeleteSamplers( kNumSamplerName, sSamplers.data());
+  // Wait for the device to finish all its commands.
+  glFinish();
+
+  if (sSamplers[0] != 0) {
+    glDeleteSamplers( kNumSamplerName, sSamplers.data());
+  }
 }
 
 void Enable(State cap) {
@@ -246,13 +310,14 @@ void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor) {
   glBlendFunc( gl_blendfactor[src_factor], gl_blendfactor[dst_factor] );
 }
 
-
 // Note : for proper internal gamma correction, we should use a custom
 //        color structure instead.
 
 void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect) {
-  auto c = (bGammaCorrect) ? glm::vec4(glm::pow( glm::vec3(rgba), glm::vec3(2.2f)), rgba.w) : rgba;
-  glClearColor(c.x, c.y, c.z, c.w);
+  auto c{ ([&](auto const& rgb) { 
+    return bGammaCorrect ? glm::pow( rgb, kGammaRGBFactor) : rgb; 
+  })(glm::vec3(rgba)) };
+  glClearColor(c.x, c.y, c.z, rgba.w);
 }
 
 void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect) {
@@ -264,7 +329,7 @@ void ClearColor(float r, float g, float b, float a, bool bGammaCorrect) {
 }
 
 void ClearColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a, bool bGammaCorrect) {
-  float constexpr s = 1.0f / 255.0f;
+  float constexpr s{ 1.0f / 255.0f };
   ClearColor( r * s, g * s, b * s, a * s, bGammaCorrect);
 }
 
@@ -276,9 +341,10 @@ void ClearColor(uint8_t c, bool bGammaCorrect) {
   ClearColor( c, c, c, 0xff, bGammaCorrect);
 }
 
-
 void CullFace(Face mode) {
+#ifndef GL_ES_VERSION_2_0  
   glCullFace( gl_facemode[mode] );
+#endif // GL_ES_VERSION_2_0
 }
 
 void DepthMask(bool state) {
@@ -286,17 +352,19 @@ void DepthMask(bool state) {
 }
 
 void LineWidth(float width) {
-  assert( "glLineWidth is inconsistent. Do not use it ヽ(￣～￣　)ノ" && 0 );
+  LOG_ERROR( "glLineWidth is inconsistent. Do not use it ヽ(￣～￣　)ノ" );
   //glLineWidth( width );
 }
 
 void PolygonMode(Face face, RenderMode mode) {
+#ifndef GL_ES_VERSION_2_0  
   glPolygonMode( gl_facemode[face], gl_polygonmode[mode] );
+#endif // GL_ES_VERSION_2_0
 }
 
 template<>
 uint32_t Get(uint32_t pname) {
-  GLint v;
+  GLint v{0};
   glGetIntegerv(pname, &v);
   return static_cast<uint32_t>(v);
 }
@@ -310,12 +378,24 @@ void UnbindSampler(int unit) {
 }
 
 void BindTexture(uint32_t tex, int unit, SamplerName name) {
+#ifndef GL_ES_VERSION_2_0
   glBindTextureUnit(unit, tex);
+#else
+  glActiveTexture(GL_TEXTURE0 + unit);
+  glBindTexture( GL_TEXTURE_2D, tex); //
+  glActiveTexture(GL_TEXTURE0);
+#endif
   BindSampler(unit, name);
 }
 
 void UnbindTexture(int unit) {
+#ifndef GL_ES_VERSION_2_0
   glBindTextureUnit(unit, 0);
+#else
+  glActiveTexture(GL_TEXTURE0 + unit);
+  glBindTexture( GL_TEXTURE_2D, 0); //
+  glActiveTexture(GL_TEXTURE0);
+#endif
   UnbindSampler(unit);
 }
 
@@ -328,7 +408,7 @@ void LinkProgram(uint32_t pgm) {
 }
 
 int32_t UniformLocation(uint32_t pgm, std::string_view name) {
-  GLint loc = glGetUniformLocation(pgm, name.data());
+  int32_t const loc{ glGetUniformLocation(pgm, name.data()) };
 #ifndef NDEBUG
   if (loc < 0) {
     // TODO : retrieve program's fullname from manager.
@@ -339,7 +419,7 @@ int32_t UniformLocation(uint32_t pgm, std::string_view name) {
 }
 
 int32_t AttribLocation(uint32_t pgm, std::string_view name) {
-  GLint loc = glGetAttribLocation(pgm, name.data());
+  int32_t const loc{ glGetAttribLocation(pgm, name.data()) };
 #ifndef NDEBUG
   if (loc < 0) {
     LOG_WARNING( "Attribute missing :", name );
@@ -405,12 +485,12 @@ bool CheckFramebufferStatus() {
 }
 
 bool CheckShaderStatus(uint32_t shader, std::string_view name){
-  GLint status = 0;
-
+  GLint status{0};
   glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+
   if (status != GL_TRUE) {
-    glGetShaderInfoLog(shader, kErrorBufferSize, nullptr, s_errorBuffer);
-    LOG_ERROR( name, "\n", s_errorBuffer);
+    glGetShaderInfoLog(shader, kErrorBufferSize, nullptr, s_errorBuffer.data());
+    LOG_ERROR( name, "\n", s_errorBuffer.data());
     return false;
   }
 
@@ -418,12 +498,12 @@ bool CheckShaderStatus(uint32_t shader, std::string_view name){
 }
 
 bool CheckProgramStatus(uint32_t program, std::string_view name) {
-  GLint status = 0;
-
+  GLint status{0};
   glGetProgramiv(program, GL_LINK_STATUS, &status);
+  
   if (status != GL_TRUE) {
-    glGetProgramInfoLog(program, kErrorBufferSize, nullptr, s_errorBuffer);
-    LOG_ERROR( name, "\n", s_errorBuffer );
+    glGetProgramInfoLog(program, kErrorBufferSize, nullptr, s_errorBuffer.data());
+    LOG_ERROR( name, "\n", s_errorBuffer.data() );
   }
 
   glValidateProgram(program);
@@ -437,8 +517,7 @@ bool CheckProgramStatus(uint32_t program, std::string_view name) {
 }
 
 void CheckError(std::string_view msg, char const* file, int line) {
-  GLenum const err = glGetError();
-  if (err != GL_NO_ERROR) {
+  if (auto const err = glGetError(); err != GL_NO_ERROR) {
     auto const error_string = GetErrorString(err);
     if (msg != nullptr) {
       Logger::Get().fatal_error(file, "", line, "OpenGL", msg, "[", error_string, "]");
