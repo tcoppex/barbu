@@ -2,11 +2,11 @@
 #define ARCBALL_CONTROLLER_H_
 
 #include <cmath>
-#include "core/camera.h"
-#include "core/events.h"
-#include "core/graphics.h"
-
 #include "glm/gtc/matrix_transform.hpp"
+
+#include "core/camera.h"
+#include "core/graphics.h"
+#include "core/events.h" //
 
 #ifndef ABC_USE_CUSTOM_TARGET
 #define ABC_USE_CUSTOM_TARGET   1
@@ -30,76 +30,83 @@ class ArcBallController : public Camera::ViewController {
       dolly2_(0.0)
   {}
 
-  void update(float dt) final {
-    TEventData const e = GetEventData();
+  // -------------------------------
 
-    update(
-      (double)dt,
-      e.bMouseMove, 
-      e.bMiddleMouse || e.bLeftAlt,
-      e.bRightMouse || e.bLeftShift,
-      (double)e.mouseX, (double)e.mouseY, (double)e.wheelDelta
+  void update(float dt) final {
+    auto const& e{ Events::Get() };
+
+    update( 
+      dt, 
+      e.mouseMoved(), 
+      e.buttonDown(2) || e.keyDown(342),  //   e.bMiddleMouse || e.bLeftAlt,
+      e.buttonDown(1) || e.keyDown(340),  //   e.bRightMouse || e.bLeftShift,
+      (double)e.mouseX(), (double)e.mouseY(), 
+      (double)e.wheelDelta()
     );
 
+    // -------
+
+    // Event Signal processing.
+
     // Keypad quick views.
-    auto const pi      = M_PI;
-    auto const half_pi = pi / 2;
-    auto const rshift  = half_pi / 4;
-    auto const rx      = yaw2_;
-    auto const ry      = pitch2_; 
+    auto const pi       { M_PI };
+    auto const half_pi  { pi / 2 };
+    auto const rshift   { half_pi / 4 };
+    auto const rx       { yaw2_ };
+    auto const ry       { pitch2_ }; 
 
     // Check that the last char was entered with the keypad.
     // [Should be rewritten to test true keysym against GLFW_KEY_KP_*]
-    if (!e.bKeypad) {
-      return;
-    }
+    // if (!e.bKeypad) {
+    //   return;
+    // }
 
-    switch (e.lastChar) {
+    switch (e.lastInputChar()) {
       // "Default" view.
-      case GLFW_KEY_0:
+      case '0': //GLFW_KEY_0:
         reset_target();
         set_view(pi / 16.0, pi / 8.0);
         set_dolly(6.0);
       break;
 
       // Side axis views.
-      case GLFW_KEY_1:
+      case '1': //GLFW_KEY_1:
         set_view(0.0, 0.0);
         //reset_target();
         bSideViewSet_ = true;
       break;
 
-      case GLFW_KEY_3:
+      case '3': //GLFW_KEY_3:
         set_view(0.0, -half_pi);
         //reset_target();
         bSideViewSet_ = true;
       break;
 
-      case GLFW_KEY_7:
+      case '7': //GLFW_KEY_7:
         set_view(half_pi, 0.0);
         //reset_target();
         bSideViewSet_ = true;
       break;
 
       // Quick axis rotations.
-      case GLFW_KEY_2:
+      case '2': //GLFW_KEY_2:
         set_view(rx - rshift, ry);
       break;
 
-      case GLFW_KEY_4:
+      case '4': //GLFW_KEY_4:
         set_view(rx, ry + rshift);
       break;
 
-      case GLFW_KEY_6:
+      case '6': //GLFW_KEY_6:
         set_view(rx, ry - rshift);
       break;
 
-      case GLFW_KEY_8:
+      case '8': //GLFW_KEY_8:
         set_view(rx + rshift, ry);
       break;
 
       // Reverse Y-axis view.
-      case GLFW_KEY_9:
+      case '9': //GLFW_KEY_9:
         set_view(rx, ry + pi, kDefaultSmoothTransition, false);
       break;
 
@@ -107,6 +114,9 @@ class ArcBallController : public Camera::ViewController {
       break;
     }
   } 
+
+  // -------------------------------
+
 
   void get_view_matrix(float *m) final {
     #if ABC_USE_CUSTOM_TARGET
@@ -125,7 +135,7 @@ class ArcBallController : public Camera::ViewController {
     
     Rmatrix_ = Rx * Ry;
 
-    auto view = Tdolly * Rx * Ry * Tpan;
+    auto view{ Tdolly * Rx * Ry * Tpan };
     memcpy(m, glm::value_ptr(view), sizeof(float) * 16);
   
     #else
@@ -136,14 +146,14 @@ class ArcBallController : public Camera::ViewController {
     //   view.rotate(camera_.yaw,    1.0f, 0.0f, 0.0f);
     //   view.rotate(camera_.pitch,  0.0f, 1.0f, 0.0f);
     
-    float const cy = cos(yaw_);
-    float const sy = sin(yaw_);
-    float const cp = cos(pitch_);
-    float const sp = sin(pitch_);
+    float const cy{ cos(yaw_) };
+    float const sy{ sin(yaw_) };
+    float const cp{ cos(pitch_) };
+    float const sp{ sin(pitch_) };
 
     m[ 0] = cp;
-    m[ 1] = sy*sp;
-    m[ 2] = -sp*cy;
+    m[ 1] = sy * sp;
+    m[ 2] = -sp * cy;
     m[ 3] = 0.0f;
 
     m[ 4] = 0.0f;
@@ -152,8 +162,8 @@ class ArcBallController : public Camera::ViewController {
     m[ 7] = 0.0f;
 
     m[ 8] = sp;
-    m[ 9] = -sy*cp;
-    m[10] = cy*cp;
+    m[ 9] = -sy * cp;
+    m[10] = cy * cp;
     m[11] = 0.0f;
 
     m[12] = target_.x;
@@ -168,12 +178,12 @@ class ArcBallController : public Camera::ViewController {
 
   inline
   void update(double const deltatime,
-             bool const bMoving,
-             bool const btnTranslate,
-             bool const btnRotate,
-             double const mouseX,
-             double const mouseY,
-             double const wheelDelta) 
+              bool const bMoving,
+              bool const btnTranslate,
+              bool const btnRotate,
+              double const mouseX,
+              double const mouseY,
+              double const wheelDelta) 
   {
     if (bMoving) {
       eventMouseMoved(btnTranslate, btnRotate, mouseX, mouseY);
@@ -192,27 +202,27 @@ class ArcBallController : public Camera::ViewController {
   inline float yawf() const { return static_cast<float>(yaw()); }
   inline float pitchf() const { return static_cast<float>(pitch()); }
 
-  inline void set_yaw(double const value, bool const bNoSmooth=kDefaultSmoothTransition) {
+  inline void set_yaw(double const value, bool const bSmooth=kDefaultSmoothTransition) {
     yaw2_ = value;
-    yaw_  = (bNoSmooth) ? value : yaw_; 
+    yaw_  = (!bSmooth) ? value : yaw_; 
   }
 
-  inline void set_pitch(double const value, bool const bNoSmooth=kDefaultSmoothTransition, bool const bFastTarget=kDefaultFastestPitchAngle) {
+  inline void set_pitch(double const value, bool const bSmooth=kDefaultSmoothTransition, bool const bFastTarget=kDefaultFastestPitchAngle) {
     // use the minimal angle to target.
-    double const v1 = value-kAngleModulo;
-    double const v2 = value+kAngleModulo;
-    double const d0 = std::abs(pitch_ - value);
-    double const d1 = std::abs(pitch_ - v1);
-    double const d2 = std::abs(pitch_ - v2);
-    double const v = (((d0 < d1) && (d0 < d2)) || !bFastTarget) ? value : (d1 < d2) ? v1 : v2;
+    double const v1{ value - kAngleModulo };
+    double const v2{ value + kAngleModulo };
+    double const d0{ std::abs(pitch_ - value) };
+    double const d1{ std::abs(pitch_ - v1) };
+    double const d2{ std::abs(pitch_ - v2) };
+    double const v{ (((d0 < d1) && (d0 < d2)) || !bFastTarget) ? value : (d1 < d2) ? v1 : v2 };
 
     pitch2_ = v;
-    pitch_  = (bNoSmooth) ? v : pitch_;
+    pitch_  = (!bSmooth) ? v : pitch_;
   }
 
-  inline void set_dolly(double const value, bool const bNoSmooth=false) { 
-    dolly2_ = value; 
-    if (bNoSmooth) {
+  inline void set_dolly(double const value, bool const bSmooth=kDefaultSmoothTransition) { 
+    dolly2_ = value;
+    if (!bSmooth) {
       dolly_ = dolly2_;
     }
   }
@@ -223,9 +233,9 @@ class ArcBallController : public Camera::ViewController {
     return -target_; // 
   }
 
-  inline void set_target(glm::vec3 const& target, bool const bNoSmooth=false) {
+  inline void set_target(glm::vec3 const& target, bool const bSmooth=kDefaultSmoothTransition) {
     target2_ = -target;
-    if (bNoSmooth) {
+    if (!bSmooth) {
       target_ = target2_;
     }
   }
@@ -236,9 +246,9 @@ class ArcBallController : public Camera::ViewController {
     target2_ = glm::vec3(0.0);
   }
 
-  inline void set_view(double const rx, double const ry, bool const bNoSmooth=kDefaultSmoothTransition, bool const bFastTarget=kDefaultFastestPitchAngle) {
-    set_yaw(rx, bNoSmooth);
-    set_pitch(ry, bNoSmooth, bFastTarget);
+  inline void set_view(double const rx, double const ry, bool const bSmooth=kDefaultSmoothTransition, bool const bFastTarget=kDefaultFastestPitchAngle) {
+    set_yaw(rx, bSmooth);
+    set_pitch(ry, bSmooth, bFastTarget);
   }
 
   inline bool is_sideview_set() const { return bSideViewSet_; }
@@ -247,7 +257,7 @@ class ArcBallController : public Camera::ViewController {
   // Keep the angles pair into a range specified by kAngleModulo to avoid overflow.
   static void RegulateAngle(double &current, double &target) {
     if (fabs(target) >= kAngleModulo) {
-      auto const dist = target - current;
+      auto const dist{ target - current };
       target = fmod(target, kAngleModulo);
       current = target - dist;
     }
@@ -258,8 +268,8 @@ class ArcBallController : public Camera::ViewController {
                        double const mouseX,
                        double const mouseY) 
   {
-    auto const dv_x = mouseX - last_mouse_x_;
-    auto const dv_y = mouseY - last_mouse_y_;
+    auto const dv_x{ mouseX - last_mouse_x_ };
+    auto const dv_y{ mouseY - last_mouse_y_ };
     last_mouse_x_ = mouseX;
     last_mouse_y_ = mouseY;
 
@@ -274,7 +284,7 @@ class ArcBallController : public Camera::ViewController {
     }
 
     if (btnTranslate) {
-      auto const acc = dolly2_ * kMouseTAcceleration; //
+      auto const acc{ dolly2_ * kMouseTAcceleration }; //
       
       #if ABC_USE_CUSTOM_TARGET
       target_ += glm::vec3(glm::vec4( float(acc * dv_x), float(-acc * dv_y), 0.0f, 0.0f) * Rmatrix_);
@@ -287,16 +297,16 @@ class ArcBallController : public Camera::ViewController {
   }
 
   void eventWheel(double const dx) {
-    auto const sign = (fabs(dx) > 1.e-5) ? ((dx > 0.0) ? -1.0 : 1.0) : 0.0;
+    auto const sign{ (fabs(dx) > 1.e-5) ? ((dx > 0.0) ? -1.0 : 1.0) : 0.0 };
     dolly2_ *= (1.0 + sign * kMouseWAcceleration); //
   }
 
   void smoothTransition(double const deltatime) {
     // should filter / bias the final signal as it will keep a small jittering aliasing value
     // due to temporal composition, or better yet : keep an anim timecode for smoother control.
-    auto k = kSmoothingCoeff * deltatime;
+    auto k{ kSmoothingCoeff * deltatime };
     k = (k > 1.0) ? 1.0 : k;
-    auto constexpr lerp = [](auto a, auto b, auto x) { return a + x * (b-a); };
+    auto constexpr lerp{ [](auto a, auto b, auto x) { return a + x * (b-a); }};
     yaw_   = lerp(yaw_, yaw2_, k);
     pitch_ = lerp(pitch_, pitch2_, k);
     dolly_ = lerp(dolly_, dolly2_, k);
@@ -318,7 +328,7 @@ class ArcBallController : public Camera::ViewController {
   // Used to smooth transition, to factor with deltatime.
   static double constexpr kSmoothingCoeff         = 12.0;
 
-  static bool constexpr kDefaultSmoothTransition  = false;
+  static bool constexpr kDefaultSmoothTransition  = true;
   static bool constexpr kDefaultFastestPitchAngle = true;
 
   double last_mouse_x_;
