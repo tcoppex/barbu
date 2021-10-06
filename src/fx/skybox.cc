@@ -76,6 +76,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
   auto const kSkyboxCubemapID = TEXTURE_ASSETS.findUniqueID( "skybox::Cubemap" );
   auto const basename   = Logger::TrimFilename(resource_id);
   bool const is_crossed = basename.find("cross") != std::string::npos;
+  bool loaded = false;
 
   // Environment sky map.
   if (is_crossed) {
@@ -83,7 +84,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
 
     sky_map_ = TEXTURE_ASSETS.createCubemapHDR( kSkyboxCubemapID, kLevels, resource_id);
 
-    if (sky_map_ && sky_map_->loaded()) {
+    if (loaded = sky_map_ && sky_map_->loaded(); loaded) {
       Irradiance::PrefilterHDR( ResourceInfo(resource_id), sh_matrices_);
       has_sh_matrices_ = true;
     }
@@ -96,12 +97,13 @@ void Skybox::setup_texture(ResourceId resource_id) {
 
     // Input spherical texture [tmp].
     auto spherical_tex = TEXTURE_ASSETS.create2d( resource_id, 1, kFormat); //
-    
+    loaded = spherical_tex && spherical_tex->loaded();
+
     // Output sky cubemap.
     sky_map_ = TEXTURE_ASSETS.createCubemap( kSkyboxCubemapID, kLevels, kFormat, kResolution, kResolution ); //
-
+   
     // Transform spherical map to cubical.
-    {
+    if (loaded &= (sky_map_ && sky_map_->loaded()); loaded) {
       auto const pgm = pgm_.cs_transform->id;  
 
       constexpr int32_t texture_unit = 0;
@@ -131,8 +133,11 @@ void Skybox::setup_texture(ResourceId resource_id) {
       glBindImageTexture( image_unit, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, kFormat); //
     }
   }
+  
+  if (loaded) {
+    calculate_convolution_envmaps(basename);
+  }
 
-  calculate_convolution_envmaps(basename);
   LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
 }
 
