@@ -18,7 +18,8 @@ class Grid {
  public:
   static constexpr int kGridNumCell     = 32;
   static constexpr float kGridScale     = 1.0f;
-  static constexpr float kGridAlpha     = 0.92f;
+  static constexpr float kGridValue     = 0.60f;
+  static constexpr float kGridAlpha     = 0.85f;
   static constexpr bool kEnableSideGrid = true;
 
  public:

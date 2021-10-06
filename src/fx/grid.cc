@@ -27,7 +27,6 @@ void Grid::deinit() {
 void Grid::update(float const dt, Camera const& camera) {
   // Reset rendering params.
   matrix_ = glm::mat4(1.0f);
-  alpha_  = kGridAlpha;
 
   if (!kEnableSideGrid) {
     return;
@@ -76,13 +75,13 @@ void Grid::update(float const dt, Camera const& camera) {
     }
   }
 
-  alpha_ = glm::mix(0.0f, alpha_, factor);
+  alpha_ = glm::mix(0.0f, kGridAlpha, factor);
 }
 
 void Grid::render(Camera const& camera) {
   float const kGridSize = kGridScale * static_cast<float>(kGridNumCell);
 
-  glm::vec4 const color(0.25f, 0.25f, 0.25f, alpha_);
+  glm::vec4 const color(glm::vec3(kGridValue), alpha_); // 
 
   auto const pgm = pgm_->id;
   gx::SetUniform( pgm, "uModel",       matrix_);
