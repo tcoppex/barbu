@@ -4,10 +4,9 @@
 // -----------------------------------------------------------------------------
 
 void Skeleton::add_joint(std::string_view name, int32_t parent_id, glm::mat4 const& inverse_bind_matrix) {
+  assert(names.size() > 0 );
   assert(names.size() < names.capacity());
-
   auto const joint_name{ name.data() };
-  
   names.push_back(joint_name);
   parents.push_back(parent_id);
   inverse_bind_matrices.push_back(inverse_bind_matrix);

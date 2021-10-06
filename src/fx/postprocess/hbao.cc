@@ -83,8 +83,8 @@ void HBAO::update_parameters(Camera const& camera) {
   auto constexpr inv_ln_two     = 1.44269504f;
   auto constexpr sqrt_ln_two    = 0.832554611f;
   
-  auto const z_near             = camera.near();
-  auto const z_far              = camera.far();
+  auto const z_near             = camera.znear();
+  auto const z_far              = camera.zfar();
   auto const fov_y              = camera.fov();
   auto const radius_scaled      = std::max(ui_params_.radius, glm::epsilon<float>());
   auto const scene_scale        = std::min(z_near, z_far);

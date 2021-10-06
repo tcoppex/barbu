@@ -243,7 +243,7 @@ void Skybox::render(RenderMode mode, Camera const& camera) {
   // maximum scaling, that's just show the alternative. ]
   glm::mat4 view = camera.view();
   view[3] = glm::vec4(glm::vec3(0.0f), view[3].w);
-  auto const mvp = camera.proj() * glm::scale( view, glm::vec3(camera.far()));
+  auto const mvp = camera.proj() * glm::scale( view, glm::vec3(camera.zfar()));
   gx::SetUniform( pgm, "uMVP", mvp);
 
   uint32_t tex_id = sky_map_->id;

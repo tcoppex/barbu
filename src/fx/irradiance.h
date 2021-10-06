@@ -42,7 +42,7 @@ class Irradiance {
   {
     float const texelSize  = 1.0f / static_cast<float>(w);
 
-    SHCoeff_t shCoeff{0};
+    SHCoeff_t shCoeff{};
     float sumWeight = 0.0f;
     for (int texid = 0; texid < 6; ++texid) {
       auto const* pixels = cubemap[texid];
@@ -149,10 +149,11 @@ class Irradiance {
   constexpr static float Y8(glm::vec3 const& n)  { return 0.546274f * (n.x*n.x - n.y*n.y); }         /* L_22 */
 
   /// Coefficients from the paper to test the implementation.
-  constexpr static SHCoeff_t sTestCoeffs{
-    .79, .39, -.34, -.29, -.11, -.26, -.16, .56, .21,
-    .44, .35, -.18, -.06, -.05,-.22, -.09, .21, -.05,
-    .54, .60, -.27, .01, -.12, -.47, -.15, .14,- .30
+  constexpr static SHCoeff_t sTestCoeffs{ {
+    {.79, .39, -.34, -.29, -.11, -.26, -.16, .56, .21},
+    {.44, .35, -.18, -.06, -.05,-.22, -.09, .21, -.05},
+    {.54, .60, -.27, .01, -.12, -.47, -.15, .14,- .30}
+  }
   };   
 
  
