@@ -16,24 +16,25 @@ class Camera;
 // view, as well as to blend between views. 
 class Grid {
  public:
-  static constexpr int kMainGridSize    = 10;
+  static constexpr int kMainGridHalfRes = 5;
   static constexpr int kSubGridStep     = 4;
-  static constexpr int kGridNumCell     = kMainGridSize * kSubGridStep;
+  static constexpr int kGridNumCell     = 2 * kMainGridHalfRes * kSubGridStep;
+  
   static constexpr float kGridScale     = 1.0f;
   static constexpr float kGridValue     = 0.60f;
   static constexpr float kGridAlpha     = 0.95f;
   static constexpr bool kEnableSideGrid = true;
-
+  
  public:
   Grid() = default;
 
   void init();
-  
   void deinit();
 
   // Update transform and alpha based on camera settings.
   void update(float const dt, Camera const& camera);
 
+  // Render the grid with antialiased lines.
   void render(Camera const& camera);
 
  private:
