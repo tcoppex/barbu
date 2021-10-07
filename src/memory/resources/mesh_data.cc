@@ -54,8 +54,16 @@ void MeshData::Grid(MeshData &mesh, int resolution, float size) {
   // Vertices datas.
   std::vector<float> lines(buffersize);
   for (int i = 0; i <= resolution; ++i) {
-    uint32_t const index{ 4u * ncomponents * i };    
-    float const cursor{ cell_padding * static_cast<float>(i) - offset };
+
+    // hack to have middle lines draw last.
+    int const i_offset{ (i < resolution/2) ? 0 : (i < resolution) ? 1 : -resolution/2 };
+
+    // Position on the grid.
+    float const fp_i{ static_cast<float>(i + i_offset) };
+    float const cursor{ cell_padding * fp_i - offset };
+    
+    // buffer index.
+    uint32_t const index{ 4u * ncomponents * i };
 
     // horizontal lines
     lines[index + 0u] = - offset;
