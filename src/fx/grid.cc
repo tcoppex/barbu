@@ -89,9 +89,11 @@ void Grid::render(Camera const& camera) {
   gx::SetUniform( pgm, "uColor",       color);
   gx::SetUniform( pgm, "uScaleFactor", kGridSize);
   
+  glEnable( GL_LINE_SMOOTH ); //
   glUseProgram(pgm);
     mesh_->draw();
   glUseProgram(0u);
+  glDisable( GL_LINE_SMOOTH );
 
   CHECK_GX_ERROR();
 }
