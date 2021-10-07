@@ -84,11 +84,13 @@ void Grid::render(Camera const& camera) {
   glm::vec4 const color(glm::vec3(kGridValue), alpha_); // 
 
   auto const pgm = pgm_->id;
-  gx::SetUniform( pgm, "uModel",       matrix_);
-  gx::SetUniform( pgm, "uViewproj",    camera.viewproj());
-  gx::SetUniform( pgm, "uColor",       color);
-  gx::SetUniform( pgm, "uScaleFactor", kGridSize);
-  
+  gx::SetUniform( pgm, "uModel",          matrix_);
+  gx::SetUniform( pgm, "uViewproj",       camera.viewproj());
+  gx::SetUniform( pgm, "uColor",          color);
+  gx::SetUniform( pgm, "uScaleFactor",    kGridSize);
+  gx::SetUniform( pgm, "uGridResolution", static_cast<float>(kGridNumCell));
+  gx::SetUniform( pgm, "uSubGridStep",    kSubGridStep);
+
   glEnable( GL_LINE_SMOOTH ); //
   glUseProgram(pgm);
     mesh_->draw();
