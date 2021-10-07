@@ -13,6 +13,7 @@ class Component {
     Visual,
     Skin,
     SphereCollider,
+    Light,
 
     kCount,
     kUndefined
@@ -21,7 +22,7 @@ class Component {
  public:
   virtual ~Component() = default;
 
-  virtual Type type() const noexcept = 0;
+  // virtual Type CType() const noexcept = 0;
 };
 
 using ComponentHandle = std::unique_ptr<Component>;
@@ -37,9 +38,7 @@ class ComponentParams : public Component {
  public:
   static constexpr Component::Type Type = tType;
 
-  Component::Type type() const noexcept final {
-    return tType;
-  }
+  // Component::Type CType() const noexcept final { return tType; }
 };
 
 // ----------------------------------------------------------------------------
