@@ -30,8 +30,6 @@ class ArcBallController : public Camera::ViewController {
       dolly2_(0.0)
   {}
 
-  // -------------------------------
-
   void update(float dt) final {
     auto const& e{ Events::Get() };
 
@@ -44,9 +42,8 @@ class ArcBallController : public Camera::ViewController {
       (double)e.wheelDelta()
     );
 
-    // -------
-
-    // Event Signal processing.
+    // [fixme]
+    /// Event Signal processing.
 
     // Keypad quick views.
     auto const pi       { M_PI };
@@ -60,7 +57,6 @@ class ArcBallController : public Camera::ViewController {
     // if (!e.bKeypad) {
     //   return;
     // }
-
     switch (e.lastInputChar()) {
       // "Default" view.
       case '0': //GLFW_KEY_0:
@@ -113,12 +109,10 @@ class ArcBallController : public Camera::ViewController {
       default:
       break;
     }
-  } 
+  }
 
-  // -------------------------------
-
-
-  void get_view_matrix(float *m) final {
+  void get_view_matrix(float m[]) final {
+    static_assert( sizeof(glm::mat4) == (16*sizeof(float)) );
     #if ABC_USE_CUSTOM_TARGET
     // This matrix will orbit around the front of the camera.
 
@@ -126,7 +120,7 @@ class ArcBallController : public Camera::ViewController {
     auto const X = glm::vec3(1.0f, 0.0f, 0.0f);
     auto const Y = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    auto const dolly = glm::vec3( 0.0f, 0.0f, - float(dolly_));
+    auto const dolly = glm::vec3( 0.0f, 0.0f, - static_cast<float>(dolly_));
 
     auto const Tdolly = glm::translate( id, dolly);
     auto const Tpan = glm::translate( id, target_);
@@ -136,7 +130,7 @@ class ArcBallController : public Camera::ViewController {
     Rmatrix_ = Rx * Ry;
 
     auto view{ Tdolly * Rx * Ry * Tpan };
-    memcpy(m, glm::value_ptr(view), sizeof(float) * 16);
+    memcpy(m, glm::value_ptr(view), sizeof view);
   
     #else
     // This matrix will always orbit around the space center.
