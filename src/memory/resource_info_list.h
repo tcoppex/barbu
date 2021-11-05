@@ -48,13 +48,13 @@ class ResourceInfoList : public std::null_vector<ResourceInfo> {
     set_to_nullptr();
   }
 
-  ResourceInfoList(std::initializer_list<std::string_view> const& init_list) {
-    add_resources(init_list);
+  ResourceInfoList(std::initializer_list<std::string_view> const& _init_list) {
+    add_resources(_init_list);
   }
 
   template<typename Container>
-  ResourceInfoList(Container const& list) {
-    add_resources(list);
+  ResourceInfoList(Container const& _list) {
+    add_resources(_list);
   }
 
   ResourceInfoList& operator =(std::nullptr_t) noexcept {
@@ -62,32 +62,32 @@ class ResourceInfoList : public std::null_vector<ResourceInfo> {
     return *this;
   }
 
-  ResourceInfoList& operator =(ResourceInfoList const& rh) noexcept {
+  ResourceInfoList& operator =(ResourceInfoList const& _rh) noexcept {
     set_to_nullptr();
-    for (auto const& x : rh) {
+    for (auto const& x : _rh) {
       push_back(x);
     }
     
     return *this;
   }
 
-  void add_resource(ResourceId const& id) {
-    push_back( ResourceInfo(id) );
+  void add_resource(ResourceId const& _id) {
+    push_back( ResourceInfo(_id) );
   }
 
-  void add_resource(std::string_view id) {
-    add_resource(ResourceId(id));
+  void add_resource(std::string_view _id) {
+    add_resource(ResourceId(_id));
   }
 
-  void add_resources(std::initializer_list<std::string_view> const& init_list) {
-    for (auto &id : init_list) {
+  void add_resources(std::initializer_list<std::string_view> const& _init_list) {
+    for (auto &id : _init_list) {
       add_resource(id);
     }
   }
 
   template<typename Container>
-  void add_resources(Container const& list) {
-    insert( end(), list.begin(), list.end());
+  void add_resources(Container const& _list) {
+    insert( end(), _list.cbegin(), _list.cend());
   }
 };
 
