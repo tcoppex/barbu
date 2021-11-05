@@ -5,7 +5,7 @@
 
 // ----------------------------------------------------------------------------
 
-// TODO : clean usage.
+// TODO clean usage :
 //    * no inherited fields.
 //    * no boolean without clear intents.
 //    * no weird indirection.
@@ -15,26 +15,25 @@
 void Application::setup() {
   // Gamma-corrected clear color.
   gx::ClearColor(0.073f, 0.073f, 0.072f, true);
-  //::setBackground( Color::kDarkSalmon.gamma() );
+  //setBackground( Color::kDarkSalmon.gamma() );
 
   // Camera.
   {
-    //auto &cam = ::getDefaultCamera();
+    //auto &camera{ getDefaultCamera() };
     camera_.setController(&arcball_);
     camera_.setPerspective(glm::radians(60.0f), resolution(), 0.01f, 500.0f);
     
-    constexpr float kPi{ glm::pi<float>() };
-    constexpr bool kSmoothTransition{ false };
-    arcball_.setView( kPi / 16.0f, kPi / 8.0f, kSmoothTransition);
-    arcball_.setDolly( 16.0f, kSmoothTransition);
+    arcball_.setView( kPi / 16.0f, kPi / 8.0f, !kSmooth);
+    arcball_.setDolly( 15.0f, !kSmooth);
   }
 
   // Scene Hierarchy.
   {
-    //auto &scene = ::getSceneHierarchy();
-
+    //auto &scene{ getSceneHierarchy() };
     focus_ = scene_.importModel( ResourceId::fromPath("models/InfiniteScan/Head.glb") );
     scene_.createEntity<BSphereEntity>( 0.25f );
+    
+    bRefocus_ = true;
   }
   
   // Renderer.
@@ -45,29 +44,27 @@ void Application::setup() {
     params.enable_hair      = true;
     params.enable_particle  = false;
 
+    // -- Experimentals (probables futures components) --
+
     // Skybox.
-    auto &skybox = renderer_.skybox();
+    auto &skybox{ renderer_.skybox() };
     skybox.setup( ResourceId::fromPath("textures/forest_slope_2k.hdr") );
    
     // Hair.
-    auto &hair = renderer_.hair();
+    auto &hair{ renderer_.hair() };
     hair.setup( ResourceId::fromPath("models/InfiniteScan/Head_scalp.obj") );
   }
-
-  bRefocus_ = false;
 }
-
 
 void Application::update() {
   auto const& selected = scene_.selected();
 
   // Refocus the camera when asked for.
   if (bRefocus_) {
-    refocusCamera( /*kCentroid*/ true, /*kSmooth*/ false, focus_);
+    refocusCamera( kCentroid, !kSmooth, focus_);
     bRefocus_ = false;
   } else {
-    focus_ = selected.empty() ? nullptr : 
-                       focus_ ? focus_ : selected.front();
+    focus_ = selected.empty() ? nullptr : (focus_ ? focus_ : selected.front());
   }
 
   // -----------------------
@@ -116,14 +113,26 @@ void Application::update() {
 }
 
 void Application::draw() {
-
+  // TODO : 
+  // Direct drawing methods without having to use the scene hierarchy.
+  //
+  // Example :
+  //
+  // // Custom shader.
+  // pgm.load( vsPath, fsPath);
+  // pgm.begin();
+  //   pgm.setUniform1f( "uValue", val);
+  //   drawCircle( x, y, radius);
+  // pgm.end();
+  //
+  // // Default shader.
+  // setColor( Color4f(0.5, 1.0, 0.0) );
+  // drawRectangle( x, y, w, h);
+  //
 }
 
 void Application::onInputChar(uint16_t inputChar) {
   auto const& selected = scene_.selected();
-
-  constexpr bool kCentroid{true};
-  constexpr bool kSmooth{true};
 
   // -- Key bindings.
   switch (inputChar) {
@@ -174,34 +183,32 @@ void Application::onResize(int w, int h) {
 
 // ----------------------------------------------------------------------------
 
-void Application::refocusCamera(bool bCentroid, bool bSmooth, EntityHandle new_focus) {
-  constexpr float kDefaultRefocusDistance{3.5f};
-  constexpr float kRefocusDistanceScaling{1.25f};
-
+void Application::refocusCamera(bool _bCentroid, bool _bSmooth, EntityHandle _focus) {
   // FIXME : issue when called before the scene reindexing.
 
   // Select new focus & retrieve target position.
   glm::vec3 target{};
-  if (new_focus && new_focus->indexed()) {
-    focus_ = new_focus;
+  if (_focus && _focus->indexed()) {
+    focus_ = _focus;
     scene_.selectAll(false);
     scene_.select(focus_, true);
-    target = bCentroid ? scene_.globalCentroid(focus_) 
+    target = _bCentroid ? scene_.globalCentroid(focus_) 
                        : scene_.globalPosition(focus_)
                        ;
   } else {
-    target = bCentroid ? scene_.centroid() : scene_.pivot();
+    target = _bCentroid ? scene_.centroid() : scene_.pivot();
   }
 
   // Set the view target.
-  arcball_.setTarget(target, bSmooth);
+  arcball_.setTarget(target, _bSmooth);
   
   // Distance to focus point.
-  float const radius{ 
-    (focus_ && focus_->has<VisualComponent>()) ? focus_->get<VisualComponent>().mesh()->radius() 
-                                               : kDefaultRefocusDistance
+  float const focus_dist{
+    kRefocusDistanceScaling *  
+    ((focus_ && focus_->has<VisualComponent>()) ? focus_->get<VisualComponent>().mesh()->radius() 
+                                                : kDefaultRefocusDistance)
   };
-  arcball_.setDolly(kRefocusDistanceScaling * radius, bSmooth);
+  arcball_.setDolly(focus_dist, _bSmooth);
 }
 
 // ----------------------------------------------------------------------------

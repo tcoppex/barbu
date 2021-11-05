@@ -336,7 +336,7 @@ void SceneHierarchy::renderDebugRigs() const {
   for (auto e : frame_.drawables) {
     auto &visual = e->get<VisualComponent>();
     if (auto rig = visual.rig(); rig) {
-      render_debug_node(rig->child(0));
+      renderDebugNode(rig->child(0));
     }
   }
 }
@@ -448,7 +448,7 @@ void SceneHierarchy::sortDrawables(Camera const& camera) {
   );
 }
 
-void SceneHierarchy::render_debug_node(EntityHandle node) const {
+void SceneHierarchy::renderDebugNode(EntityHandle node) const {
   if (nullptr == node) {
     return;
   }
@@ -479,7 +479,7 @@ void SceneHierarchy::render_debug_node(EntityHandle node) const {
 
   // Recursively render sub hierarchy.
   for (auto &child : node->children()) {
-    render_debug_node(child);
+    renderDebugNode(child);
   }
 }
 
