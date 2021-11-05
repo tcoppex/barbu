@@ -37,7 +37,6 @@ void Hair::init() {
   marschner_.generate();
 
   init_ui_views();
-
 }
 
 void Hair::setup(ResourceId const& scalp_id) {

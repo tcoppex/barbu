@@ -36,7 +36,7 @@ class Entity {
   Create(U&&... u) {
     return std::make_shared<T>(std::forward<U>(u)...);
   }
-  
+
  public:
   Entity() = default;
 
@@ -68,27 +68,27 @@ class Entity {
 
   // -- Components access.
 
-  // Return true if the entity possess the component.
+  /* Return true if the entity possess the component. */
   template<typename T> 
   std::enable_if_t<std::is_base_of_v<Component, T>, bool> has() const noexcept {
     return static_cast<bool>(components_[T::Type]);
   }
   
-  // Return a reference to the component [ return shared_ptr<T> instead ? ].
+  /* Return a reference to the component [ return shared_ptr<T> instead ? ]. */
   template<typename T> 
   std::enable_if_t<std::is_base_of_v<Component, T>, T&> get() {
     assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
-  // Return a constant reference to the component.
+  /* Return a constant reference to the component. */
   template<typename T> 
   std::enable_if_t<std::is_base_of_v<Component, T>, T const&> get() const {
     assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
-  // Add then return the given component to the entity.
+  /* Add then return the given component to the entity. */
   template<typename T> 
   std::enable_if_t<std::is_base_of_v<Component, T>, T&> add() {
     if (!has<T>()) {
@@ -97,7 +97,7 @@ class Entity {
     return get<T>();
   }
 
-  // Remove the given component.
+  /* Remove the given component. */
   template<typename T>
   std::enable_if_t<std::is_base_of_v<Component, T>> remove() {
     static_assert(T::Type != Component::Type::Transform);
@@ -115,12 +115,12 @@ class Entity {
   inline glm::vec3 position() const { return transform().position(); }
   inline void setPosition(glm::vec3 const& pos) { transform().setPosition(pos); }
 
-  // Return the barycenter of an object in local space, depending on its components. 
+  /* Return the barycenter of an object in local space, depending on its components. */
   glm::vec3 centroid() const;
 
   // -- Miscs.
 
-  // Let view the entity as a subtype. [bug prone]
+  /* Let view the entity as a subtype. [bug prone] */
   template<typename T> T& as() {
     return *((T*)this);
   }
