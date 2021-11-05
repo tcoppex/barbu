@@ -63,11 +63,7 @@ void Skybox::deinit() {
   // sky_map_.reset();
 }
 
-void Skybox::render(Camera const& camera) {
-  render(RenderMode::Sky, camera);
-}
-
-void Skybox::setTexture(ResourceId resource_id) {
+void Skybox::setup(ResourceId resource_id) {
   assert(sky_map_ == nullptr); //
 
   // (we might want to use mipmaps to improve the quality of  late convolutions)
@@ -139,6 +135,10 @@ void Skybox::setTexture(ResourceId resource_id) {
   }
 
   LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
+}
+
+void Skybox::render(Camera const& camera) {
+  render(RenderMode::Sky, camera);
 }
 
 // ----------------------------------------------------------------------------

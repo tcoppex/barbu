@@ -25,7 +25,7 @@ class Skybox {
   void init();
   void deinit();
 
-  void setTexture(ResourceId resource_id); //
+  void setup(ResourceId resource_id); //
 
   void render(Camera const& camera);
 
