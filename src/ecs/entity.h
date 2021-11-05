@@ -101,11 +101,11 @@ class Entity {
   inline TransformComponent & transform() { return get<TransformComponent>(); }
   inline TransformComponent const& transform() const { return get<TransformComponent>(); }
 
-  inline glm::mat4 & local_matrix() { return transform().matrix(); }
-  inline glm::mat4 const& local_matrix() const { return transform().matrix(); }
+  inline glm::mat4 & localMatrix() { return transform().matrix(); }
+  inline glm::mat4 const& localMatrix() const { return transform().matrix(); }
   
   inline glm::vec3 position() const { return transform().position(); }
-  inline void set_position(glm::vec3 const& pos) { transform().set_position(pos); }
+  inline void setPosition(glm::vec3 const& pos) { transform().setPosition(pos); }
 
   // Return the barycenter of an object in local space, depending on its components. 
   glm::vec3 centroid() const;

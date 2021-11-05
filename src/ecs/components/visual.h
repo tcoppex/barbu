@@ -24,7 +24,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     // Special Case : the mesh has no materials.
     if (!mesh_->has_materials()) {
       if (render_mode == RenderMode::kDefault) {
-        material()->update_uniforms(attributes);
+        material()->updateUniforms(attributes);
         mesh_->draw();
       }
       return;
@@ -39,19 +39,19 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
 
       // Check the material render mode.
       assert(mat != nullptr); //
-      if (render_mode != mat->render_mode()) {
+      if (render_mode != mat->renderMode()) {
         continue;
       }
 
       // Set material parameters when needed.
       uint32_t const pgm{ mat->program()->id };
       bool const bUseSameProgram{ last_pgm == pgm }; 
-      texture_unit = mat->update_uniforms(attributes, bUseSameProgram ? texture_unit : 0);
+      texture_unit = mat->updateUniforms(attributes, bUseSameProgram ? texture_unit : 0);
       last_pgm = pgm;
 
       // Force double-sided rendering when requested.
       bool const bCullFace{ gx::IsEnabled(gx::State::CullFace) };
-      if (mat->double_sided()) {
+      if (mat->isDoubleSided()) {
         gx::Disable( gx::State::CullFace );
       }
 
@@ -68,7 +68,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
   }
 
   // Add a mesh with a default material for each submeshes.
-  inline void set_mesh(MeshHandle mesh) {
+  inline void setMesh(MeshHandle mesh) {
     mesh_ = mesh;
 
     // materials_.clear();
@@ -78,7 +78,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     // }
   }
 
-  inline void set_rig(EntityHandle rig) noexcept {
+  inline void setRig(EntityHandle rig) noexcept {
     rig_ = rig;
   }
 

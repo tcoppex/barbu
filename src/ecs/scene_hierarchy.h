@@ -43,32 +43,37 @@ class SceneHierarchy {
 
   // Add an entity to the scene hierarchy placed on the root when no parent is
   // specified. 
-  void add_entity(EntityHandle entity, EntityHandle parent = nullptr);
+  void addEntity(EntityHandle entity, EntityHandle parent = nullptr);
 
   // Remove an entity to the list of entity and update its relationship links.
-  void remove_entity(EntityHandle entity, bool bRecursively = false);
+  void removeEntity(EntityHandle entity, bool bRecursively = false);
 
   // Reset the entity local transform.
-  void reset_entity(EntityHandle entity, bool bRecursively = false);
+  void resetEntity(EntityHandle entity, bool bRecursively = false);
 
   // Create a model entity by importing an external model file.
-  EntityHandle import_model(std::string_view filename);
-
-  // Update locals matrices based on their modified globals.
-  void update_selected_local_matrices();
+  EntityHandle importModel(std::string_view filename);
   
+  // Select / Unselect entities depending on status.
+  void select(EntityHandle entity, bool status);
+  void selectAll(bool status);
+
+  // ----------------------
+
+  /* Getters */
+
   // Return the global matrix for the given entity index.
-  inline glm::mat4 & global_matrix(int32_t index) { return frame_.globals[index]; }
-  inline glm::mat4 const& global_matrix(int32_t index) const { return frame_.globals[index]; }
+  inline glm::mat4& globalMatrix(int32_t index) { return frame_.globals[index]; }
+  inline glm::mat4 const& globalMatrix(int32_t index) const { return frame_.globals[index]; }
 
   // Return the entity position in world space.
-  inline glm::vec3 entity_global_position(EntityHandle e) const {
-    return glm::vec3(parent_global_matrix(e) * glm::vec4(e->position(), 1.0)); //
+  inline glm::vec3 globalPosition(EntityHandle e) const {
+    return glm::vec3(parentGlobalMatrix(e) * glm::vec4(e->position(), 1.0)); //
   }
 
   // Return the entity centroid in world space.
-  inline glm::vec3 entity_global_centroid(EntityHandle e) const {
-    return glm::vec3(parent_global_matrix(e) * glm::vec4(e->centroid(), 1.0)); //
+  inline glm::vec3 globalCentroid(EntityHandle e) const {
+    return glm::vec3(parentGlobalMatrix(e) * glm::vec4(e->centroid(), 1.0)); //
   }
 
   // Return the first entity of the list, if any.
@@ -81,12 +86,8 @@ class SceneHierarchy {
   inline EntityList_t const& drawables() const { return frame_.drawables; }
   inline EntityList_t const& colliders() const { return frame_.colliders; }
 
-  // Select / Unselect entities depending on status.
-  void select(EntityHandle entity, bool status);
-  void select_all(bool status);
-
   // Return true when the entity is selected.
-  bool is_selected(EntityHandle entity) const;
+  bool isSelected(EntityHandle entity) const;
 
   // Return the pivot / centroid of the scene from the entities root.
   // If selected is true, will be limited to the selection.
@@ -95,14 +96,16 @@ class SceneHierarchy {
 
   // ----------------------
 
-  EntityHandle next(EntityHandle entity, int32_t step=1) const;
+  /* Experimental */
+
+  EntityHandle next(EntityHandle entity, int32_t step = 1) const;
 
   // Add a bounding model entity for physic collision.
-  EntityHandle add_bounding_sphere(float radius=1.0f); //
+  EntityHandle add_bounding_sphere(float radius = 1.0f); //
 
   // Render availables rigs from the scene for debug display.
-  void render_debug_rigs() const; //
-  void render_debug_colliders() const; //
+  void renderDebugRigs() const; //
+  void renderDebugColliders() const; //
 
   // Update / display selected gizmos.
   void gizmos(bool use_centroid);
@@ -139,21 +142,24 @@ class SceneHierarchy {
   };
 
   // Create a model entity from a mesh and a basename.
-  EntityHandle create_model_entity(std::string const& basename, MeshHandle mesh) noexcept;
+  EntityHandle createModelEntity(std::string const& basename, MeshHandle mesh) noexcept;
 
-  EntityHandle create_light_entity(std::string const& basename) noexcept; //
+  EntityHandle createLightEntity(std::string const& basename) noexcept; // [wip]
 
   // Hierarchically prefix-update entities.
-  void update_hierarchy(float const dt);
-  void update_sub_hierarchy(float const dt, EntityHandle entity, int &index);
+  void updateHierarchy(float const dt);
+  void subUpdateHierarchy(float const dt, EntityHandle entity, int &index);
+
+  // Update locals matrices based on their modified globals.
+  void updateSelectedLocalMatrices();
 
   // Sort drawable entities front to back, relative to the camera.
-  void sort_drawables(Camera const& camera);
+  void sortDrawables(Camera const& camera);
 
   // Return the entity's parent global matrix, or the identity if none exists.
-  inline glm::mat4 const& parent_global_matrix(EntityHandle e) const { 
+  inline glm::mat4 const& parentGlobalMatrix(EntityHandle e) const { 
     if (auto index = e->parent()->index(); index >= 0) {
-      return global_matrix(index);
+      return globalMatrix(index);
     }
     return sIdentity; 
   }

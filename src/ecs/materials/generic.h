@@ -48,7 +48,7 @@ class GenericMaterial final : public Material {
   }
 
   void setup(MaterialInfo const& info) final;
-  void update_internals() final;
+  void updateInternals() final;
 
  private:
   ColorMode     color_mode_;

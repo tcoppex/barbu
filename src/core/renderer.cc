@@ -57,7 +57,7 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
         auto const& bsphere = e->get<SphereColliderComponent>();
 
         // [debug bounding sphere]
-        auto bsParams = scene.global_matrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
+        auto bsParams = scene.globalMatrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
         bsParams.w = bsphere.radius();
         hair_.set_bounding_sphere( bsParams );  
       }
@@ -244,11 +244,11 @@ void Renderer::drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Ca
 
     // Display rigs with debug shapes.
     if (params_.show_rigs) {
-      scene.render_debug_rigs();
+      scene.renderDebugRigs();
     }
 
     // Display colliders with debug shapes.
-    scene.render_debug_colliders();
+    scene.renderDebugColliders();
   }
 
   CHECK_GX_ERROR();
@@ -259,7 +259,7 @@ void Renderer::drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Ca
 void Renderer::drawEntities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera) {
   auto render_drawables = [this, render_mode, &scene, &camera](EntityHandle drawable) {
     // global matrix of the entity.
-    auto const& world = scene.global_matrix(drawable->index());
+    auto const& world = scene.globalMatrix(drawable->index());
 
     // External, per-mesh render attributes.
     RenderAttributes attributes;
