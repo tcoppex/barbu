@@ -20,8 +20,7 @@ namespace views {
 
 // ----------------------------------------------------------------------------
 
-class App : public EventCallbacks
-{
+class App : public EventCallbacks {
  public:
   struct Parameters_t {
     bool regulate_fps = true;
@@ -62,17 +61,29 @@ class App : public EventCallbacks
    * Prefer the destructor. */
   virtual void finalize() {}
 
-  // ---
+  // -------
+
+  /* Returns core app parameters. */
+  inline Parameters_t& params() noexcept {
+    return params_;
+  }
+
+  /* Display / Hide UI */
+  inline void toggleUI() noexcept {
+    params_.show_ui ^= true;
+  }
 
   /* [temporary] Return the resolution of the current window. */
   inline glm::ivec2 resolution() const {
     return glm::ivec2( window_->width(), window_->height()); //
   }
 
-  /* Returns core app parameters. */
-  inline Parameters_t& params() noexcept {
-    return params_;
+  /* [temporary] */
+  Renderer::Parameters_t& getRendererParameters() {
+    return renderer_.params();
   }
+
+  // -------
 
  private:
   /* Initialize the core app. */
