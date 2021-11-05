@@ -2,6 +2,7 @@
 #define BARBU_ECS_ENTITY_FORWARD_H_
 
 #include <memory>
+#include <utility>
 
 class Entity;
 using EntityHandle = std::shared_ptr<Entity>;

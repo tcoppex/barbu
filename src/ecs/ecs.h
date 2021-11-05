@@ -13,6 +13,7 @@
 #include "ecs/components/light.h"
 
 #include "ecs/entities/model.h"
+#include "ecs/entities/bsphere.h"
 
 // ----------------------------------------------------------------------------
 

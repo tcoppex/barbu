@@ -41,9 +41,60 @@ class SceneHierarchy {
   // Update the scene and its entity.
   void update(float const dt, Camera const& camera);
 
+  // -----------
+
   // Add an entity to the scene hierarchy placed on the root when no parent is
-  // specified. 
-  void addEntity(EntityHandle entity, EntityHandle parent = nullptr);
+  // specified.
+  template<class T = Entity>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  addChildEntity(EntityHandle parent, std::shared_ptr<T> entity) noexcept {
+    assert( nullptr != entity );
+    assert( nullptr == entity->parent_ );
+
+    if (nullptr == parent) {
+      parent = root_;
+    }
+
+    // [fixme]
+    // New entities don't have an index and corresponding perFrame internal structures
+    // while the hierarchy has not been update. Hence using their perFrame data directly
+    // afterwards, in the same frame, can crash the app.
+    // One obvious solution would be to update the subhierarchy after every add.
+    // + Or use two updates : one pre-user_update & one pre-use_draw calls.
+    // + Or don't allow indexing use externally.
+    entity->index_ = -1; //entities_.empty() ? 0 : static_cast<int32_t>(entities_.size()-1);
+
+    entity->parent_ = parent;
+    parent->children_.push_back( entity );
+    entities_.push_back( entity );
+
+    return entity;
+  }
+
+  // Add an entity to the root.
+  template<class T = Entity>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  addEntity(std::shared_ptr<T> entity) noexcept {
+    return addChildEntity( nullptr, entity);
+  }
+
+  // Create an entity with a parent.
+  template<class T = Entity, class... U>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  createChildEntity(EntityHandle parent, U&&... u) {
+    auto e = Entity::Create<T>( std::forward<U>(u)... ); 
+    return e ? addChildEntity<T>(parent, e) : nullptr;
+  }
+
+  // Create an entity from the root.
+  template<class T = Entity, class... U>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  createEntity(U&&... u) {
+    auto e = Entity::Create<T>( std::forward<U>(u)... );
+    return e ? addEntity<T>(e) : nullptr;
+  }
+
+  // -----------
 
   // Remove an entity to the list of entity and update its relationship links.
   void removeEntity(EntityHandle entity, bool bRecursively = false);
@@ -142,9 +193,8 @@ class SceneHierarchy {
   };
 
   // Create a model entity from a mesh and a basename.
-  EntityHandle createModelEntity(std::string const& basename, MeshHandle mesh) noexcept;
-
-  EntityHandle createLightEntity(std::string const& basename) noexcept; // [wip]
+  // EntityHandle createModelEntity(std::string const& basename, MeshHandle mesh) noexcept;
+  // EntityHandle createLightEntity(std::string const& basename) noexcept; // [wip]
 
   // Hierarchically prefix-update entities.
   void updateHierarchy(float const dt);

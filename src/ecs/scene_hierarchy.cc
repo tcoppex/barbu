@@ -15,9 +15,6 @@
 // Default name given to rig entity loaded from model.
 static constexpr char const* kDefaultRigEntityName{ "[rig]" };
 
-// Default name given to bounding sphere entities.
-static constexpr char const* kDefaultBoundingSphereEntityName{ "BSphere" };
-
 // Resolution used to render debug sphere.
 constexpr int32_t kDebugSphereResolution = 16;
 
@@ -98,31 +95,6 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
       }
     }
   }
-}
-
-void SceneHierarchy::addEntity(EntityHandle entity, EntityHandle parent) {
-  assert( nullptr != entity );
-  assert( nullptr == entity->parent_ );
-
-  if (nullptr == parent) {
-    parent = root_;
-
-    // [debug only] 
-    //parent = entities_.empty() ? root_ : entities_.back();
-  }
-
-  // [fixme]
-  // New entities don't have an index and corresponding perFrame internal structures
-  // while the hierarchy has not been update. Hence using their perFrame data directly
-  // afterwards, in the same frame, can crash the app.
-  // One obvious solution would be to update the subhierarchy after every add.
-  // + Or use two updates : one pre-user_update & one pre-use_draw calls.
-  // + Or don't allow indexing use externally.
-  entity->index_ = -1; //entities_.empty() ? 0 : static_cast<int32_t>(entities_.size()-1);
-
-  entity->parent_ = parent;
-  parent->children_.push_back( entity );
-  entities_.push_back( entity );
 }
 
 void SceneHierarchy::removeEntity(EntityHandle entity, bool bRecursively) {
@@ -211,11 +183,16 @@ EntityHandle SceneHierarchy::importModel(std::string_view filename) {
     auto const basename = Logger::TrimFilename( std::string(filename) );    
     
     // Create a new mesh entity node.
-    auto entity = createModelEntity(basename, mesh);
+#if 0
+    auto entity = Entity::Create<ModelEntity>(basename, mesh); //
+    addEntity(entity);
+#else
+    auto entity = createEntity<ModelEntity>( basename, mesh);
+#endif
 
     // Handle skinned model.
     if (entity) {
-      if (auto skl = entity->as<ModelEntity>().skeleton(); skl) {
+      if (auto skl = entity->skeleton(); skl) {
         // ----------------------------
         // [ Work In Progress]
 
@@ -244,8 +221,12 @@ EntityHandle SceneHierarchy::importModel(std::string_view filename) {
           skl->calculate_global_bind_matrices();
 
           // Create an upper rig entity.
-          auto rig_root = std::make_shared<Entity>( kDefaultRigEntityName ); 
-          addEntity( rig_root, entity);
+#if 0
+          auto rig_root = Entity::Create( kDefaultRigEntityName ); 
+          addChildEntity( entity, rig_root);
+#else
+          auto rig_root = createChildEntity( entity, kDefaultRigEntityName);
+#endif
 
           // Add the rig root to the visual component.
           auto &visual = entity->get<VisualComponent>(); 
@@ -259,11 +240,12 @@ EntityHandle SceneHierarchy::importModel(std::string_view filename) {
           
           // Add joint entities to the hierarchy.
           for (int32_t i = 0; i < njoints; ++i) {
-            auto joint_entity = std::make_shared<Entity>( skl->names[i] );
-            
-            // Add the entity to its parent in the hierarchy.
+            // Entity's parent.
             auto const parent_id = skl->parents[i];
-            addEntity( joint_entity, (parent_id > -1) ? skeleton_map[parent_id] : rig_root);
+            auto parent = (parent_id > -1) ? skeleton_map[parent_id] : rig_root;
+            
+            // Create the new entity in the hierarchy.
+            auto joint_entity = createChildEntity( parent, skl->names[i]);
 
             // Update the entity local matrix using skeleton matrices.
             auto const& parent_inv_matrix = (parent_id > -1) ? skl->inverse_bind_matrices[parent_id] : glm::mat4(1.0f);
@@ -350,23 +332,6 @@ EntityHandle SceneHierarchy::next(EntityHandle entity, int32_t step) const {
   return nullptr;
 }
 
-EntityHandle SceneHierarchy::add_bounding_sphere(float radius) {
-#if 0
-  if (auto mesh = MESH_ASSETS.createSphere(kDebugSphereResolution, kDebugSphereResolution); mesh) {
-    return createModelEntity( kDefaultBoundingSphereEntityName, mesh);
-  }
-#else
-  auto entity = std::make_shared<Entity>(kDefaultBoundingSphereEntityName);
-  if (entity != nullptr) {
-    addEntity(entity);
-    auto &bsphere = entity->add<SphereColliderComponent>();
-    bsphere.set_radius(radius);
-  }
-#endif
-
-  return nullptr;
-}
-
 void SceneHierarchy::renderDebugRigs() const {
   for (auto e : frame_.drawables) {
     auto &visual = e->get<VisualComponent>();
@@ -406,28 +371,6 @@ void SceneHierarchy::gizmos(bool use_centroid) {
 }
 
 // ----------------------------------------------------------------------------
-
-EntityHandle SceneHierarchy::createModelEntity(std::string const& basename, MeshHandle mesh) noexcept {
-  // Create a unique entity.
-  auto entity = std::make_shared<ModelEntity>( basename, mesh);
-
-  // Add it to the scene hierarchy.
-  if (entity != nullptr) {
-    addEntity(entity);
-  }
-  return entity;
-}
-
-EntityHandle SceneHierarchy::createLightEntity(std::string const& basename) noexcept {
-  auto entity = std::make_shared<Entity>( basename );
-  
-  entity->add<LightComponent>();
-
-  if (entity != nullptr) {
-    addEntity(entity);
-  }
-  return entity;
-}
 
 void SceneHierarchy::updateHierarchy(float const dt) {
   // (the root is used as a virtual entity and is hence not updated).

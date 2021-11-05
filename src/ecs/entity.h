@@ -29,6 +29,14 @@ class Entity {
 
   using EntityChildren_t = std::vector<EntityHandle>;
 
+  /* Wrapper around specific EntityHandle allocator. */
+  template<class T = Entity, class... U> 
+  static 
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>> 
+  Create(U&&... u) {
+    return std::make_shared<T>(std::forward<U>(u)...);
+  }
+  
  public:
   Entity() = default;
 
