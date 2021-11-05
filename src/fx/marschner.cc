@@ -74,7 +74,7 @@ void Marschner::generate() {
 
 // ----------------------------------------------------------------------------
 
-void Marschner::bind_lookups(int baseUnit) {
+void Marschner::bindLUTs(int baseUnit) {
   for (int i=0; i<kNumLUTs; ++i) {
     gx::BindTexture(textures_[i]->id, baseUnit + i, gx::SamplerName::LinearRepeat);
   }
@@ -82,7 +82,7 @@ void Marschner::bind_lookups(int baseUnit) {
 
 // ----------------------------------------------------------------------------
 
-void Marschner::unbind_lookups(int baseUnit) {
+void Marschner::unbindLUTs(int baseUnit) {
   for (int i=0; i<kNumLUTs; ++i) {
     gx::UnbindTexture(baseUnit + i);
   }

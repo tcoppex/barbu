@@ -69,8 +69,8 @@ class Marschner {
   void update(bool bForceUpdate = false);
   void generate();
 
-  void bind_lookups(int baseUnit = 0);
-  void unbind_lookups(int baseUnit = 0);
+  void bindLUTs(int baseUnit = 0);
+  void unbindLUTs(int baseUnit = 0);
 
  private:
   Parameters_t params_;

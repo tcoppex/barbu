@@ -91,21 +91,21 @@ struct RawMeshData {
   //   return static_cast<int32_t>(vertices.size()); //
   // }
 
-  bool has_vertex_groups() const { 
+  bool hasVertexGroups() const { 
     return !vgroups.empty();
   }
 
-  void reserve_skinning() {
+  void reserveSkinningData() {
     joints.reserve(vertices.capacity());
     weights.reserve(vertices.capacity());
   }
   
   // Use elementsAttribs & vertices to fill the normals attributes.
-  void recalculate_normals();
+  void recalculateNormals();
 
   // Calculate tangent space based on vertices position, texcoords & normals,
   // and index them on elementsAttribs.
-  void recalculate_tangents(); //
+  void recalculateTangents(); //
 };
 
 // ----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ struct RawMeshFile {
 
   // [to clarify]
   // Prefix VertexGroups and materials names by the main material id to avoid collisions.
-  void prefix_material_vg_names(MaterialFile &mtl) {
+  void prefixMaterialVertexGroupNames(MaterialFile &mtl) {
     for (auto &mesh : meshes) {
       for (auto &vg : mesh.vgroups) {
         vg.name = mtl.id + "::" + vg.name;

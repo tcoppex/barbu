@@ -28,7 +28,7 @@ void Renderer::init() {
 void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb) {
   float const dt = GlobalClock::Get().deltaTime();
 
-  gizmo_.begin_frame( dt, camera);
+  gizmo_.beginFrame( dt, camera);
 
   // User's update.
   update_cb(); //
@@ -40,7 +40,7 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
   // UPDATE
   {
     // Postprocessing, resize textures when needed [to improve]
-    postprocess_.setup_textures(camera); //
+    postprocess_.setupTextures(camera); //
 
     // Grid.
     grid_.update(dt, camera);
@@ -89,7 +89,7 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
 
   scene.gizmos(false); //
 
-  gizmo_.end_frame(camera);
+  gizmo_.endFrame(camera);
 }
 
 // void Renderer::register_draw_cb(DrawCallback_t const& draw_cb) {
@@ -270,8 +270,8 @@ void Renderer::drawEntities(RenderMode render_mode, SceneHierarchy const& scene,
     // (vertex skinning)
     if (drawable->has<SkinComponent>()) {
       auto const& skin = drawable->get<SkinComponent>();
-      attributes.skinning_texid    = skin.texture_id(); //
-      attributes.skinning_mode     = skin.skinning_mode();
+      attributes.skinning_texid    = skin.textureID(); //
+      attributes.skinning_mode     = skin.skinningMode();
     }
 
     // (fragment)

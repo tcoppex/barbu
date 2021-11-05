@@ -82,7 +82,7 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
         auto const& global_pose_matrices = controller.global_pose_matrices();
 
         // Map skeleton joint index to their rig entity.
-        auto &skeleton_map = skin.skeleton_map(); //
+        auto &skeleton_map = skin.skeletonMap(); //
         assert(!skeleton_map.empty());
 
         for (int32_t joint_id = 0; joint_id < controller.njoints(); ++joint_id) {
@@ -198,7 +198,7 @@ EntityHandle SceneHierarchy::importModel(std::string_view filename) {
 
         // Add a skinning component.
         auto& skin = entity->add<SkinComponent>();
-        skin.set_skeleton( skl );
+        skin.setSkeleton( skl );
 
         // [debug]
         // Set the first animation clips on loop.
@@ -235,7 +235,7 @@ EntityHandle SceneHierarchy::importModel(std::string_view filename) {
           // We use a map intern to the skin component to find entities from their
           // joint index.
           auto const njoints{ skl->njoints() };
-          auto &skeleton_map = skin.skeleton_map();  //
+          auto &skeleton_map = skin.skeletonMap();  //
           skeleton_map.resize( njoints );
           
           // Add joint entities to the hierarchy.

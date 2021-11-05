@@ -31,22 +31,22 @@ class LightComponent final : public ComponentParams<Component::Light> {
   inline glm::vec3 const& color() const noexcept { return color_; }
   inline float intensity() const noexcept { return intensity_; }
 
-  void set_type(LightType type) noexcept {
+  void setType(LightType type) noexcept {
     type_ = type;
   }
 
-  void set_color(glm::vec3 const& color) noexcept {
+  void setColor(glm::vec3 const& color) noexcept {
     color_ = color;
   }
 
-  void set_intensity(float intensity) noexcept {
+  void setIntensity(float intensity) noexcept {
     intensity_ = intensity;
   }
 
  private:
-  LightType type_;
-  glm::vec3 color_;
-  float intensity_;
+  LightType   type_;
+  glm::vec3   color_;
+  float       intensity_;
 };
 
 // ----------------------------------------------------------------------------

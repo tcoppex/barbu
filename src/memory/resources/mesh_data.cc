@@ -370,13 +370,13 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
       if (_raw.normals.empty()) {
         LOG_DEBUG_INFO( "Recalculating normals for :", meshname );
 
-        _raw.recalculate_normals();
+        _raw.recalculateNormals();
       }
 
       // [only recalculate tangent when the material contains normal map ?]
       if (bNeedTangents) {
         LOG_DEBUG_INFO( "Recalculating tangents for :", meshname );
-        _raw.recalculate_tangents();
+        _raw.recalculateTangents();
       }
     }
     
@@ -456,7 +456,7 @@ bool MeshData::setup(RawMeshFile &meshfile, bool bNeedTangents) {
 
 // ----------------------------------------------------------------------------
 
-void MeshData::calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const {
+void MeshData::calculateBounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const {
   auto const resultX = std::minmax_element(vertices.begin(), vertices.end(), 
     [](auto const &a, auto const &b) { return a.position.x < b.position.x; }
   );

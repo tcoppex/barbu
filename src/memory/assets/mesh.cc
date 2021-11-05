@@ -4,15 +4,15 @@
 // ----------------------------------------------------------------------------
 
 void Mesh::draw(int32_t count, MeshData::PrimitiveType primitive) const {
-  for (auto i = 0; i < nsubgeometry(); ++i) {
-    draw_submesh(i, count, primitive);
+  for (auto i = 0; i < numSubMesh(); ++i) {
+    drawSubMesh(i, count, primitive);
   }
 }
 
-void Mesh::draw_submesh(int32_t index, int32_t count, MeshData::PrimitiveType primitive) const {
+void Mesh::drawSubMesh(int32_t index, int32_t count, MeshData::PrimitiveType primitive) const {
   assert( loaded() );
 
-  auto const mode = get_draw_mode(primitive);
+  auto const mode = getInternalDrawMode(primitive);
 
   glBindVertexArray(vao_);
   if (nelems_ > 0) {
@@ -35,7 +35,7 @@ void Mesh::draw_submesh(int32_t index, int32_t count, MeshData::PrimitiveType pr
 
 // ----------------------------------------------------------------------------
 
-uint32_t Mesh::get_draw_mode(MeshData::PrimitiveType primitive) const {
+uint32_t Mesh::getInternalDrawMode(MeshData::PrimitiveType primitive) const {
   GLenum mode;
 
   // When primitive is set to kInternal, use the mesh internal type.
@@ -106,7 +106,7 @@ bool Mesh::setup() {
   skeleton_ = meshdata.skeleton;
 
   // Calculate the mesh AABB.
-  meshdata.calculate_bounds( centroid_, bounds_, radius_);
+  meshdata.calculateBounds( centroid_, bounds_, radius_);
 
   // [Recenter the mesh to its pivot ?]
   // at least horizontally / XZ plane, or alternatively suggest a default transform.

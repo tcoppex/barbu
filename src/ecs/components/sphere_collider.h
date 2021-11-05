@@ -20,18 +20,17 @@ class SphereColliderComponent final : public ComponentParams<Component::SphereCo
   inline float radius() const { return radius_; }
   //inline glm::vec4 data() const { return glm::vec4( center_, radius_); }
 
-
-  inline void set_center(glm::vec3 const& center) noexcept {
+  inline void setCenter(glm::vec3 const& center) noexcept {
     center_ = center;
   }
 
-  inline void set_radius(float radius) noexcept {
+  inline void setRadius(float radius) noexcept {
     radius_ = radius;
   }
 
   inline void set(glm::vec3 const& center, float radius) noexcept {
-    set_center(center);
-    set_radius(radius);    
+    setCenter(center);
+    setRadius(radius);    
   }
 
  private:

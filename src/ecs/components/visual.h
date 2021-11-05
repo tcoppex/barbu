@@ -18,11 +18,11 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
  public:
   VisualComponent() = default;
 
-  // Render parts of the mesh matching the RenderMode.
+  /* Render parts of the mesh matching the RenderMode. */
   void render(RenderAttributes const& attributes, RenderMode const render_mode) {
     
     // Special Case : the mesh has no materials.
-    if (!mesh_->has_materials()) {
+    if (!mesh_->hasMaterials()) {
       if (render_mode == RenderMode::kDefault) {
         material()->updateUniforms(attributes);
         mesh_->draw();
@@ -33,8 +33,8 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     // Keep tracks of previous program to avoid useless uniform setup mesh wised.
     uint32_t last_pgm = 0u;
     int32_t texture_unit = 0;
-    int32_t const nsubgeometry{ mesh_->nsubgeometry() };
-    for (int32_t i = 0; i < nsubgeometry; ++i) {
+    int32_t const sub_mesh_count{ mesh_->numSubMesh() };
+    for (int32_t i = 0; i < sub_mesh_count; ++i) {
       auto const mat{ material(i) };
 
       // Check the material render mode.
@@ -56,7 +56,7 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
       }
 
       // Draw submesh.
-      mesh_->draw_submesh(i);
+      mesh_->drawSubMesh(i);
 
       // Restore pipeline state.
       if (bCullFace) {
@@ -67,12 +67,12 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
     CHECK_GX_ERROR();
   }
 
-  // Add a mesh with a default material for each submeshes.
+  /* Add a mesh with a default material for each submeshes. */
   inline void setMesh(MeshHandle mesh) {
     mesh_ = mesh;
 
     // materials_.clear();
-    // for (auto& vg : mesh_->vertex_groups()) {
+    // for (auto& vg : mesh_->vertexGroups()) {
     //   auto mat = MATERIAL_ASSETS.get( AssetId(vg.name) );
     //   materials_.insert_or_assign( vg.name, mat->loaded() ? mat : MATERIAL_ASSETS.get_default());
     // }
@@ -98,11 +98,11 @@ class VisualComponent final : public ComponentParams<Component::Visual> {
   inline MaterialHandle material(int32_t index = 0) {
     auto const default_material{ MATERIAL_ASSETS.get_default()->get() };
 
-    if (!mesh_->has_materials()) {
+    if (!mesh_->hasMaterials()) {
       return default_material;
     }
     
-    auto const& vg{ mesh_->vertex_group(index) };
+    auto const& vg{ mesh_->vertexGroup(index) };
     auto const material_id{ AssetId(vg.name) };
     return (MATERIAL_ASSETS.has(material_id)) ? MATERIAL_ASSETS.get(material_id)->get()
                                               : default_material

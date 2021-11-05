@@ -19,7 +19,7 @@ class BSphereEntity : public Entity {
     : Entity(_name)
   {
     auto &sphere = add<SphereColliderComponent>();
-    sphere.set_radius(_radius);
+    sphere.setRadius(_radius);
   }
 
   BSphereEntity(float _radius)

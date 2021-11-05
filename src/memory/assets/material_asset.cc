@@ -49,7 +49,7 @@ MaterialAssetFactory::Handle MaterialAssetFactory::get_default() {
 }
   
 void MaterialAssetFactory::import_from_meshdata(ResourceId meshdata_id) {
-  if (auto h = Resources::Get<MeshData>( meshdata_id ); h.is_valid() && h.data->has_materials()) { 
+  if (auto h = Resources::Get<MeshData>( meshdata_id ); h.is_valid() && h.data->hasMaterials()) { 
     int32_t index = 0;
     for (auto const& info : h.data->material.infos) {
       create( AssetId(info.name), Parameters_t(meshdata_id, index++));

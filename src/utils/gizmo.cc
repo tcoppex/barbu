@@ -60,7 +60,7 @@ void Gizmo::deinit() {
   glDeleteBuffers(1, &vbo_);
 }
 
-void Gizmo::begin_frame(float dt, Camera const& camera) {
+void Gizmo::beginFrame(float dt, Camera const& camera) {
   IM3D_ASSERT(vao_ && vbo_ && pgm_.points && pgm_.lines && pgm_.triangles);
 
 // At the top of each frame, the application must fill the Im3d::AppData struct and then call Im3d::NewFrame().
@@ -152,7 +152,7 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
   Im3d::NewFrame();
 }
 
-void Gizmo::end_frame(Camera const& camera) {
+void Gizmo::endFrame(Camera const& camera) {
 // After all Im3d calls have been made for a frame, the user must call Im3d::EndFrame() to finalize draw data, then
 // access the draw lists for rendering. Draw lists are only valid between calls to EndFrame() and NewFrame().
 // The example below shows the simplest approach to rendering draw lists; variations on this are possible. See the 

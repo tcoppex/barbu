@@ -339,7 +339,7 @@ void MarchingCube::generate(glm::ivec3 const& grid_dimension) {
   for (int k = 0; k < grid_dim_.z; ++k) {
     for (int j = 0; j < grid_dim_.y; ++j) {
       for (int i = 0; i < grid_dim_.x; ++i) {
-        create_chunk( glm::ivec3( i, j, k) );
+        createChunk( glm::ivec3( i, j, k) );
       }
     }
   }
@@ -557,7 +557,7 @@ void MarchingCube::init_shaders() {
   // 1) build the density volume.
   {
     programs_.build_density = PROGRAM_ASSETS.createCompute(
-      SHADERS_DIR "/marching_cube/01_density_volume/cs_build_density_volume.glsl"
+      SHADERS_DIR "/marching_cube/01_density_volume/cs_buildDensityVolume.glsl"
     );
 
     int32_t const seed = 4567891 * (rand() / static_cast<float>(RAND_MAX)); //
@@ -588,8 +588,8 @@ void MarchingCube::init_shaders() {
 
     programs_.genvertices = PROGRAM_ASSETS.createGeo(
       asset_id,
-      SHADERS_DIR "/marching_cube/03_generate_vertices/vs_generate_vertices.glsl",
-      SHADERS_DIR "/marching_cube/03_generate_vertices/gs_generate_vertices.glsl"
+      SHADERS_DIR "/marching_cube/03_generateVertices/vs_generateVertices.glsl",
+      SHADERS_DIR "/marching_cube/03_generateVertices/gs_generateVertices.glsl"
     );
 
     auto const pgm = programs_.genvertices->id;
@@ -614,7 +614,7 @@ void MarchingCube::init_shaders() {
 
 //-----------------------------------------------------------------------------
 
-void MarchingCube::create_chunk( glm::ivec3 const& coords ) {
+void MarchingCube::createChunk( glm::ivec3 const& coords ) {
 
   int const index = (grid_dim_.x * grid_dim_.y) * coords.z
                   + grid_dim_.x * coords.y 
@@ -633,7 +633,7 @@ void MarchingCube::create_chunk( glm::ivec3 const& coords ) {
 
 
   // 1) Generate the density volume.
-  build_density_volume(chunk);
+  buildDensityVolume(chunk);
 
   gx::Enable( gx::State::RasterizerDiscard );
   {
@@ -643,7 +643,7 @@ void MarchingCube::create_chunk( glm::ivec3 const& coords ) {
     // [better to use a compute shader]
     // 2) List triangles to output.
     glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, query);
-      list_triangles();
+      listTriangles();
     glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
     
     GLint query_result = 0;
@@ -652,7 +652,7 @@ void MarchingCube::create_chunk( glm::ivec3 const& coords ) {
     // 3) Generate the chunk's triangles (if any).
     bool const bHasTriangles = (query_result > 0);
     if (bHasTriangles) {
-      generate_vertices(chunk);
+      generateVertices(chunk);
       chunk.state = CHUNK_FILLED;
     }
   }
@@ -661,7 +661,7 @@ void MarchingCube::create_chunk( glm::ivec3 const& coords ) {
   CHECK_GX_ERROR();
 }
 
-void MarchingCube::build_density_volume(ChunkInfo_t &chunk) {
+void MarchingCube::buildDensityVolume(ChunkInfo_t &chunk) {
   auto &pgm = programs_.build_density->id;
 
   float const t = GlobalClock::Get().applicationTime();
@@ -685,7 +685,7 @@ void MarchingCube::build_density_volume(ChunkInfo_t &chunk) {
   CHECK_GX_ERROR();
 }
 
-void MarchingCube::list_triangles() {
+void MarchingCube::listTriangles() {
   auto const pgm = programs_.trilist->id;
 
   gx::SetUniform( pgm, "uMargin", static_cast<float>(kMargin));
@@ -724,7 +724,7 @@ void MarchingCube::list_triangles() {
   CHECK_GX_ERROR();
 }
 
-void MarchingCube::generate_vertices(ChunkInfo_t &chunk) {
+void MarchingCube::generateVertices(ChunkInfo_t &chunk) {
   if ((chunk.id < 0) && (nfreebuffers_ <= 0)) {
     LOG_WARNING( "No more free space for chunk datas." );
     chunk.id = -1; //

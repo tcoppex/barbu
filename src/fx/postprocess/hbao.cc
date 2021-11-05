@@ -25,29 +25,21 @@ static void bindImageTexture(GLint unit, GLuint tex, GLenum mode, GLenum format)
 // ----------------------------------------------------------------------------
 
 void HBAO::init() {
-  init_shaders();
+  pgm_.ssao    = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_hbao.glsl" );
+  pgm_.blur_x  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_x.glsl" );
+  pgm_.blur_y  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_y.glsl" );
+
+  // check we found the subroutine location.
+  LOG_CHECK( glGetSubroutineUniformLocation(pgm_.ssao->id, GL_COMPUTE_SHADER, "suHBAO") > -1 ); //
+
+  CHECK_GX_ERROR();
 }
 
 void HBAO::deinit() {
   //
 }
 
-void HBAO::process(Camera const& camera, GLuint const tex_linear_depth, GLuint &tex_ao_out) {
-  assert(0 != tex_linear_depth);
-
-  update_parameters(camera);
-
-  run_kernel_hbao(tex_linear_depth);
-  run_kernel_blur_ao();
-
-  tex_ao_out = textures_[BLUR_AO_XY];
-
-  CHECK_GX_ERROR();
-}
-
-// ----------------------------------------------------------------------------
-
-void HBAO::create_textures(int32_t w, int32_t h, float const scaling) {
+void HBAO::createTextures(int32_t w, int32_t h, float const scaling) {
   params_.full_resolution = glm::vec4( w, h, 1.0f / w, 1.0f / h);
   params_.ao_resolution   = glm::vec4( scaling * w, scaling * h, 1.0f / (scaling*w), 1.0f / (scaling * h));
 
@@ -63,23 +55,27 @@ void HBAO::create_textures(int32_t w, int32_t h, float const scaling) {
   CHECK_GX_ERROR();
 }
 
-void HBAO::release_textures() {
+void HBAO::releaseTextures() {
   glDeleteTextures(((GLsizei)textures_.size()), textures_.data()); //
   CHECK_GX_ERROR();
 }
 
-void HBAO::init_shaders() {
-  pgm_.ssao    = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_hbao.glsl" );
-  pgm_.blur_x  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_x.glsl" );
-  pgm_.blur_y  = PROGRAM_ASSETS.createCompute( SHADERS_DIR "/postprocess/ssao/cs_blur_ao_y.glsl" );
+void HBAO::applyEffect(Camera const& camera, GLuint const tex_linear_depth, GLuint &tex_ao_out) {
+  assert(0 != tex_linear_depth);
 
-  // check we found the subroutine location.
-  LOG_CHECK( glGetSubroutineUniformLocation(pgm_.ssao->id, GL_COMPUTE_SHADER, "suHBAO") > -1 ); //
+  updateParameters(camera);
+
+  computeHBAO(tex_linear_depth);
+  computeBlurAO();
+
+  tex_ao_out = textures_[BLUR_AO_XY];
 
   CHECK_GX_ERROR();
 }
 
-void HBAO::update_parameters(Camera const& camera) {
+// ----------------------------------------------------------------------------
+
+void HBAO::updateParameters(Camera const& camera) {
   auto constexpr inv_ln_two     = 1.44269504f;
   auto constexpr sqrt_ln_two    = 0.832554611f;
   
@@ -111,7 +107,7 @@ void HBAO::update_parameters(Camera const& camera) {
   #endif
 }
 
-void HBAO::run_kernel_hbao(GLuint const tex_linear_depth) {
+void HBAO::computeHBAO(GLuint const tex_linear_depth) {
   auto const pgm = pgm_.ssao->id; 
 
   uint32_t const width  = params_.ao_resolution.x; //
@@ -182,7 +178,7 @@ void HBAO::run_kernel_hbao(GLuint const tex_linear_depth) {
   CHECK_GX_ERROR();
 }
 
-void HBAO::run_kernel_blur_ao() {
+void HBAO::computeBlurAO() {
   auto const width  = params_.ao_resolution.x; //
   auto const height = params_.ao_resolution.y; //
 

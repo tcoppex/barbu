@@ -53,8 +53,8 @@ void Hair::setup(ResourceId const& scalp_id) {
   glm::vec3 pivot{};
   glm::vec3 bounds{};
   float radius{};
-  scalp_mesh_data.calculate_bounds(pivot, bounds, radius); //
-  //scalp_mesh_data.calculate_bounds(&pivot, &bounds, &radius); // TODO
+  scalp_mesh_data.calculateBounds(pivot, bounds, radius); //
+  //scalp_mesh_data.calculateBounds(&pivot, &bounds, &radius); // TODO
 
   nroots_ = scalp_mesh_data.nvertices();
   model_ = glm::translate( glm::mat4(1.0f), pivot);
@@ -189,13 +189,13 @@ void Hair::render(Camera const& camera) {
         gx::SetUniform( pgm, "uAzimuthalLUT",     1);
         gx::SetUniform( pgm, "uAlbedo",           params_.render.albedo);
 
-        marschner_.bind_lookups();
+        marschner_.bindLUTs();
 
         glBindVertexArray(tess_stream_.vao);
           glDrawTransformFeedback(GL_LINES, tess_stream_.tf); //
         glBindVertexArray(0);
 
-        marschner_.unbind_lookups();
+        marschner_.unbindLUTs();
 
       gx::UseProgram(0);
     }

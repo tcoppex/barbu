@@ -224,7 +224,7 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
     }
   
     // Create a default vertex group if none were specified.
-    if (!raw.has_vertex_groups()) {
+    if (!raw.hasVertexGroups()) {
       raw.vgroups.resize(1);
       raw.vgroups[0].name = MeshData::kDefaultGroupName;
     }
@@ -431,7 +431,7 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
     if (LoadFile(fn, &buffer, &buffersize)) {
       ParseMTL( buffer, mtl);
     }
-    meshfile.prefix_material_vg_names(mtl);
+    meshfile.prefixMaterialVertexGroupNames(mtl);
 
     // Transform relative paths to absolute ones.
     for (auto &mat : mtl.infos) {
@@ -968,7 +968,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
       meshfile.material_id = fn; 
       mtl.id = fn.substr(fn.find_last_of('/') + 1);
       mtl.id = mtl.id.substr(0, mtl.id.find_last_of('.'));
-      meshfile.prefix_material_vg_names(mtl);
+      meshfile.prefixMaterialVertexGroupNames(mtl);
     }
 
     // -- ANIMATION DATAS.
