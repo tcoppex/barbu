@@ -74,7 +74,7 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
     // 'Deferred'-pass, post-process the solid objects.
    
     postprocess_.begin();
-      drawPass( RendererPassBit::PASS_DEFERRED, scene, camera);
+    drawPass( RendererPassBit::PASS_DEFERRED, scene, camera);
     postprocess_.end(camera);
 
     // Forward-pass, render the special effects.
@@ -275,10 +275,10 @@ void Renderer::drawEntities(RenderMode render_mode, SceneHierarchy const& scene,
     }
 
     // (fragment)
-    attributes.brdf_lut_texid      = skybox_.brdf_lut_map()->id;
-    attributes.prefilter_texid     = skybox_.prefilter_map() ? skybox_.prefilter_map()->id : 0u;
-    attributes.irradiance_texid    = skybox_.irradiance_map() ? skybox_.irradiance_map()->id : 0u;
-    attributes.irradiance_matrices = skybox_.has_irradiance_matrice() ? skybox_.irradiance_matrices() : nullptr;
+    attributes.brdf_lut_texid      = skybox_.textureBRDFLookup()->id;
+    attributes.prefilter_texid     = skybox_.texturePrefilter() ? skybox_.texturePrefilter()->id : 0u;
+    attributes.irradiance_texid    = skybox_.textureIrradiance() ? skybox_.textureIrradiance()->id : 0u;
+    attributes.irradiance_matrices = skybox_.hasIrradianceMatrices() ? skybox_.irradianceMatrices() : nullptr;
     attributes.eye_position        = camera.position();
     //attributes.tonemap_mode      = tonemap_mode; // [todo]
 

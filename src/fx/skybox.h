@@ -25,17 +25,18 @@ class Skybox {
   void init();
   void deinit();
 
-  void setup_texture(ResourceId resource_id); //
+  void setTexture(ResourceId resource_id); //
 
   void render(Camera const& camera);
 
-  inline TextureHandle texture() { return sky_map_; }
-  inline TextureHandle irradiance_map() { return irradiance_map_; }
-  inline TextureHandle prefilter_map() { return prefilter_map_; }
-  inline TextureHandle brdf_lut_map() { return brdf_lut_map_; }
+  inline TextureHandle textureDiffuse() { return sky_map_; }
+  inline TextureHandle textureIrradiance() { return irradiance_map_; }
+  inline TextureHandle texturePrefilter() { return prefilter_map_; }
+  inline TextureHandle textureBRDFLookup() { return brdf_lut_map_; }
 
-  inline glm::mat4 const* irradiance_matrices() const { return sh_matrices_.data(); }
-  inline bool has_irradiance_matrice() const noexcept { return has_sh_matrices_; }
+  /* Spherical harmonics irradiances matrices. */
+  inline glm::mat4 const* irradianceMatrices() const { return sh_matrices_.data(); }
+  inline bool hasIrradianceMatrices() const noexcept { return has_sh_matrices_; }
 
  private:
   enum class RenderMode {
@@ -45,13 +46,9 @@ class Skybox {
     kCount
   };
 
-  /**/
-  void calculate_integrated_brdf();
-
-  /**/
-  void calculate_convolution_envmaps(std::string const& basename);
-
-  /**/
+  void computeIntegratedBRDF();
+  void computeConvolutionMaps(std::string const& basename);
+  
   void render(RenderMode mode, Camera const& camera);
 
   struct {

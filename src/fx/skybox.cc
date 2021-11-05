@@ -46,7 +46,7 @@ void Skybox::init() {
   // [should probably be moved elsewhere]
   // Compute the integrate BRDF Lookup texture.
   if constexpr(true) {
-    calculate_integrated_brdf();
+    computeIntegratedBRDF();
   }
 
   // Skybox cube mesh.
@@ -67,7 +67,7 @@ void Skybox::render(Camera const& camera) {
   render(RenderMode::Sky, camera);
 }
 
-void Skybox::setup_texture(ResourceId resource_id) {
+void Skybox::setTexture(ResourceId resource_id) {
   assert(sky_map_ == nullptr); //
 
   // (we might want to use mipmaps to improve the quality of  late convolutions)
@@ -135,7 +135,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
   }
   
   if (loaded) {
-    calculate_convolution_envmaps(basename);
+    computeConvolutionMaps(basename);
   }
 
   LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
@@ -143,7 +143,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
 
 // ----------------------------------------------------------------------------
 
-void Skybox::calculate_integrated_brdf() {
+void Skybox::computeIntegratedBRDF() {
   // Setup the 2D texture.
   constexpr int32_t kFormat     = GL_RG16F;
   constexpr int32_t kResolution = 512;
@@ -182,7 +182,7 @@ void Skybox::calculate_integrated_brdf() {
   CHECK_GX_ERROR();
 }
 
-void Skybox::calculate_convolution_envmaps(std::string const& basename) {
+void Skybox::computeConvolutionMaps(std::string const& basename) {
   Probe probe;
 
   // Be sure to have set the proper pipeline states (supposedely already set in the renderer).
