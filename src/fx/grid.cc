@@ -45,7 +45,7 @@ void Grid::update(float const dt, Camera const& camera) {
   auto const dp = glm::abs(glm::dot(front, up));
   float factor = (glm::abs(abc->target().y) < 1.0e-5f) ? glm::smoothstep(0.0f, 0.75f*epsX, dp) : 1.0f;
   
-  if (abc->is_sideview_set())
+  if (abc->isSideView())
   {
     auto const afront = glm::abs(front);
 

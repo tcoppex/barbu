@@ -172,7 +172,7 @@ void Postprocess::post_effects(Camera const& camera) {
   gx::UseProgram(pgm);
   {
     gx::SetUniform( pgm, "uResolution", lindepth_res_);
-    gx::SetUniform( pgm, "uLinearParams", camera.linearization_params());
+    gx::SetUniform( pgm, "uLinearParams", camera.linearizationParams());
 
     gx::BindTexture(buffer_texture(DEPTH), ++image_unit);
     gx::SetUniform( pgm, "uDepthIn", image_unit);

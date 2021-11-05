@@ -7,8 +7,8 @@
 #include "im3d/im3d.h"  // (used for debug render)
 
 #include "core/camera.h"
-#include "ui/views/ecs/SceneHierarchyView.h"
 #include "core/global_clock.h"
+#include "ui/views/ecs/SceneHierarchyView.h"
 
 // ----------------------------------------------------------------------------
 
@@ -68,7 +68,7 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
   sort_drawables(camera);
 
   // Animate nodes with skinning (for now, suppose them all drawables).
-  float const global_time = GlobalClock::Get().application_time();
+  float const global_time = GlobalClock::Get().applicationTime();
   for (auto& e : frame_.drawables) {
     if (!e->has<SkinComponent>()) {
       continue;
@@ -426,11 +426,22 @@ void SceneHierarchy::gizmos(bool use_centroid) {
 
 // ----------------------------------------------------------------------------
 
-EntityHandle SceneHierarchy::create_model_entity(std::string const& basename, MeshHandle mesh) {
+EntityHandle SceneHierarchy::create_model_entity(std::string const& basename, MeshHandle mesh) noexcept {
   // Create a unique entity.
   auto entity = std::make_shared<ModelEntity>( basename, mesh);
 
   // Add it to the scene hierarchy.
+  if (entity != nullptr) {
+    add_entity(entity);
+  }
+  return entity;
+}
+
+EntityHandle SceneHierarchy::create_light_entity(std::string const& basename) noexcept {
+  auto entity = std::make_shared<Entity>( basename );
+  
+  entity->add<LightComponent>();
+
   if (entity != nullptr) {
     add_entity(entity);
   }

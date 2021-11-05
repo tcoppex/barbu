@@ -23,7 +23,7 @@ void Resources::WatchUpdate(std::function<void()> update_cb) {
 
     sCurrentTick = 0.0f;
   }
-  sCurrentTick += static_cast<float>(GlobalClock::Get().delta_time()); //
+  sCurrentTick += static_cast<float>(GlobalClock::Get().deltaTime()); //
 }
 
 // ----------------------------------------------------------------------------

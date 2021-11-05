@@ -71,9 +71,12 @@ class SceneHierarchy {
     return glm::vec3(parent_global_matrix(e) * glm::vec4(e->centroid(), 1.0)); //
   }
 
+  // Return the first entity of the list, if any.
   EntityHandle first() const { return entities_.empty() ? nullptr : entities_.front(); } //
-
+  
+  // Return the list of entities.
   inline EntityList_t const& all() const { return entities_; }
+
   inline EntityList_t const& selected() const { return frame_.selected; }
   inline EntityList_t const& drawables() const { return frame_.drawables; }
   inline EntityList_t const& colliders() const { return frame_.colliders; }
@@ -136,7 +139,9 @@ class SceneHierarchy {
   };
 
   // Create a model entity from a mesh and a basename.
-  EntityHandle create_model_entity(std::string const& basename, MeshHandle mesh);
+  EntityHandle create_model_entity(std::string const& basename, MeshHandle mesh) noexcept;
+
+  EntityHandle create_light_entity(std::string const& basename) noexcept; //
 
   // Hierarchically prefix-update entities.
   void update_hierarchy(float const dt);

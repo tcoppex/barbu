@@ -26,7 +26,7 @@ Clock::Clock()
   converse_table_[TimeUnit::Default]      = converse_table_[default_unit_];
 
   // initialize the clock
-  start_time_ = absolute_time();
+  start_time_ = absoluteTime();
 
   resume();
 }
@@ -36,7 +36,7 @@ void Clock::update() {
   ++framecount_;
 
   double lastFrameTime{frame_time_};
-  frame_time_ = relative_time(TimeUnit::Millisecond);
+  frame_time_ = relativeTime(TimeUnit::Millisecond);
   delta_time_ = frame_time_ - lastFrameTime;
 
   if ((frame_time_ - last_fps_time_) >= 1000.0) {
@@ -45,7 +45,7 @@ void Clock::update() {
     current_second_framecount_ = 0u;
   }
 
-  if (!is_paused()) {
+  if (!isPaused()) {
     application_delta_time_ = time_scale_ * delta_time_;
     application_time_ += application_delta_time_;
   } else {
@@ -53,11 +53,11 @@ void Clock::update() {
   }
 }
 
-void Clock::stabilize_delta_time(const double dt) {
-  frame_time_ = relative_time(TimeUnit::Millisecond) - dt;
+void Clock::stabilizeDeltaTime(const double dt) {
+  frame_time_ = relativeTime(TimeUnit::Millisecond) - dt;
   delta_time_ = dt;
 
-  if (!is_paused()) {
+  if (!isPaused()) {
     application_delta_time_ = time_scale_ * delta_time_;
     application_time_ += application_delta_time_;
   } else {
@@ -65,53 +65,53 @@ void Clock::stabilize_delta_time(const double dt) {
   }
 }
 
-bool Clock::is_same_unit(TimeUnit src, TimeUnit dst) const {
+bool Clock::isSameUnit(TimeUnit src, TimeUnit dst) const {
   return (src == dst) || (converse_table_[src] == converse_table_[dst]);
 }
 
-double Clock::convert_time(TimeUnit src_unit, TimeUnit dst_unit, const double time) const {
+double Clock::convertTime(TimeUnit src_unit, TimeUnit dst_unit, const double time) const {
   double const scale{ 
-    (is_same_unit(src_unit, dst_unit)) ? 1.0 : converse_table_[src_unit] / converse_table_[dst_unit]
+    (isSameUnit(src_unit, dst_unit)) ? 1.0 : converse_table_[src_unit] / converse_table_[dst_unit]
   };
   return scale * time;
 }
 
-double Clock::absolute_time(TimeUnit unit) const {
+double Clock::absoluteTime(TimeUnit unit) const {
   // Note : 
   //  Using double cast difference instead of time span duration we would loose 
   //  precisions.
   auto const current_time{ std::chrono::system_clock::now() };
   auto const duration_in_seconds{ std::chrono::duration<double>(current_time.time_since_epoch()) };
-  return convert_time(TimeUnit::Second, unit, duration_in_seconds.count());
+  return convertTime(TimeUnit::Second, unit, duration_in_seconds.count());
 }
 
-double Clock::relative_time(TimeUnit unit) const {
-  return convert_time(TimeUnit::Millisecond, unit,
-    absolute_time(TimeUnit::Millisecond) - start_time_
+double Clock::relativeTime(TimeUnit unit) const {
+  return convertTime(TimeUnit::Millisecond, unit,
+    absoluteTime(TimeUnit::Millisecond) - start_time_
   );
 }
 
-double Clock::delta_time(TimeUnit unit) const {
-  return convert_time(TimeUnit::Millisecond, unit, delta_time_);
+double Clock::deltaTime(TimeUnit unit) const {
+  return convertTime(TimeUnit::Millisecond, unit, delta_time_);
 }
 
-double Clock::frame_time(TimeUnit unit) const {
-  return convert_time(TimeUnit::Millisecond, unit, frame_time_);
+double Clock::frameTime(TimeUnit unit) const {
+  return convertTime(TimeUnit::Millisecond, unit, frame_time_);
 }
 
-double Clock::frame_elapsed_time(TimeUnit unit) const {
-  return relative_time(unit) - frame_time(unit);
+double Clock::frameElapsedTime(TimeUnit unit) const {
+  return relativeTime(unit) - frameTime(unit);
 }
 
-double Clock::application_time(TimeUnit unit) const {
-  return convert_time(TimeUnit::Millisecond, unit, application_time_);
+double Clock::applicationTime(TimeUnit unit) const {
+  return convertTime(TimeUnit::Millisecond, unit, application_time_);
 }
 
-double Clock::application_delta_time(TimeUnit unit) const {
-  return convert_time(TimeUnit::Millisecond, unit, application_delta_time_);
+double Clock::applicationDeltaTime(TimeUnit unit) const {
+  return convertTime(TimeUnit::Millisecond, unit, application_delta_time_);
 }
 
-void Clock::set_default_unit(TimeUnit unit) {
+void Clock::setDefaultUnit(TimeUnit unit) {
   default_unit_ = unit;
   converse_table_[TimeUnit::Default] = converse_table_[default_unit_];
 }
@@ -158,12 +158,12 @@ void GlobalClock::Update(bool bRegulateFPS) {
     // The first few clock updates can occurs a very long time after the app initialization.
     // Therefore we stabilize the dt the first few frames. [ improve ? ]
     if (gc.framecount() < 2) {
-      gc.stabilize_delta_time( 1000.0 / kMaxFPS );
+      gc.stabilizeDeltaTime( 1000.0 / kMaxFPS );
     }
     gc.update();
 
-    // LOG_INFO( gc.delta_time(), gc.application_delta_time(), gc.frame_elapsed_time(), gc.application_time()  );
-    // LOG_INFO( gc.time_scale(), gc.fps(), gc.framecount() ); 
+    // LOG_INFO( gc.deltaTime(), gc.applicationDeltaTime(), gc.frameElapsedTime(), gc.applicationTime()  );
+    // LOG_INFO( gc.timeScale(), gc.fps(), gc.framecount() ); 
   }
 }
 

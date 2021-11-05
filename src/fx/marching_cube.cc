@@ -664,7 +664,7 @@ void MarchingCube::create_chunk( glm::ivec3 const& coords ) {
 void MarchingCube::build_density_volume(ChunkInfo_t &chunk) {
   auto &pgm = programs_.build_density->id;
 
-  float const t = GlobalClock::Get().application_time();
+  float const t = GlobalClock::Get().applicationTime();
   gx::SetUniform( pgm, "uTime",       t);
 
   gx::SetUniform( pgm, "uInvChunkDim",     kInvChunkDim);

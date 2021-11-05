@@ -30,7 +30,7 @@ class Camera {
    public:
     virtual ~ViewController() {}
     virtual void update(float dt) {} 
-    virtual void get_view_matrix(float *m) = 0; 
+    virtual void getViewMatrix(float *m) = 0; 
     virtual glm::vec3 target() const = 0; //
   };
 
@@ -53,7 +53,7 @@ class Camera {
     return (fov_ > 0.0f) && (width_ > 0) && (height_ > 0);
   }
 
-  void set_perspective(float fov, int32_t w, int32_t h, float znear, float zfar) {
+  void setPerspective(float fov, int32_t w, int32_t h, float znear, float zfar) {
     assert( fov > 0.0f );
     assert( (w > 0) && (h > 0) );
     assert( (zfar - znear) > 0.0f );
@@ -70,12 +70,12 @@ class Camera {
     linear_params_ = glm::vec4( znear, zfar, A, - znear * A);
   }
 
-  void set_perspective(float fov, glm::ivec2 const& res, float znear, float zfar) {
-    set_perspective( fov, res.x, res.y, znear, zfar);
+  void setPerspective(float fov, glm::ivec2 const& res, float znear, float zfar) {
+    setPerspective( fov, res.x, res.y, znear, zfar);
   }
 
-  void set_default() {
-    set_perspective( kDefaultFOV, kDefaultSize, kDefaultSize, kDefaultNear, kDefaultFar);
+  void setDefault() {
+    setPerspective( kDefaultFOV, kDefaultSize, kDefaultSize, kDefaultNear, kDefaultFar);
   }
 
   // Update controller and rebuild all matrices.
@@ -89,7 +89,7 @@ class Camera {
   // Rebuild all matrices.
   void rebuild(bool bRetrieveView = true) {
     if (controller_ && bRetrieveView) {
-      controller_->get_view_matrix(glm::value_ptr(view_));
+      controller_->getViewMatrix(glm::value_ptr(view_));
     }
     world_    = glm::inverse(view_); // costly
     viewproj_ = proj_ * view_;
@@ -98,7 +98,7 @@ class Camera {
   inline ViewController *controller() { return controller_; }
   inline ViewController const* controller() const { return controller_; }
 
-  inline void set_controller(ViewController *controller) { controller_ = controller; }
+  inline void setController(ViewController *controller) { controller_ = controller; }
 
   inline float fov() const noexcept { return fov_; }
 
@@ -109,7 +109,7 @@ class Camera {
   inline float znear() const noexcept { return linear_params_.x; }
   inline float zfar() const noexcept { return linear_params_.y; }
 
-  inline glm::vec4 const& linearization_params() const {
+  inline glm::vec4 const& linearizationParams() const {
     return linear_params_;
   }
 
@@ -125,7 +125,7 @@ class Camera {
     return controller_ ? controller_->target() : position() + 3.0f*direction(); //
   }
 
-  inline bool is_ortho() const noexcept { return bUseOrtho_; }
+  inline bool isOrtho() const noexcept { return bUseOrtho_; }
 
  private:
   ViewController *controller_;

@@ -76,14 +76,14 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
   ad.m_viewOrigin    = Vec3(camera.position());
   ad.m_viewDirection = Vec3(camera.direction());
   ad.m_worldUp       = Vec3(0.0f, 1.0f, 0.0f);
-  ad.m_projOrtho     = camera.is_ortho(); 
+  ad.m_projOrtho     = camera.isOrtho(); 
   ad.m_flipGizmoWhenBehind = kbFlipGizmoWhenBehind;
 
   auto const W = camera.proj()[0][0];
   auto const H = camera.proj()[1][1];
 
  // m_projScaleY controls how gizmos are scaled in world space to maintain a constant screen height
-  ad.m_projScaleY = camera.is_ortho()
+  ad.m_projScaleY = camera.isOrtho()
     ? 2.0f / H
     : tanf(camera.fov() * 0.5f) * 2.0f
     ;  
@@ -96,7 +96,7 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
   auto const worldMatrix = Mat4(camera.world());
 
   Vec3 rayOrigin, rayDirection;
-  if (camera.is_ortho())
+  if (camera.isOrtho())
   {
     rayOrigin.x  = cursorPos.x / W;
     rayOrigin.y  = cursorPos.y / H;

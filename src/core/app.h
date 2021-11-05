@@ -61,6 +61,7 @@ class App : public EventCallbacks
   /* [User defined] Optional place to call termination code before exiting.
    * Prefer the destructor. */
   virtual void finalize() {}
+
   // ---
 
   /* [temporary] Return the resolution of the current window. */
@@ -85,22 +86,15 @@ class App : public EventCallbacks
 
  protected:
   WindowHandle window_;                         //<! Interface to the main window.
-  
   Renderer renderer_;                           //<! Pipeline defining how a scene is rendered.
-
   Camera camera_;                               //<! Main camera accessible to the user.
-  
   SceneHierarchy scene_;                        //<! Entity Component Scene hierarchy to fetch the renderer.
 
  private:
   bool is_running_;                             //<! True while the mainloop continue.
-  
   int32_t exit_status_;                         //<! Status used when exiting the process.
-
   uint32_t rand_seed_;                          //<! Random Number Generator seed.
-  
   UIController ui_controller_;                  //<! Manage the UI application-wise.
-  
   Parameters_t params_; //                      //<! Generics parameters modifiable by UI.
 
  private:

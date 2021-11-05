@@ -48,7 +48,7 @@ bool ComputePose(float const global_time,
 {
   // [todo: handle compressed joints data]
   
-  float local_time(0.0f);
+  float local_time{0.0f};
 
   if (sequence_clip.evaluate_localtime(global_time, local_time)) {
     sequence_clip.bEnable = false;

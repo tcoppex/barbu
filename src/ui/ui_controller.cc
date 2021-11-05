@@ -83,7 +83,7 @@ void UIController::update(std::shared_ptr<AbstractWindow> window) {
 
   // Setup time step
   auto& gc = GlobalClock::Get();
-  io.DeltaTime = gc.delta_time();
+  io.DeltaTime = gc.deltaTime();
 
   // [TODO] Setup special keys.
   // io.KeyCtrl  = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];

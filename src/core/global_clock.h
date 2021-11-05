@@ -42,51 +42,51 @@ class Clock {
   void update();
 
   // Convert time from one unit to another.
-  double convert_time(TimeUnit src_unit, TimeUnit dst_unit, double const time) const;
+  double convertTime(TimeUnit src_unit, TimeUnit dst_unit, double const time) const;
 
   // -------------------
 
   // Time from the system.
-  double absolute_time(TimeUnit unit = TimeUnit::Default) const;
+  double absoluteTime(TimeUnit unit = TimeUnit::Default) const;
   
   // Time from the start of the clock.
-  double relative_time(TimeUnit unit = TimeUnit::Default) const;
+  double relativeTime(TimeUnit unit = TimeUnit::Default) const;
   
   // Relative time at the beginning of the frame.
-  double frame_time(TimeUnit unit = TimeUnit::Default) const;
+  double frameTime(TimeUnit unit = TimeUnit::Default) const;
 
   // Time from the last frame, does not stop with pause.
-  double delta_time(TimeUnit unit = TimeUnit::Default) const;
+  double deltaTime(TimeUnit unit = TimeUnit::Default) const;
 
   // -------------------
 
   // Time of the application.
-  double application_time(TimeUnit unit = TimeUnit::Default) const;
+  double applicationTime(TimeUnit unit = TimeUnit::Default) const;
 
   // Delta time of the application (ie. 0.0 when paused).
-  double application_delta_time(TimeUnit unit = TimeUnit::Default) const;
+  double applicationDeltaTime(TimeUnit unit = TimeUnit::Default) const;
 
   // Time from the beginning of the frame (relative_time - frame_time)
-  double frame_elapsed_time(TimeUnit unit = TimeUnit::Default) const;
+  double frameElapsedTime(TimeUnit unit = TimeUnit::Default) const;
 
   // -------------------
 
-  inline double   time_scale()    const noexcept { return time_scale_; }
+  inline double   timeScale()    const noexcept { return time_scale_; }
   inline int32_t  fps()           const noexcept { return fps_; }
   inline int32_t  framecount()    const noexcept { return framecount_; }
-  inline bool     is_paused()     const noexcept { return bPaused_; }
+  inline bool     isPaused()     const noexcept { return bPaused_; }
 
   // Defines a scale by which application time is updated.
-  void set_time_scale(double scale);
+  void setTimeScale(double scale);
 
   // Specify the default time unit to return.
-  void set_default_unit(TimeUnit unit);
+  void setDefaultUnit(TimeUnit unit);
 
   // Fixed first frames deltas.
-  void stabilize_delta_time(double const dt);
+  void stabilizeDeltaTime(double const dt);
 
  private:
-  bool is_same_unit(TimeUnit src, TimeUnit dst) const;
+  bool isSameUnit(TimeUnit src, TimeUnit dst) const;
 
   EnumArray<double, TimeUnit> converse_table_;
 

@@ -152,7 +152,7 @@ void App::postsetup() {
   // Check camera settings.
   if (!camera_.initialized()) {
     LOG_WARNING( "The camera's projection has not been initialized (￣ε￣). Using the default one instead." );
-    camera_.set_default();
+    camera_.setDefault();
   }
   camera_.rebuild();
 

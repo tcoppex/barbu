@@ -45,14 +45,14 @@ class Logger : public Singleton<Logger> {
   };
 
   ~Logger() {
-    display_stats();
+    displayStats();
   }
 
   template<typename T, typename ... Args>
   bool log(char const* file, char const* fn, int line, bool useHash, LogType type, T first, Args ... args) {
     // Clear the local stream and retrieve the full current message.
     out_.str(std::string());
-    sub_log(first, args ...);
+    subLog(first, args ...);
 
     // Trim filename for display.
     std::string filename(file);
@@ -153,17 +153,17 @@ class Logger : public Singleton<Logger> {
 
  private:
   template<typename T>
-  void sub_log(T first) {
+  void subLog(T first) {
     out_ << first;
   }
 
   template<typename T, typename ... Args>
-  void sub_log(T first, Args ... args) {
+  void subLog(T first, Args ... args) {
     out_ << first << " ";
-    sub_log(args ...);
+    subLog(args ...);
   }
 
-  void display_stats() {
+  void displayStats() {
 #ifndef NDEBUG
     if (warning_count_ > 0 || error_count_ > 0) {
       std::cerr << std::endl <<

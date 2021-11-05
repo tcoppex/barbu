@@ -26,7 +26,7 @@ void Renderer::init() {
 }
 
 void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb) {
-  float const dt = GlobalClock::Get().delta_time();
+  float const dt = GlobalClock::Get().deltaTime();
 
   gizmo_.begin_frame( dt, camera);
 
@@ -56,9 +56,10 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
         auto const& e = colliders.front();
         auto const& bsphere = e->get<SphereColliderComponent>();
 
-        auto data = scene.global_matrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
-        data.w = bsphere.radius();
-        hair_.set_bounding_sphere( data );  
+        // [debug bounding sphere]
+        auto bsParams = scene.global_matrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
+        bsParams.w = bsphere.radius();
+        hair_.set_bounding_sphere( bsParams );  
       }
       hair_.update(dt);
     }
@@ -73,11 +74,11 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
     // 'Deferred'-pass, post-process the solid objects.
    
     postprocess_.begin();
-      draw_pass( RendererPassBit::PASS_DEFERRED, scene, camera);
+      drawPass( RendererPassBit::PASS_DEFERRED, scene, camera);
     postprocess_.end(camera);
 
     // Forward-pass, render the special effects.
-    draw_pass(RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
+    drawPass( RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
 
     // [ should have a final composition pass here to tonemap the forwards ].
   }
@@ -97,7 +98,7 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
 
 // ----------------------------------------------------------------------------
 
-void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera) {
+void Renderer::drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera) {
   // Reset default states.
   gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Fill);
   gx::Disable( gx::State::Blend );
@@ -136,8 +137,8 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
   if (bitmask & SCENE_OPAQUE_BIT)
   {
     if (!params_.show_wireframe) {
-      draw_entities( RenderMode::Opaque, scene, camera );
-      draw_entities( RenderMode::CutOff, scene, camera );
+      drawEntities( RenderMode::Opaque, scene, camera );
+      drawEntities( RenderMode::CutOff, scene, camera );
     }
   }
   CHECK_GX_ERROR();
@@ -150,8 +151,8 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
     gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Line );
 
     if (params_.show_wireframe) {
-      draw_entities( RenderMode::Opaque, scene, camera );
-      draw_entities( RenderMode::CutOff, scene, camera );
+      drawEntities( RenderMode::Opaque, scene, camera );
+      drawEntities( RenderMode::CutOff, scene, camera );
 
       if (params_.enable_hair) {
         hair_.render(camera);
@@ -220,10 +221,10 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
     gx::Enable( gx::State::CullFace );
     {
       gx::CullFace( gx::Face::Front );
-      draw_entities( RenderMode::Transparent, scene, camera);
+      drawEntities( RenderMode::Transparent, scene, camera);
   
       gx::CullFace( gx::Face::Back );
-      draw_entities( RenderMode::Transparent, scene, camera);
+      drawEntities( RenderMode::Transparent, scene, camera);
     }
     gx::Disable( gx::State::CullFace );
 
@@ -255,7 +256,7 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
 
 // ----------------------------------------------------------------------------
 
-void Renderer::draw_entities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera) {
+void Renderer::drawEntities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera) {
   auto render_drawables = [this, render_mode, &scene, &camera](EntityHandle drawable) {
     // global matrix of the entity.
     auto const& world = scene.global_matrix(drawable->index());
