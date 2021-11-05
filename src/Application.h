@@ -13,14 +13,16 @@ class Application final : public App {
   ~Application() {}
 
   void setup() final;
-  
   void update() final;
+  void draw() final;
 
   /* -- Events Capture -- */
 
+  void onInputChar(uint16_t c) final;
+  void onResize(int w, int h) final;
+
   // void onKeyPressed(KeyCode_t key) final;
   // void onKeyReleased(KeyCode_t key) final;
-  void onInputChar(uint16_t c) final;
   // void onMousePressed(int x, int y, KeyCode_t button) final;
   // void onMouseReleased(int x, int y, KeyCode_t button) final;
   // void onMouseEntered(int x, int y) final;
@@ -28,14 +30,15 @@ class Application final : public App {
   // void onMouseMoved(int x, int y) final;
   // void onMouseDragged(int x, int y, KeyCode_t button) final;
   // void onMouseWheel(float dx, float dy) final;
-  void onResize(int w, int h) final;
 
  private:
-  void refocus_camera(bool bCentroid, bool bNoSmooth, EntityHandle new_focus = nullptr);
+  void refocusCamera(bool bCentroid, bool bNoSmooth, EntityHandle new_focus = nullptr);
 
-  ArcBallController arcball_controller_;
-  EntityHandle focus_;
-  bool bRefocus_ = false;
+  ArcBallController arcball_;       //< Controller for the camera.
+  
+  EntityHandle focus_;              //< Entity to focus on.
+
+  bool bRefocus_ = false;           //< When true, refocus the camera.
 };
 
 
