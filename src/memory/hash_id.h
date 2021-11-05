@@ -24,7 +24,7 @@
 //
 struct HashId {
   static
-  HashId fromAssetsPath(std::string_view _path) noexcept {
+  HashId fromPath(std::string_view _path) noexcept {
     return HashId(
       ((_path.size() > 0) && _path[0] == '/') ? _path : (ASSETS_DIR "/") + std::string(_path)
     );
