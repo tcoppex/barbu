@@ -17,9 +17,6 @@ void Marschner::init() {
   textures_[0] = TEXTURE_ASSETS.create2d( "Marschner::M_LUT", 1, kTextureFormat, kTextureResolution, kTextureResolution);
   textures_[1] = TEXTURE_ASSETS.create2d( "Marschner::N_LUT", 1, kTextureFormat, kTextureResolution, kTextureResolution);
 
-  LOG_CHECK( glIsTexture(textures_[0]->id) );
-  LOG_CHECK( glIsTexture(textures_[1]->id) );
-
   // Setup the UI.
   ui_view = std::make_shared<views::MarschnerView>(params_);
 }
@@ -27,7 +24,7 @@ void Marschner::init() {
 // ----------------------------------------------------------------------------
 
 void Marschner::update(bool bForceUpdate) {
-  if (bForceUpdate || !(previous_shading_params_ == params_.shading)) {
+  if (bForceUpdate || (previous_shading_params_ != params_.shading)) {
     generate();
   }
   previous_shading_params_ = params_.shading;
@@ -36,8 +33,6 @@ void Marschner::update(bool bForceUpdate) {
 // ----------------------------------------------------------------------------
 
 void Marschner::generate() {
-  auto const inv_resolution = 1.0f / kTextureResolution;
-
   for (int i = 0; i < kNumLUTs; ++i) {
     auto const& tex = textures_[i]->id;
 
@@ -58,13 +53,14 @@ void Marschner::generate() {
       gx::SetUniform( pgm, "uDeltaCaustic",       params_.shading.deltaCaustic);
       gx::SetUniform( pgm, "uDeltaHm",            params_.shading.deltaHm);
     }
-    gx::SetUniform( pgm, "uInvResolution",    inv_resolution);
+    gx::SetUniform( pgm, "uInvResolution",    kInvTextureResolution);
     gx::SetUniform( pgm, "uDstImg",           0);
 
     gx::UseProgram(pgm);
     gx::DispatchCompute<kComputeBlockSize, kComputeBlockSize>(kTextureResolution, kTextureResolution);
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT); //
 
+    // Put the texture pointer into params to be viewed by the UI.
     params_.tex_ptr[i] = &tex; //
   }
   gx::UseProgram();
@@ -75,7 +71,7 @@ void Marschner::generate() {
 // ----------------------------------------------------------------------------
 
 void Marschner::bindLUTs(int baseUnit) {
-  for (int i=0; i<kNumLUTs; ++i) {
+  for (int i = 0; i < kNumLUTs; ++i) {
     gx::BindTexture(textures_[i]->id, baseUnit + i, gx::SamplerName::LinearRepeat);
   }
 }
@@ -83,7 +79,7 @@ void Marschner::bindLUTs(int baseUnit) {
 // ----------------------------------------------------------------------------
 
 void Marschner::unbindLUTs(int baseUnit) {
-  for (int i=0; i<kNumLUTs; ++i) {
+  for (int i = 0; i < kNumLUTs; ++i) {
     gx::UnbindTexture(baseUnit + i);
   }
 }
