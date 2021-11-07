@@ -63,6 +63,7 @@ enum DisplayFlags : uint16_t { //
 struct Display {
   SurfaceSize    width        = -1;
   SurfaceSize    height       = -1;
+  int32_t        msaa_samples = 4; //
   DisplayFlags   flags        = DisplayFlags_Default;
   GraphicsAPI    api          = GraphicsAPI::kDefault; //
   ShaderModel    shader_model = ShaderModel::GL_CORE_42; //

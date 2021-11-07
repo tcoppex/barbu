@@ -127,7 +127,7 @@ bool Window::create(Display const& display, std::string_view title) noexcept {
   // Framebuffers hints.
   glfwWindowHint( GLFW_SRGB_CAPABLE,            GLFW_TRUE);
   glfwWindowHint( GLFW_DOUBLEBUFFER,            GLFW_TRUE);
-  glfwWindowHint( GLFW_SAMPLES,                 GLFW_DONT_CARE);
+  glfwWindowHint( GLFW_SAMPLES,                 display.msaa_samples);
   
   // Context hints.
   if (GraphicsAPI::kOpenGL == display.api)
