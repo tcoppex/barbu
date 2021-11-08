@@ -105,7 +105,15 @@ Window::~Window() {
 }
 
 bool Window::create(Display const& display, std::string_view title) noexcept {
-  // Initialize Window Management API.
+  // On debug mode, set the GLFW error callback.
+#ifndef NDEBUG
+  glfwSetErrorCallback([](int error, const char *msg) {
+    std::cerr << "GLFW Error [" << std::to_string(error)  << "] : "  << msg << std::endl 
+              << std::endl;
+  });
+#endif
+
+  // Initialize GLFW.
   if (!glfwInit()) {
     LOG_ERROR( "GLFW failed to be initialized." );
     return false;
@@ -127,8 +135,8 @@ bool Window::create(Display const& display, std::string_view title) noexcept {
   // Framebuffers hints.
   glfwWindowHint( GLFW_SRGB_CAPABLE,            GLFW_TRUE);
   glfwWindowHint( GLFW_DOUBLEBUFFER,            GLFW_TRUE);
-  glfwWindowHint( GLFW_SAMPLES,                 display.msaa_samples);
-  
+  glfwWindowHint( GLFW_SAMPLES,                 GLFW_DONT_CARE);
+
   // Context hints.
   if (GraphicsAPI::kOpenGL == display.api)
   {
@@ -138,12 +146,14 @@ bool Window::create(Display const& display, std::string_view title) noexcept {
       glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR,   2);
       glfwWindowHint( GLFW_OPENGL_PROFILE,          GLFW_OPENGL_CORE_PROFILE);
       glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT,   GLFW_TRUE);
+      glfwWindowHint( GLFW_SAMPLES,                 display.msaa_samples); //
     } else {
       glfwWindowHint( GLFW_CLIENT_API,              GLFW_OPENGL_ES_API);
       glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR,   3);
       glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR,   2);
     }
-    glfwWindowHint( GLFW_CONTEXT_CREATION_API,      GLFW_EGL_CONTEXT_API); // GLFW_NATIVE_CONTEXT_API
+    // glfwWindowHint( GLFW_CONTEXT_CREATION_API,      GLFW_EGL_CONTEXT_API); // issue on Windows
+    glfwWindowHint( GLFW_CONTEXT_CREATION_API,      GLFW_NATIVE_CONTEXT_API);
     glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT,      GLFW_FALSE); //
     has_context_ = true;
   } else {
