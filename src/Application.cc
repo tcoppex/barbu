@@ -15,7 +15,7 @@
 
 void Application::setup() {
   // Gamma-corrected clear color.
-  gx::ClearColor(0.073f, 0.073f, 0.072f, true);
+  gx::ClearColor(0.25f, true);
   //setBackground( Color::kDarkSalmon.gamma() );
 
   // Camera.
@@ -49,7 +49,7 @@ void Application::setup() {
     params.enable_particle  = false;
   }
 
-  // Experimentals features (future components).
+  // Experimental features (future components).
   {
     //auto &renderer{ getRenderer() };
 
@@ -74,7 +74,7 @@ void Application::update() {
     focus_ = selected.empty() ? nullptr : (focus_ ? focus_ : selected.front());
   }
 
-  // [fixme] Events that modify the SceneHierarchy.
+  // Events that modify the SceneHierarchy.
   if constexpr(true) {
     updateHierarchyEvents(); //
   }
@@ -103,16 +103,16 @@ void Application::draw() {
 
 void Application::onInputChar(uint16_t inputChar) {
   auto const& selected{ scene_.selected() };
-  int cycle_step = 0;
+  int cycling_step = 0;
 
   // -- Key bindings.
   switch (inputChar) {
-    // Select  / Unselect all.
+    // Select / Deselect all.
     case 'a':
       selected.empty() ? scene_.selectAll() : scene_.deselectAll();
     break;
     
-    // Focus on entities.
+    // Focus on current entity.
     case 'C':
       refocusCamera( !kCentroid, kSmooth);
     break;
@@ -120,30 +120,30 @@ void Application::onInputChar(uint16_t inputChar) {
       refocusCamera( kCentroid, kSmooth);
     break;
 
-    // Cycle through entities.
+    // Cycle through selected entities.
     case 'j':
-      cycle_step = +1;
+      cycling_step = +1;
     break;
     case 'k':
-      cycle_step = -1;
+      cycling_step = -1;
     break;
 
-    // Show / hide UI.
+    // Toggle UI display.
     case 'h':
       App::toggleUI();
     break;
 
-    // Show / hide wireframe.
+    // Toggle Wireframe display.
     case 'w':
-      renderer_.params().show_wireframe ^= true; //
+      getRendererParameters().show_wireframe ^= true;
     break;
 
     default:
     break;
   } 
 
-  if (0 != cycle_step) {
-    focus_ = selected.front() ? scene_.next(selected.front(), cycle_step) 
+  if (0 != cycling_step) {
+    focus_ = selected.front() ? scene_.next(selected.front(), cycling_step) 
                               : scene_.first()
                               ;
     refocusCamera( !kCentroid, kSmooth, focus_);
@@ -197,27 +197,32 @@ void Application::updateHierarchyEvents() {
   //
 
   auto const& events{ Events::Get() }; 
-  auto const& selected{ scene_.selected() };
   
-  if (!selected.empty()) {
-    // Reset transform.
-    if ('x' == events.lastInputChar()) {
-      for (auto &e : selected) {
-        scene_.resetEntity(e);
-      }
-    } 
-    
-    // Delete.
-    if ('X' == events.lastInputChar()) {
-      for (auto &e : selected) {
-        focus_ = (focus_ == e) ? nullptr : focus_;
-        scene_.removeEntity(e, true);
-      }
-      scene_.deselectAll();
-    }
+  // Modify selected entities.
+  if (auto const& selected{ scene_.selected() }; !selected.empty()) {
+    switch (events.lastInputChar()) {
+      // Reset transform.
+      case 'x':
+        for (auto &e : selected) {
+          scene_.resetEntity(e);
+        }
+      break;
+
+      // Delete.
+      case 'X':
+        for (auto &e : selected) {
+          focus_ = (focus_ == e) ? nullptr : focus_;
+          scene_.removeEntity(e, true);
+        }
+        scene_.deselectAll();
+      break;
+
+      default:
+      break;
+    };
   }
 
-  // Import drag-n-dropped objects & center them to camera target.
+  // Import drag-n-dropped objects & center them to the camera target.
   auto const get_extension{ [](auto path) { 
     return path.substr(path.find_last_of(".") + 1);
   }};

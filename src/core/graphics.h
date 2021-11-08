@@ -111,11 +111,13 @@ void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor);
 void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect = false);
 void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect = false);
 
-void ClearColor(float r, float g, float b, float a = 1.0f, bool bGammaCorrect = false);
+void ClearColor(float r, float g, float b, float a, bool bGammaCorrect = false);
+void ClearColor(float r, float g, float b, bool bGammaCorrect = false);
 void ClearColor(float c, bool bGammaCorrect = false);
 
-void ClearColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xff, bool bGammaCorrect = false);
-void ClearColor(uint8_t c, bool bGammaCorrect = false);
+void ClearColor(int32_t r, int32_t g, int32_t b, int32_t a, bool bGammaCorrect = false);
+void ClearColor(int32_t r, int32_t g, int32_t b, bool bGammaCorrect = false);
+// void ClearColor(int32_t c, bool bGammaCorrect = false);
 
 void CullFace(Face mode);
 
