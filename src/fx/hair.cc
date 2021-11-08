@@ -470,7 +470,7 @@ void Hair::init_shaders() {
 
       // Set transform feedback outputs.
       std::array<GLchar const*, 1> varyings{ "position_xyz_coeff_w" };
-      glTransformFeedbackVaryings(pgm, varyings.size(), varyings.data(), GL_INTERLEAVED_ATTRIBS); //
+      glTransformFeedbackVaryings(pgm, static_cast<GLsizei>(varyings.size()), varyings.data(), GL_INTERLEAVED_ATTRIBS); //
 
       // (linked manually because of TF)
       gx::LinkProgram(pgm);
