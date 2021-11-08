@@ -50,11 +50,13 @@ class Irradiance {
       for (int y = 0; y < h; ++y)
       {
         // map value to [-1, 1]
-        float const v = 2.0f * ((y+0.5f) * texelSize) - 1.0f;
+        float const fy = (static_cast<float>(y) + 0.5f) * texelSize;
+        float const v = 2.0f * fy - 1.0f;
         
         for (int x = 0; x < w; ++x)
         {
-          float const u = 2.0f * ((x+0.5f) * texelSize) - 1.0f;        
+          float const fx = (static_cast<float>(x) + 0.5f) * texelSize;
+          float const u = 2.0f * fx - 1.0f;        
           
           glm::vec4 const attribs = GetTexelAttrib( texid, u, v, texelSize);
           
@@ -150,9 +152,9 @@ class Irradiance {
 
   /// Coefficients from the paper to test the implementation.
   constexpr static SHCoeff_t sTestCoeffs{ {
-    {.79, .39, -.34, -.29, -.11, -.26, -.16, .56, .21},
-    {.44, .35, -.18, -.06, -.05,-.22, -.09, .21, -.05},
-    {.54, .60, -.27, .01, -.12, -.47, -.15, .14,- .30}
+    {.79f, .39f, -.34f, -.29f, -.11f, -.26f, -.16f, .56f,  .21f},
+    {.44f, .35f, -.18f, -.06f, -.05f, -.22f, -.09f, .21f, -.05f},
+    {.54f, .60f, -.27f,  .01f, -.12f, -.47f, -.15f, .14f, -.30f}
   }
   };   
 

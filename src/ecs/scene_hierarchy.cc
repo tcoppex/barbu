@@ -65,7 +65,7 @@ void SceneHierarchy::update(float const dt, Camera const& camera) {
   sortDrawables(camera);
 
   // Animate nodes with skinning (for now, suppose them all drawables).
-  float const global_time = GlobalClock::Get().applicationTime();
+  float const global_time = static_cast<float>(GlobalClock::Get().applicationTime()); //
   for (auto& e : frame_.drawables) {
     if (!e->has<SkinComponent>()) {
       continue;
@@ -465,14 +465,14 @@ void SceneHierarchy::renderDebugNode(EntityHandle node) const {
     auto const start{ globalPosition(node) };
 
     // [fixme] the debug shapes should scale depending on some factors.
-    double constexpr scale = 0.02; //
+    float constexpr scale = 0.02f; //
 
     Im3d::PushColor( rgb );
     if (1 == n) {
       auto const end{ globalPosition(node->child(0)) };
-      Im3d::DrawPrism( start, end, 1.0 * scale, 5);
+      Im3d::DrawPrism( start, end, 1.0f * scale, 5);
     } else {
-      Im3d::DrawSphere( start, 2.0 * scale, kDebugSphereResolution);
+      Im3d::DrawSphere( start, 2.0f * scale, kDebugSphereResolution);
     }
     Im3d::PopColor();
   }

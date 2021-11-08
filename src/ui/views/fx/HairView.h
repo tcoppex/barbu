@@ -35,9 +35,9 @@ class HairView : public ParametrizedUIView<Hair::Parameters_t> {
     ImGui::Separator();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Tesselation")) {
-      ImGui::DragInt("instances", &params_.tess.ninstances, 0.1, 1, 16);
-      ImGui::DragInt("lines", &params_.tess.nlines, 0.1, 1, 16);
-      ImGui::DragInt("subsegments", &params_.tess.nsubsegments, 0.1, 1, 16);
+      ImGui::DragInt("instances", &params_.tess.ninstances, 0.1f, 1, 16);
+      ImGui::DragInt("lines", &params_.tess.nlines, 0.1f, 1, 16);
+      ImGui::DragInt("subsegments", &params_.tess.nsubsegments, 0.1f, 1, 16);
       
       ImGui::TreePop();
     }

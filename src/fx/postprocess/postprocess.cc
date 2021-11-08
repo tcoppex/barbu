@@ -76,7 +76,7 @@ void Postprocess::createTextures() {
 
     // (we might want to scaled down the texture for post-effects)
     lindepth_res_ = glm::vec2( w_, h_);
-    glTextureStorage2D(out_.lindepth_r32f, 1, kLinearDepthFormat, lindepth_res_.x, lindepth_res_.y);  
+    glTextureStorage2D(out_.lindepth_r32f, 1, kLinearDepthFormat, w_, h_);  
   
     ssao_.createTextures(w_, h_);
   }
@@ -180,7 +180,9 @@ void Postprocess::applyEffects(Camera const& camera) {
     glBindImageTexture( ++image_unit, out_.lindepth_r32f, 0, GL_FALSE, 0, GL_WRITE_ONLY, kLinearDepthFormat); //
     gx::SetUniform( pgm, "uLinearDepthOut", image_unit);
 
-    gx::DispatchCompute<LINEARDEPTH_BLOCK_DIM, LINEARDEPTH_BLOCK_DIM>( lindepth_res_.x, lindepth_res_.y);
+    // uint32_t const width  = static_cast<uint32_t>(lindepth_res_.x); //
+    // uint32_t const height = static_cast<uint32_t>(lindepth_res_.y); //
+    gx::DispatchCompute<LINEARDEPTH_BLOCK_DIM, LINEARDEPTH_BLOCK_DIM>( w_, h_);
   } 
   gx::UseProgram();
 

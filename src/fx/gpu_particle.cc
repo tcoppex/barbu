@@ -342,13 +342,13 @@ void GPUParticle::init_buffers() {
     auto const sort_buffer_max_count = GetClosestPowerOfTwo(kMaxParticleCount); //
 
     // DotProducts buffer.
-    GLuint const dp_buffer_size = sort_buffer_max_count * sizeof(GLfloat);
+    GLsizeiptr const dp_buffer_size = sort_buffer_max_count * sizeof(GLfloat);
     glCreateBuffers(1u, &gl_dp_buffer_id_);
     glNamedBufferStorage( gl_dp_buffer_id_, dp_buffer_size, nullptr, 0);
 
     // Double-sized buffer for indices sorting.
     // [we might want to use u16 instead, when below ~64K particles]
-    GLuint const sort_indices_buffer_size = 2u * sort_buffer_max_count * sizeof(GLuint);
+    GLsizeiptr const sort_indices_buffer_size = 2u * sort_buffer_max_count * sizeof(GLuint);
     glCreateBuffers(1u, &gl_sort_indices_buffer_id_);
     glNamedBufferStorage(gl_sort_indices_buffer_id_, sort_indices_buffer_size, nullptr, 0);
   }

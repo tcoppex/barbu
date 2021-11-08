@@ -89,31 +89,40 @@ void Gizmo::beginFrame(float dt, Camera const& camera) {
     ;  
   ad.m_projScaleY *= kGizmoScaling;
 
-  Vec2 cursorPos( events.mouseX(), events.mouseY());
-  cursorPos = (cursorPos / ad.m_viewportSize) * 2.0f - Vec2(1.0f);
-  cursorPos.y = -cursorPos.y;
-  
-  auto const worldMatrix = Mat4(camera.world());
+  // Set cursor ray.
+  {
+    // Mouse position.
+    auto const mouse_fx = static_cast<float>(events.mouseX());
+    auto const mouse_fy = static_cast<float>(events.mouseY());
+    Vec2 cursorPos( mouse_fx, mouse_fy);
+    cursorPos = (cursorPos / ad.m_viewportSize) * 2.0f - Vec2(1.0f);
+    cursorPos.y = -cursorPos.y;
+    
+    // Camera world matrix.
+    auto const worldMatrix = Mat4(camera.world());
 
-  Vec3 rayOrigin, rayDirection;
-  if (camera.isOrtho())
-  {
-    rayOrigin.x  = cursorPos.x / W;
-    rayOrigin.y  = cursorPos.y / H;
-    rayOrigin.z  = 0.0f;
-    rayOrigin    = worldMatrix * Vec4(rayOrigin, 1.0f);
-    rayDirection = worldMatrix * Vec4(0.0f, 0.0f, -1.0f, 0.0f); 
+    // View rays.
+    Vec3 rayOrigin, rayDirection;
+    if (camera.isOrtho())
+    {
+      rayOrigin.x  = cursorPos.x / W;
+      rayOrigin.y  = cursorPos.y / H;
+      rayOrigin.z  = 0.0f;
+      rayOrigin    = worldMatrix * Vec4(rayOrigin, 1.0f);
+      rayDirection = worldMatrix * Vec4(0.0f, 0.0f, -1.0f, 0.0f); 
+    }
+    else
+    {
+      rayOrigin = ad.m_viewOrigin;
+      rayDirection.x  = cursorPos.x / W;
+      rayDirection.y  = cursorPos.y / H;
+      rayDirection.z  = -1.0f;
+      rayDirection    = worldMatrix * Vec4(Normalize(rayDirection), 0.0f);
+    }
+
+    ad.m_cursorRayOrigin = rayOrigin;
+    ad.m_cursorRayDirection = rayDirection;
   }
-  else
-  {
-    rayOrigin = ad.m_viewOrigin;
-    rayDirection.x  = cursorPos.x / W;
-    rayDirection.y  = cursorPos.y / H;
-    rayDirection.z  = -1.0f;
-    rayDirection    = worldMatrix * Vec4(Normalize(rayDirection), 0.0f);
-  }
-  ad.m_cursorRayOrigin = rayOrigin;
-  ad.m_cursorRayDirection = rayDirection;
 
  // Set cull frustum planes. This is only required if IM3D_CULL_GIZMOS or IM3D_CULL_PRIMTIVES is enable via
  // im3d_config.h, or if any of the IsVisible() functions are called.
@@ -148,7 +157,7 @@ void Gizmo::beginFrame(float dt, Camera const& camera) {
   ad.m_snapRotation    = bSnap ? kRotationSnapUnit : 0.0f;
   ad.m_snapScale       = bSnap ? kScalingSnapUnit : 0.0f;
 
-  Im3d::SetAlpha(0.66);
+  Im3d::SetAlpha(0.66f);
   Im3d::NewFrame();
 }
 

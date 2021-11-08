@@ -103,18 +103,18 @@ void ImageManager::setup_crossed_hdr(Image &img) {
   };
 
   // Copy the first five face, line by line, top to bottom.
-  int32_t const linewidth = w * img.channels;
-  int32_t const linesize = linewidth * sizeof(float);
-  for (int i=0; i<kCubeFaces - 1; ++i) {
+  int32_t const kLineWidth{ w * img.channels };
+  size_t const kLineSize{ kLineWidth * sizeof(float) };
+  for (int i = 0; i < kCubeFaces - 1; ++i) {
     int32_t const x = offsets[i][0] * w;
     int32_t const y = offsets[i][1] * h;
     int32_t const face_index = i * face_size;
 
-    for (int j=0; j<h; ++j) {
+    for (int j = 0; j < h; ++j) {
       int32_t const dst_index = face_index + j * w * img.channels;
       int32_t const src_index = ((y + j) * img.width + x) * img.channels;
 
-      memcpy( data + dst_index, (float*)img.pixels + src_index, linesize);
+      memcpy( data + dst_index, (float*)img.pixels + src_index, kLineSize);
     }
   }
 
@@ -125,14 +125,13 @@ void ImageManager::setup_crossed_hdr(Image &img) {
   int32_t const x = offsets[kCubeFaces-1][0] * w;
   int32_t const y = offsets[kCubeFaces-1][1] * h;
   int32_t const face_index = (kCubeFaces-1) * face_size;
-  for (int j=0; j<h; ++j) {
+  for (int j = 0; j < h; ++j) {
     int32_t const dst_index = face_index + j * w * img.channels;
     int32_t const src_index = ((y-j-1) * img.width + x) * img.channels;
 
-
-    for (int k=0; k<linewidth; k+=img.channels) {
+    for (int k = 0; k < kLineWidth; k+=img.channels) {
       int32_t dst = dst_index + k;
-      int32_t src = src_index + linewidth - k - img.channels;
+      int32_t src = src_index + kLineWidth - k - img.channels;
 
       data[dst + 0] = ((float*)img.pixels)[src + 0];
       data[dst + 1] = ((float*)img.pixels)[src + 1];

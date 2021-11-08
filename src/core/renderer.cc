@@ -26,7 +26,7 @@ void Renderer::init() {
 }
 
 void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb) {
-  float const dt = GlobalClock::Get().deltaTime();
+  float const dt = static_cast<float>(GlobalClock::Get().deltaTime()); //
 
   gizmo_.beginFrame( dt, camera);
 

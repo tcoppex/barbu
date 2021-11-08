@@ -154,8 +154,8 @@ bool Window::create(Display const& display, std::string_view title) noexcept {
   // Compute window resolution based-off the main monitor's resolution.
   {
     GLFWvidmode const* mode{ glfwGetVideoMode(glfwGetPrimaryMonitor()) };
-    screen_w_ = mode->width;
-    screen_h_ = mode->height;
+    screen_w_ = static_cast<SurfaceSize>(mode->width);
+    screen_h_ = static_cast<SurfaceSize>(mode->height);
     window_w_ = bFullscreen ? screen_w_ : ClampSurfaceSize( display.width, screen_w_);
     window_h_ = bFullscreen ? screen_h_ : ClampSurfaceSize( display.height, screen_h_);
   }

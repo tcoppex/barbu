@@ -169,8 +169,9 @@ void Events::onResize(int w, int h) {
   //   io.DisplayFramebufferScale = ImVec2( 1.0f, 1.0f); //
   // );
 
-  surface_w_ = w;
-  surface_h_ = h;
+  // [beware : downcast from int32 to int16]
+  surface_w_ = static_cast<SurfaceSize>(w);
+  surface_h_ = static_cast<SurfaceSize>(h);
   has_resized_ = true;
 
   EVENTS_DISPATCH_SIGNAL(onResize, w, h);

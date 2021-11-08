@@ -103,8 +103,8 @@ void Disable(State cap);
 
 bool IsEnabled(State cap);
 
-void Viewport(float x, float y, float w, float h);
-void Viewport(float w, float h);
+void Viewport(int32_t x, int32_t y, int32_t w, int32_t h);
+void Viewport(int32_t w, int32_t h);
 
 void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor);
 

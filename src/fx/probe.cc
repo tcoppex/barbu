@@ -106,9 +106,8 @@ void Probe::end() {
 
 void Probe::setupFace(CubeFace face, int32_t level) {
   // Setup the viewport to appropriate level resolution.
-  float const scale = 1.0f / static_cast<float>(1 << level);
-  int32_t const res = scale * resolution_;
-  gx::Viewport( res, res);
+  int32_t const kFaceResolution{ resolution_ / (1 << level) };
+  gx::Viewport( kFaceResolution, kFaceResolution);
 
   // Attach the cubemap face to the framebuffer color output.
   auto const face_id{ static_cast<int32_t>(face) };

@@ -17,7 +17,7 @@
 class PingPongBuffer {
  public:
   static constexpr int kNumBuffers = 2;
-  static constexpr float kAttribBytesize = 4 * sizeof(float);
+  static constexpr int kAttribBytesize = 4 * sizeof(float);
 
   template<typename T>
   static constexpr int NumAttribsRequired() {

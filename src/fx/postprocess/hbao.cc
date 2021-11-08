@@ -40,8 +40,9 @@ void HBAO::deinit() {
 }
 
 void HBAO::createTextures(int32_t w, int32_t h, float const scaling) {
-  params_.full_resolution = glm::vec4( w, h, 1.0f / w, 1.0f / h);
-  params_.ao_resolution   = glm::vec4( scaling * w, scaling * h, 1.0f / (scaling*w), 1.0f / (scaling * h));
+  glm::vec2 const res{ static_cast<float>(w), static_cast<float>(h)};
+  params_.full_resolution = glm::vec4( res.x, res.y, 1.0f / res.x, 1.0f / res.y);
+  params_.ao_resolution   = scaling * params_.full_resolution;
 
   GLsizei const width  = static_cast<GLsizei>(params_.ao_resolution.x); 
   GLsizei const height = static_cast<GLsizei>(params_.ao_resolution.y);
@@ -110,8 +111,8 @@ void HBAO::updateParameters(Camera const& camera) {
 void HBAO::computeHBAO(GLuint const tex_linear_depth) {
   auto const pgm = pgm_.ssao->id; 
 
-  uint32_t const width  = params_.ao_resolution.x; //
-  uint32_t const height = params_.ao_resolution.y; //
+  uint32_t const width  = static_cast<uint32_t>(params_.ao_resolution.x); //
+  uint32_t const height = static_cast<uint32_t>(params_.ao_resolution.y); //
 
   gx::UseProgram(pgm);
   {
@@ -179,8 +180,8 @@ void HBAO::computeHBAO(GLuint const tex_linear_depth) {
 }
 
 void HBAO::computeBlurAO() {
-  auto const width  = params_.ao_resolution.x; //
-  auto const height = params_.ao_resolution.y; //
+  uint32_t const width  = static_cast<uint32_t>(params_.ao_resolution.x); //
+  uint32_t const height = static_cast<uint32_t>(params_.ao_resolution.y); //
 
   /// Horizontal blur pass.
   gx::UseProgram(pgm_.blur_x->id);

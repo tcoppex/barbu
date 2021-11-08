@@ -133,8 +133,8 @@ class Events final : public Singleton<Events>
   SurfaceSize surface_h_;
 
   // Mouse.
-  float mouse_x_;
-  float mouse_y_;
+  int mouse_x_;
+  int mouse_y_;
   float mouse_wheel_;
   float mouse_wheel_delta_;
 

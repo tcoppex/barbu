@@ -214,7 +214,7 @@ void Skybox::computeConvolutionMaps(std::string const& basename) {
     constexpr int32_t kSpecularMapNumSamples = 2048; //
     constexpr int32_t kSpecularMapResolution = 256; //
     int32_t const kSpecularMapLevel = Texture::GetMaxMipLevel(kSpecularMapResolution);
-    float const kInvMaxLevel        = 1.0f / (kSpecularMapLevel - 1.0f);
+    float const kInvMaxLevel = 1.0f / static_cast<float>(kSpecularMapLevel - 1);
 
     LOG_DEBUG_INFO( "Computing prefiltered convolution for :", basename );
 
@@ -223,7 +223,7 @@ void Skybox::computeConvolutionMaps(std::string const& basename) {
     probe.setup( kSpecularMapResolution, kSpecularMapLevel, false); //
     
     probe.capture( [this, kInvMaxLevel](Camera const& camera, int32_t level) {
-      const float roughness = level * kInvMaxLevel;
+      const float roughness = static_cast<float>(level) * kInvMaxLevel;
       pgm_.prefilter->setUniform( "uRoughness",  roughness); //
       render( RenderMode::Prefilter, camera); 
     });

@@ -227,7 +227,7 @@ void MeshData::WireCube(MeshData &mesh, float size) {
 // ----------------------------------------------------------------------------
 
 void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
-  float constexpr Pi     = M_PI;
+  float constexpr Pi     = glm::pi<float>();
   float constexpr TwoPi  = 2.0f * Pi;
 
   RawMeshData raw;
@@ -257,21 +257,21 @@ void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
     ++vertex_id;
 
     for (int j = 1; j < rows-1; ++j) {
-      float const dj = j * DeltaY;
+      float const dj = static_cast<float>(j) * DeltaY;
 
       float const theta = (dj - 0.5f) * Pi;
       float const ct = cosf(theta);
       float const st = sinf(theta);
 
       for (int i = 0; i < cols; ++i) {
-        float const di = i * DeltaX;
+        float const di = static_cast<float>(i) * DeltaX;
 
         float const phi = di * TwoPi;
         float const cp = cosf(phi);
         float const sp = sinf(phi);
 
         Normals[vertex_id]   = glm::normalize(glm::vec3( ct * cp, st, ct * sp));
-        Texcoords[vertex_id] = glm::vec2( i*DeltaX, j*DeltaY );
+        Texcoords[vertex_id] = glm::vec2( di, dj);
         Positions[vertex_id] = radius * Normals[vertex_id];
         ++vertex_id;
       }
@@ -304,9 +304,11 @@ void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
         Indices[index++] = glm::ivec3( first_vertex_id + i + cols );
       }
     }
+
+    auto const npositions = static_cast<int32_t>(Positions.size());
     for (int i = 0; i < cols; ++i) {
-      Indices[index++] = glm::ivec3( Positions.size() - cols - 1 + i );
-      Indices[index++] = glm::ivec3( Positions.size() - 1 );
+      Indices[index++] = glm::ivec3( npositions - cols - 1 + i );
+      Indices[index++] = glm::ivec3( npositions - 1 );
     }
   }
 
@@ -400,7 +402,7 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
           mapVertices[key] = index;
           attribIndices.push_back( glm::ivec4(key, i) );
         } else {
-          index = it->second;  
+          index = static_cast<int32_t>(it->second);  
         }
         
         indices.push_back(index);

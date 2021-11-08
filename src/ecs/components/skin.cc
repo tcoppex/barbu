@@ -51,8 +51,8 @@ void SkinComponent::updateSkinningBuffer() {
     glCreateBuffers(1u, &buffer_id_);
 
     // Upper boundary of skinning data.
-    int32_t constexpr kElemsize{ static_cast<int32_t>(glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat))) };
-    int32_t const kBytesize{ skeleton_->njoints() * kElemsize };
+    GLsizeiptr constexpr kElemsize{ static_cast<GLsizeiptr>(glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat))) };
+    GLsizeiptr const kBytesize{ skeleton_->njoints() * kElemsize };
 
     glNamedBufferStorage( buffer_id_, kBytesize, nullptr, GL_DYNAMIC_STORAGE_BIT);
     glCreateTextures( GL_TEXTURE_BUFFER, 1u, &texture_id_);
@@ -63,7 +63,7 @@ void SkinComponent::updateSkinningBuffer() {
   
   // 2) Retrieve the underlying data depending on the skinning blending mode.
   float const* data_ptr{nullptr};
-  int32_t bytesize{0};
+  GLsizeiptr bytesize{0};
   if (SkinningMode::DualQuaternion == mode_) {
     // DUAL QUATERNION BLENDING
     auto *const data = controller_.dual_quaternions().data();

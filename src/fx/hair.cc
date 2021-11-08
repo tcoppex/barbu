@@ -270,15 +270,17 @@ void Hair::init_simulation(MeshData const& scalpMesh) {
     auto const& n = normals_[rootVertexIndex];
 
     // (dirty 'organic' size randomness scaling)
-    auto const stoch{ 
-      1.0f + 0.1f * (1.0f - 2.0f * rand() / static_cast<float>(RAND_MAX)) //
-    };
+    float const random_value{static_cast<float>( 
+      1.0 + 0.1 * (1.0 - 2.0 * static_cast<double>(rand()) / static_cast<double>(RAND_MAX)) //
+    )};
 
     float lastOffset = 0.0f;
     for (int i = 0u; i < kNumControlPoints; ++i) {
       int const idx{ rootVertexIndex + i };
       // Segment length grow exponentially. [! makes the system less stable]
-      float const offset{ i * scaleOffset * stoch };
+      float const offset{ 
+        static_cast<float>(i) * scaleOffset * random_value
+      };
       Positions[idx]  = glm::vec4(v + offset * n, offset - lastOffset);
       Velocities[idx] = glm::vec4(0.0);
       lastOffset      = offset;
@@ -297,7 +299,7 @@ void Hair::init_simulation(MeshData const& scalpMesh) {
     for (int j = 0u; j < nroots_; ++j) {
       int const A = j * kNumControlPoints;
       int const B = A + (kNumControlPoints - 1u);
-      float const dj = (j + 1) * inv_nroots;
+      float const dj = static_cast<float>(j + 1) * inv_nroots;
 
       if (bCurly) {
         float n = 1.25f * glm::simplex( glm::vec2(sinf(3.0f * dj), cosf(5.0f)) );
@@ -309,16 +311,17 @@ void Hair::init_simulation(MeshData const& scalpMesh) {
       Tangents[B] = .2f*glm::vec4(-normals_[A] + curly, 0);
 
       // Inner tangents.
-      float const inv_dist = 1.0f / (B - A);
+      float const dist_AB = static_cast<float>(B - A);
+      float const inv_dist = 1.0f / dist_AB;
       for (int i = A + 1u; i < B; ++i) {
       
         if (bCurly) {  
-          float di = 10.0f * (B - i) / static_cast<float>(kNumControlPoints - 2u);
-          float n = di * glm::simplex( glm::vec2(sinf(43.0f * dj), cosf(5.0f * di)) );
+          float const di = 10.0f * static_cast<float>(B - i) / (dist_AB - 1.0f);
+          float const n = di * glm::simplex( glm::vec2(sinf(43.0f * dj), cosf(5.0f * di)) );
           curly = -5.8f * glm::vec3(10.7f * cosf(n * kPi), -2.3f * n, 20.5f * sinf(n * kPi));
         }
 
-        float const s = 0.1f*(i - A) * inv_dist * scaleMaxLength;
+        float const s = 0.1f * static_cast<float>(i - A) * inv_dist * scaleMaxLength;
         Tangents[i] = s * glm::vec4(curly, 0);
       }
     }

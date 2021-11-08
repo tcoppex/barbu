@@ -360,7 +360,7 @@ void MarchingCube::render(Camera const& camera) {
   int32_t constexpr kVBOStride = 2u * sizeof(glm::vec3);
   {
     int32_t attrib = 0u;
-    uintptr_t offset = 0u;
+    GLuint offset = 0u;
 
     // position
     glVertexArrayAttribBinding(vao, attrib, kVBOBinding);
@@ -429,7 +429,7 @@ void MarchingCube::init_buffers() {
       std::vector<glm::ivec2> buffer(kVoxelsPerSlice);
       for (size_t i = 0; i < buffer.size(); ++i) {
         int32_t const x = i % kChunkDim; 
-        int32_t const y = i / kChunkDim;
+        int32_t const y = static_cast<int32_t>(i / kChunkDim);
         buffer[i] = glm::ivec2( x, y);
       }
      
@@ -560,7 +560,8 @@ void MarchingCube::init_shaders() {
       SHADERS_DIR "/marching_cube/01_density_volume/cs_buildDensityVolume.glsl"
     );
 
-    int32_t const seed = 4567891 * (rand() / static_cast<float>(RAND_MAX)); //
+    double const random_value = static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
+    int32_t const seed = static_cast<int32_t>(4567891.0 * random_value);
     programs_.build_density->setUniform("uPerlinNoisePermutationSeed", seed);
   }
 
@@ -664,8 +665,8 @@ void MarchingCube::createChunk( glm::ivec3 const& coords ) {
 void MarchingCube::buildDensityVolume(ChunkInfo_t &chunk) {
   auto &pgm = programs_.build_density->id;
 
-  float const t = GlobalClock::Get().applicationTime();
-  gx::SetUniform( pgm, "uTime",       t);
+  float const app_time = static_cast<float>(GlobalClock::Get().applicationTime());
+  gx::SetUniform( pgm, "uTime",            app_time);
 
   gx::SetUniform( pgm, "uInvChunkDim",     kInvChunkDim);
   gx::SetUniform( pgm, "uMargin",          static_cast<float>(kMargin));
