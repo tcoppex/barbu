@@ -57,7 +57,7 @@ void Events::prepareNextFrame() {
 
 /* Dispatch event signal to sub callbacks handlers. */
 #define EVENTS_DISPATCH_SIGNAL( funcName, ... ) \
-  static_assert( std::string_view(#funcName)==__FUNCTION__, "Incorrect dispatch signal used." ); \
+  static_assert( std::string_view(#funcName)==__func__, "Incorrect dispatch signal used."); \
   std::for_each(event_callbacks_.begin(), event_callbacks_.end(), [__VA_ARGS__](auto &e){ e->funcName(__VA_ARGS__); })
 
 // ----------------------------------------------------------------------------
