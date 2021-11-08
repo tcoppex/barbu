@@ -12,8 +12,12 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
   MarschnerView(TParameters &params) : ParametrizedUIView(params) {}
 
   void render() final {
-    if (ImGui::Button("Open Marschner parameters")) {
-      show_window_ = true;
+    std::string const btn_label{
+      std::string(show_window_ ? "Close" : "Open") +  " Marschner parameters"
+    };
+    
+    if (ImGui::Button(btn_label.c_str())) {
+      show_window_ = !show_window_;
     }
 
     if (!show_window_) {
