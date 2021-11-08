@@ -11,21 +11,21 @@
 App::App()
   : window_{std::make_shared<Window>()} 
   , camera_{nullptr}
+  , started_(false)
   , is_running_{true}
   , exit_status_{EXIT_SUCCESS}
   , rand_seed_{0u}
 {}
 
 App::~App() {
-  // UI.
-  ui_controller_.deinit();
+  if (started_) {
+    ui_controller_.deinit();
+    gx::Deinitialize();
+  }
 
   // Resources.
   Assets::ReleaseAll();
   Resources::ReleaseAll();
-
-  // Graphics.
-  gx::Deinitialize();
 
   // Singletons.
   Events::Deinitialize();
@@ -107,7 +107,7 @@ bool App::presetup(std::string_view title) {
   // Window and Graphics.
   {
     // Create the main window surface.
-    if (!window_->create( Display(), title)) {
+    if (started_ = window_->create( Display(), title); !started_) {
       LOG_ERROR( "The window creation failed (／。＼)" );
       return false;
     }

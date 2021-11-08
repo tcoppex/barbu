@@ -102,6 +102,7 @@ class App : public EventCallbacks {
   SceneHierarchy scene_;                        //<! Entity Component Scene hierarchy to fetch the renderer.
 
  private:
+  bool started_;
   bool is_running_;                             //<! True while the mainloop continue.
   int32_t exit_status_;                         //<! Status used when exiting the process.
   uint32_t rand_seed_;                          //<! Random Number Generator seed.
