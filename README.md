@@ -4,7 +4,7 @@
 
 ![screenshot](https://i.imgur.com/3gtP0iJ.png)
 
-Barbü is a prototyping framework for real-time 3D graphics aimed at simulating hairy creatures & humanoids.
+Barbü is a prototyping framework for real-time 3D graphics aimed at simulating hairy creatures.
 
 It is written in **C++ 17** and **OpenGL 4.6**.
 
