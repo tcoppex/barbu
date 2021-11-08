@@ -209,8 +209,9 @@ if(USE_GCC OR USE_CLANG)
     -Wzero-as-null-pointer-constant
     -Wdisabled-optimization
     -Wvector-operation-performance
-    #-Wold-style-cast
-    #-Wduplicated-branches 
+    # -Wold-style-cast
+    # -Wduplicated-branches 
+    # -Wconversion
   )
 
   # To avoid warnings about the previous mismatched GCC / Clang options.
