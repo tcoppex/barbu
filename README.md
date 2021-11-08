@@ -26,11 +26,10 @@ Check the gallery [here](https://imgur.com/a/MgJyFNG), or take a [sneak peek](ht
 ## Quickstart
 
 We will use the command-line on Unix and [Git Bash](https://git-for-windows.github.io/) on Windows.
-Be sure to have [Git LFS](https://git-lfs.github.com/) installed on your system to retrieve the assets.
 
 ### Cloning the repo.
 
-Clone the repo with its submodules :
+First be sure to have [Git LFS](https://git-lfs.github.com/) installed on your system to retrieve the assets, then clone the repo with its submodules :
 
 ```bash
 git clone --recurse-submodules https://github.com/tcoppex/barbu.git
@@ -46,8 +45,8 @@ The following third parties are used :
 * [cgltf (1.10)](https://github.com/jkuhlmann/cgltf) : gltf 2.0 loader.
 * [MikkTSpace](https://github.com/mmikk/MikkTSpace) : tangent space computation.
 
-Some of them are shipped directly while others are retrieved as submodules. If you
-cloned the repository without its submodules, you can still retrieved them by typing :
+Some are shipped directly while others are retrieved as submodules. If you
+need to retrieved them separately, use this command in the project directory :
 ```bash
 git submodule update --init --recursive
 ```
@@ -75,8 +74,8 @@ cmake --build . --target ALL_BUILD --config Release
 *Notes:*
 
  1. *Using CMake, the build configuration type (ie. Debug, Release) is set at Build Time with MSVC and at Cache Generation Time with Makefile.*
-
  2. *OpenGL extensions are generated automatically by a custom [Python](https://www.python.org/downloads/) script.  Alternatively [GLEW](http://glew.sourceforge.net/) can be used by specifying the option `-DOPT_USE_GLEW=ON` to CMake. __If something does not compile due to OpenGL functions, try to use GLEW instead.__*
+ 3. *By default some third parties are compiled as shared libraries. You can switch them to static by using the option `-DOPT_BUILD_SHARED_LIBS=OFF`.*
 
 ### Run
 
