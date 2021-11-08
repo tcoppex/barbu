@@ -25,9 +25,16 @@ Check the gallery [here](https://imgur.com/a/MgJyFNG), or take a [sneak peek](ht
 
 ## Quickstart
 
-We will be using the command-line on Unix and [Git Bash](https://git-for-windows.github.io/) on Windows.
+We will use the command-line on Unix and [Git Bash](https://git-for-windows.github.io/) on Windows.
+Be sure to have [Git LFS](https://git-lfs.github.com/) installed on your system to retrieve the assets.
 
-### Dependencies
+### Cloning the repo.
+
+Clone the repo with its submodules :
+
+```bash
+git clone --recurse-submodules https://github.com/tcoppex/barbu.git
+```
 
 The following third parties are used :
 
@@ -39,10 +46,10 @@ The following third parties are used :
 * [cgltf (1.10)](https://github.com/jkuhlmann/cgltf) : gltf 2.0 loader.
 * [MikkTSpace](https://github.com/mmikk/MikkTSpace) : tangent space computation.
 
-Some of them are shipped directly, others must be retrieved as submodule :
+Some of them are shipped directly while others are retrieved as submodules. If you
+cloned the repository without its submodules, you can still retrieved them by typing :
 ```bash
-git submodule init
-git submodule update
+git submodule update --init --recursive
 ```
 
 ### Build
@@ -53,10 +60,10 @@ We will first create a build directory then generate the CMake cache depending o
 mkdir BUILDs && cd BUILDs
 ```
 
-On **Unix**, using Makefile (*replace `$NUM_CPU` by the number of core you  want to use*) :
+On **Unix**, using Makefile (*replace `$NUM_THREADS` by the number of threads you want to use*) :
 ```bash
 cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . -- -j$NUM_CPU
+cmake --build . -- -j $NUM_THREADS
 ```
 
 On **Windows**, using MSVC 15 for x64:
