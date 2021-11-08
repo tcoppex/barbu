@@ -35,10 +35,11 @@ class Application final : public App {
   static constexpr float kDefaultRefocusDistance{ 3.50f };
   static constexpr float kRefocusDistanceScaling{ 1.25f };
 
-  void refocusCamera(bool bCentroid, bool bSmooth, EntityHandle new_focus = nullptr);
+  void refocusCamera(bool _bCentroid, bool _bSmooth, EntityHandle _focus = nullptr);
+  void updateHierarchyEvents();
 
-  ArcBallController arcball_;       //< Controller for the camera.
-  EntityHandle focus_;              //< Entity to focus on.
+  ArcBallController arcball_;       //< View controller for the camera.
+  EntityHandle focus_;              //< Entity to focus on, if any.
   bool bRefocus_ = false;           //< When true, refocus the camera.
 };
 

@@ -4,12 +4,13 @@
 #include "ui/views/views.h"
 
 // ----------------------------------------------------------------------------
-
+//
 // TODO clean usage :
 //    * no inherited fields.
 //    * no boolean without clear intents.
 //    * no weird indirection.
-
+//    * fix scene hierarchy reindexing issue.
+//
 // ----------------------------------------------------------------------------
 
 void Application::setup() {
@@ -20,6 +21,7 @@ void Application::setup() {
   // Camera.
   {
     //auto &camera{ getDefaultCamera() };
+
     camera_.setController(&arcball_);
     camera_.setPerspective(glm::radians(60.0f), resolution(), 0.01f, 500.0f);
     
@@ -30,9 +32,11 @@ void Application::setup() {
   // Scene Hierarchy.
   {
     //auto &scene{ getSceneHierarchy() };
+    
     focus_ = scene_.importModel( ResourceId::fromPath("models/InfiniteScan/Head.glb") );
     scene_.createEntity<BSphereEntity>( 0.25f );
     
+    // Refocus on the next update.
     bRefocus_ = true;
   }
   
@@ -43,8 +47,11 @@ void Application::setup() {
     params.show_grid        = true;
     params.enable_hair      = true;
     params.enable_particle  = false;
+  }
 
-    // -- Experimentals (probables futures components) --
+  // Experimentals features (future components).
+  {
+    //auto &renderer{ getRenderer() };
 
     // Skybox.
     auto &skybox{ renderer_.skybox() };
@@ -57,7 +64,7 @@ void Application::setup() {
 }
 
 void Application::update() {
-  auto const& selected = scene_.selected();
+  auto const& selected{ scene_.selected() };
 
   // Refocus the camera when asked for.
   if (bRefocus_) {
@@ -67,48 +74,9 @@ void Application::update() {
     focus_ = selected.empty() ? nullptr : (focus_ ? focus_ : selected.front());
   }
 
-  // -----------------------
-
-  // [Bug-prone due to SceneHierarchy internal structure update, to check]
-
-  // Modify the SceneHierarchy.
+  // [fixme] Events that modify the SceneHierarchy.
   if constexpr(true) {
-    // Notes: Adding new entities should be done separately of scene hierarchy modification
-    //        as it has not update its internal structure yet.
-
-    auto const& events = Events::Get(); //
-    
-    if (!selected.empty()) {
-      // Reset transform.
-      if ('x' == events.lastInputChar()) {
-        for (auto &e : selected) {
-          scene_.resetEntity(e);
-        }
-      } 
-      // Delete.
-      else if ('X' == events.lastInputChar()) {
-        for (auto &e : selected) {
-          focus_ = (focus_ == e) ? nullptr : focus_;
-          scene_.removeEntity(e, true);
-        }
-        scene_.selectAll(false);
-      }
-    }
-
-    // Import drag-n-dropped objects & center them to camera target.
-    
-    auto const get_extension = [](auto path) { 
-      return path.substr(path.find_last_of(".") + 1);
-    }; 
-    auto const dnd_target = camera_.target();
-
-    for (auto &fn : events.droppedFilenames()) {
-      if (auto const ext{get_extension(fn)}; MeshDataManager::CheckExtension(ext)) {
-        if (auto entity = scene_.importModel(fn); entity) {
-          entity->setPosition( dnd_target );
-        }
-      }
-    }
+    updateHierarchyEvents(); //
   }
 }
 
@@ -131,14 +99,17 @@ void Application::draw() {
   //
 }
 
+// ----------------------------------------------------------------------------
+
 void Application::onInputChar(uint16_t inputChar) {
-  auto const& selected = scene_.selected();
+  auto const& selected{ scene_.selected() };
+  int cycle_step = 0;
 
   // -- Key bindings.
   switch (inputChar) {
     // Select  / Unselect all.
     case 'a':
-      scene_.selectAll(selected.empty());
+      selected.empty() ? scene_.selectAll() : scene_.deselectAll();
     break;
     
     // Focus on entities.
@@ -151,14 +122,10 @@ void Application::onInputChar(uint16_t inputChar) {
 
     // Cycle through entities.
     case 'j':
-      refocusCamera( !kCentroid, kSmooth, 
-        selected.front() ? scene_.next(selected.front(), +1) : scene_.first()
-      );
+      cycle_step = +1;
     break;
     case 'k':
-      refocusCamera( !kCentroid, kSmooth, 
-        selected.front() ? scene_.next(selected.front(), -1) : scene_.first()
-      );
+      cycle_step = -1;
     break;
 
     // Show / hide UI.
@@ -174,6 +141,13 @@ void Application::onInputChar(uint16_t inputChar) {
     default:
     break;
   } 
+
+  if (0 != cycle_step) {
+    focus_ = selected.front() ? scene_.next(selected.front(), cycle_step) 
+                              : scene_.first()
+                              ;
+    refocusCamera( !kCentroid, kSmooth, focus_);
+  }
 }
 
 void Application::onResize(int w, int h) {
@@ -190,25 +164,70 @@ void Application::refocusCamera(bool _bCentroid, bool _bSmooth, EntityHandle _fo
   glm::vec3 target{};
   if (_focus && _focus->indexed()) {
     focus_ = _focus;
-    scene_.selectAll(false);
+    scene_.deselectAll();
     scene_.select(focus_, true);
     target = _bCentroid ? scene_.globalCentroid(focus_) 
-                       : scene_.globalPosition(focus_)
-                       ;
+                        : scene_.globalPosition(focus_)
+                        ;
   } else {
-    target = _bCentroid ? scene_.centroid() : scene_.pivot();
+    target = _bCentroid ? scene_.centroid() 
+                        : scene_.pivot()
+                        ;
   }
 
-  // Set the view target.
-  arcball_.setTarget(target, _bSmooth);
-  
   // Distance to focus point.
-  float const focus_dist{
+  float const focus_distance{
     kRefocusDistanceScaling *  
     ((focus_ && focus_->has<VisualComponent>()) ? focus_->get<VisualComponent>().mesh()->radius() 
                                                 : kDefaultRefocusDistance)
   };
-  arcball_.setDolly(focus_dist, _bSmooth);
+
+  arcball_.setTarget( target, _bSmooth);
+  arcball_.setDolly( focus_distance, _bSmooth);
+}
+
+void Application::updateHierarchyEvents() {
+  //
+  // [ Bug-prone due to SceneHierarchy internal structure update, to investigate ]
+  //
+  // Adding new entities should be done separately of scene hierarchy modification
+  // as it has not update its internal structure yet.
+  //
+  // Depending on where this is called, this might fails. 
+  //
+
+  auto const& events{ Events::Get() }; 
+  auto const& selected{ scene_.selected() };
+  
+  if (!selected.empty()) {
+    // Reset transform.
+    if ('x' == events.lastInputChar()) {
+      for (auto &e : selected) {
+        scene_.resetEntity(e);
+      }
+    } 
+    
+    // Delete.
+    if ('X' == events.lastInputChar()) {
+      for (auto &e : selected) {
+        focus_ = (focus_ == e) ? nullptr : focus_;
+        scene_.removeEntity(e, true);
+      }
+      scene_.deselectAll();
+    }
+  }
+
+  // Import drag-n-dropped objects & center them to camera target.
+  auto const get_extension{ [](auto path) { 
+    return path.substr(path.find_last_of(".") + 1);
+  }};
+  for (auto &fn : events.droppedFilenames()) {
+    if (auto const ext{get_extension(fn)}; MeshDataManager::CheckExtension(ext)) {
+      if (auto entity = scene_.importModel(fn); entity) {
+        entity->setPosition( camera_.target() );
+      }
+    }
+  }
 }
 
 // ----------------------------------------------------------------------------

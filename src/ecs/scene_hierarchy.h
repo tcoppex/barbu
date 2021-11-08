@@ -75,7 +75,7 @@ class SceneHierarchy {
     return addChildEntity( nullptr, entity);
   }
 
-  /* Create an entity attached to a parent. */
+  /* Create an entity, empty or from a template, attached to its parent. */
   template<class T = Entity, class... U>
   std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
   createChildEntity(EntityHandle parent, U&&... u) {
@@ -83,7 +83,7 @@ class SceneHierarchy {
     return e ? addChildEntity<T>(parent, e) : nullptr;
   }
 
-  /* Create an entity attached to the root. */
+  /* Create an entity, empty or from a template, attached to the root. */
   template<class T = Entity, class... U>
   std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
   createEntity(U&&... u) {
@@ -100,9 +100,17 @@ class SceneHierarchy {
   /* Create a model entity by importing an external model file. */
   EntityHandle importModel(std::string_view filename);
   
-  /* Select / Unselect entities depending on status. */
+  /* Select / Deselect entities depending on status. */
   void select(EntityHandle entity, bool status);
-  void selectAll(bool status);
+
+  /* Select all entities when true, deselect otherwise. */
+  void toggleSelect(bool status);
+
+  /* Select all entities. */
+  void selectAll() { toggleSelect(true); }
+  
+  /* Deselect all entities. */
+  void deselectAll() { toggleSelect(false); }
 
   /* Getters */
 

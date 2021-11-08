@@ -274,7 +274,7 @@ void SceneHierarchy::select(EntityHandle entity, bool status) {
   ui_view->select(entity->index(), status);
 }
 
-void SceneHierarchy::selectAll(bool status) {
+void SceneHierarchy::toggleSelect(bool status) {
   ui_view->selectAll(status);
 }
 
