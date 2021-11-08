@@ -29,23 +29,23 @@ void Postprocess::init() {
   CHECK_GX_ERROR();
 }
 
-void Postprocess::setup_textures(Camera const& camera) {
+void Postprocess::setupTextures(Camera const& camera) {
   auto const w = camera.width();
   auto const h = camera.height();
   bool const bResized = (w_ != w) || (h_ != h);
 
   if (bResized) {
     if (bTextureInit_) {
-      release_textures();
+      releaseTextures();
     }
 
     w_ = w;
     h_ = h;
-    create_textures();
+    createTextures();
   }
 }
 
-void Postprocess::create_textures() {
+void Postprocess::createTextures() {
   // Initialize the FBOs with their internal buffer textures.
   glCreateFramebuffers(kNumBuffers, fbos_);
   
@@ -76,9 +76,9 @@ void Postprocess::create_textures() {
 
     // (we might want to scaled down the texture for post-effects)
     lindepth_res_ = glm::vec2( w_, h_);
-    glTextureStorage2D(out_.lindepth_r32f, 1, kLinearDepthFormat, lindepth_res_.x, lindepth_res_.y);  
+    glTextureStorage2D(out_.lindepth_r32f, 1, kLinearDepthFormat, w_, h_);  
   
-    ssao_.create_textures(w_, h_);
+    ssao_.createTextures(w_, h_);
   }
 
   bTextureInit_ = true;
@@ -86,7 +86,7 @@ void Postprocess::create_textures() {
   CHECK_GX_ERROR();
 }
 
-void Postprocess::release_textures() {
+void Postprocess::releaseTextures() {
   if (!bTextureInit_) {
     return;
   }
@@ -98,14 +98,14 @@ void Postprocess::release_textures() {
   glDeleteTextures(1, &out_.lindepth_r32f);
   out_.lindepth_r32f = 0u;
   
-  ssao_.release_textures();
+  ssao_.releaseTextures();
   bTextureInit_ = false;
 
   CHECK_GX_ERROR();
 }
 
 void Postprocess::deinit() {
-  release_textures();
+  releaseTextures();
   glDeleteVertexArrays(1, &vao_);
   //ssao_.deinit();
 
@@ -135,17 +135,17 @@ void Postprocess::end(Camera const& camera) {
 
   // Filters input buffers.
   if (bEnable_) {
-    post_effects(camera);
+    applyEffects(camera);
   } else {
     // clear ao buffer (todo ?)
     //glClearNamedFramebufferfv();
   }
 
   // Mapscreen for final composition.
-  render_screen();
+  renderScreen();
 
   // Copy the depth buffer to the main one to continue forward rendering.
-  // (we might as well do this in the CS render_screen pass)
+  // (we might as well do this in the CS renderScreen pass)
   auto const w = camera.width();
   auto const h = camera.height();
   glBlitNamedFramebuffer(
@@ -164,7 +164,7 @@ void Postprocess::end(Camera const& camera) {
 
 // ----------------------------------------------------------------------------
 
-void Postprocess::post_effects(Camera const& camera) {
+void Postprocess::applyEffects(Camera const& camera) {
   auto const pgm = pgm_.lindepth->id;
   int image_unit = -1;
 
@@ -172,15 +172,17 @@ void Postprocess::post_effects(Camera const& camera) {
   gx::UseProgram(pgm);
   {
     gx::SetUniform( pgm, "uResolution", lindepth_res_);
-    gx::SetUniform( pgm, "uLinearParams", camera.linearization_params());
+    gx::SetUniform( pgm, "uLinearParams", camera.linearizationParams());
 
-    gx::BindTexture(buffer_texture(DEPTH), ++image_unit);
+    gx::BindTexture(bufferTextureID(DEPTH), ++image_unit);
     gx::SetUniform( pgm, "uDepthIn", image_unit);
 
     glBindImageTexture( ++image_unit, out_.lindepth_r32f, 0, GL_FALSE, 0, GL_WRITE_ONLY, kLinearDepthFormat); //
     gx::SetUniform( pgm, "uLinearDepthOut", image_unit);
 
-    gx::DispatchCompute<LINEARDEPTH_BLOCK_DIM, LINEARDEPTH_BLOCK_DIM>( lindepth_res_.x, lindepth_res_.y);
+    // uint32_t const width  = static_cast<uint32_t>(lindepth_res_.x); //
+    // uint32_t const height = static_cast<uint32_t>(lindepth_res_.y); //
+    gx::DispatchCompute<LINEARDEPTH_BLOCK_DIM, LINEARDEPTH_BLOCK_DIM>( w_, h_);
   } 
   gx::UseProgram();
 
@@ -193,12 +195,12 @@ void Postprocess::post_effects(Camera const& camera) {
   }
 
   // SSAO.
-  ssao_.process(camera, out_.lindepth_r32f, out_.ext_ao_r32f); 
+  ssao_.applyEffect(camera, out_.lindepth_r32f, out_.ext_ao_r32f); 
 
   CHECK_GX_ERROR();
 }
 
-void Postprocess::render_screen() {
+void Postprocess::renderScreen() {
   auto const& pgm = pgm_.mapscreen->id;
 
   gx::Disable(gx::State::DepthTest);
@@ -207,7 +209,7 @@ void Postprocess::render_screen() {
   {
     int image_unit = -1;
     
-    gx::BindTexture( buffer_texture(COLOR_RGBA8), ++image_unit, gx::NearestClamp);
+    gx::BindTexture( bufferTextureID(COLOR_RGBA8), ++image_unit, gx::NearestClamp);
     gx::SetUniform(pgm, "uColor", image_unit);
 
     if (out_.ext_ao_r32f > 0) {

@@ -3,23 +3,24 @@
 
 #include <memory>
 
-struct GLFWwindow;
 struct ImDrawData;
 class UIView;
+class AbstractWindow; //
 
 // ----------------------------------------------------------------------------
 
 class UIController {
  public:
   UIController() :
-    window_ptr_(nullptr),
-    mainview_ptr_(nullptr),
-    time_(0.0)
+    mainview_ptr_(nullptr)
   {}
 
-  void init(GLFWwindow* window);
+  void init(/*GLFWwindow* window*/);
   void deinit();
-  void update();
+
+  // [should not sent the (abstract) window but its Events / View ]
+  void update(std::shared_ptr<AbstractWindow> window); 
+  
   void render(bool show_ui = true);
 
   inline void set_mainview(std::shared_ptr<UIView> view) {
@@ -32,9 +33,8 @@ class UIController {
   void create_font_texture();
   void render_frame(ImDrawData* draw_data);
 
-  GLFWwindow *window_ptr_;
+  //GLFWwindow *window_ptr_;
   std::shared_ptr<UIView> mainview_ptr_;
-  double time_;
 
   struct TDeviceObjects {
     unsigned int fontTexture = 0;

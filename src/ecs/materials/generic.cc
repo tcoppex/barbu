@@ -35,10 +35,10 @@ void GenericMaterial::setup(MaterialInfo const& info) {
   }
 }
 
-void GenericMaterial::update_internals() {
+void GenericMaterial::updateInternals() {
   auto const pgm = program()->id;
 
-  float const cutoff = (render_mode() == RenderMode::CutOff) ? alpha_cutoff_ : 0.0f;
+  float const cutoff = (renderMode() == RenderMode::CutOff) ? alpha_cutoff_ : 0.0f;
   auto const cm = static_cast<int32_t>(color_mode_); 
   //(color_mode == ColorMode::kInternal) ? color_mode_ : color_mode;
   

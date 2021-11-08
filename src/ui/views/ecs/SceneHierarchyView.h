@@ -54,7 +54,7 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
   }
 
 
-  inline bool is_selected(int32_t index) const {
+  inline bool isSelected(int32_t index) const {
     return (index < static_cast<int32_t>(selected_.size())) ? selected_[index] : false;
   }
 
@@ -63,7 +63,7 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
     selected_[index] = status;
   }
   
-  inline void select_all(bool status) {
+  inline void selectAll(bool status) {
     std::fill(selected_.begin(), selected_.end(), status);
   }
 
@@ -87,7 +87,7 @@ class SceneHierarchyView : public ParametrizedUIView<SceneHierarchy> {
     int32_t const i  = entity->index(); //
 
     // Add selected flag.
-    node_flags |= (is_selected(i) ? ImGuiTreeNodeFlags_Selected : 0);
+    node_flags |= (isSelected(i) ? ImGuiTreeNodeFlags_Selected : 0);
 
     // Automatically open in-between nodes.
     if (!children.empty()) {

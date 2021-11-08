@@ -17,8 +17,11 @@ namespace fs = std::filesystem;
 #include <experimental/filesystem>
 namespace fs = std::experimental::filesystem;
 #else
+# ifdef __GNUC__
 #pragma GCC error "std::filesystem is required."
-//#pragma message( "std::filesystem is required." )
+# else
+#pragma message( "std::filesystem is required." )
+# endif
 #endif
 
 #include "core/logger.h"
@@ -51,7 +54,7 @@ namespace fs = std::experimental::filesystem;
 //
 class Resource {
  protected:
-  virtual ~Resource() {}
+  virtual ~Resource() = default;
 
   // Release the internal memory of the resource.
   virtual void release() = 0;

@@ -14,6 +14,12 @@ from os import mkdir
 
 # -----------------------------------------------------------------------------
 
+kMacroname = "GLEXTGEN_GET_PROC_ADDRESS"
+
+kFuncname = "glextgen_LoadExtensionFuncPtrs"
+
+# -----------------------------------------------------------------------------
+
 def HeadComment():
   import time
   now = time.strftime("%Y/%m/%d")
@@ -24,19 +30,29 @@ def HeadComment():
 def GenerateInline(path, declarations, funcloads):
   filename = "%s/_extensions.inl" % path
 
-  func = """
+  func = '''
 static
-void LoadExtensionFuncPtrs() {
+void %s(void (* (*getProcAddress)(char const*))()) {
 %s
 }
+'''
+  func = func % (kFuncname, "\n".join(funcloads))
 
-"""
-  func = func % '\n'.join(funcloads)
+  macro_encapsulate ='''
+#ifndef %s
+#define %s(tName) getProcAddress(tName)
+#endif
+
+%s
+
+#undef %s
+'''
+  func = macro_encapsulate % (kMacroname, kMacroname, func, kMacroname)
 
   with open(filename, "w") as fd:
     fd.write(HeadComment())
-    fd.write('\n'.join(declarations))
-    fd.write('\n')
+    fd.write("\n".join(declarations))
+    fd.write("\n")
     fd.write(func)
 
 # -----------------------------------------------------------------------------
@@ -46,27 +62,27 @@ def GenerateHeader(path, ext_declarations, defines):
 
   with open(filename, "w") as fd:
     fd.write(HeadComment())
-    fd.write("#ifndef EXT_EXTENSIONS_H\n")
-    fd.write("#define EXT_EXTENSIONS_H\n")
+    fd.write("#ifndef GLEXTGEN_EXTENSIONS_H\n")
+    fd.write("#define GLEXTGEN_EXTENSIONS_H\n")
     fd.write('''
 #if defined(_WIN32)
 #define GL_GLEXT_PROTOTYPES
 #include "GL/glcorearb.h"
 #else
 #include "GL/gl.h"
+#include "GL/glext.h"
 #endif
 ''');
-    fd.write("#include \"GL/glext.h\"\n")
-    fd.write('\n')
-    fd.write('\n'.join(ext_declarations))
+    fd.write("\n")
+    fd.write("\n".join(ext_declarations))
     fd.write("\n\n")
-    fd.write('\n'.join(defines))
+    fd.write("\n".join(defines))
     fd.write("\n\n")
-    fd.write("#endif  // EXT_EXTENSIONS_H\n")
+    fd.write("#endif  // GLEXTGEN_EXTENSIONS_H\n")
 
 # -----------------------------------------------------------------------------
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   import sys
 
   if len(sys.argv) != 3:
@@ -78,7 +94,7 @@ if __name__ == '__main__':
 
   exts = []
   with open(extensions_fn, "r") as fd:
-    exts = fd.read().split('\n')
+    exts = fd.read().split("\n")
 
   # Sort and remove redundancies.
   exts = sorted(list(set(exts)))
@@ -89,7 +105,7 @@ if __name__ == '__main__':
   funcloads = []
 
   # Functions not to cast to avoid warnings.
-  fn_filter_cast_list = set(['glEndTransformFeedback'])
+  fn_filter_cast_list = set(["glEndTransformFeedback"])
 
   for ext in exts:
     if ext == "":
@@ -103,7 +119,7 @@ if __name__ == '__main__':
     decl = "%s %s;" % (typename, funcname)
     declarations.append(decl)
     
-    # 'extern' functions declaration.
+    # "extern" functions declaration.
     e_declarations.append("extern %s" % decl)
 
     # defines to simplify use.
@@ -112,7 +128,7 @@ if __name__ == '__main__':
 
     # loaders code.
     cast_str = "" if bFilterCast else "reinterpret_cast<%s>" % typename
-    funcload = "  %s = %s(\n\t\tgetAddress(\"%s\")\n\t);" % (funcname, cast_str, ext)
+    funcload = "  %s = %s(\n\t\t%s(\"%s\")\n\t);" % (funcname, cast_str, kMacroname, ext)
     funcloads.append(funcload)
 
 

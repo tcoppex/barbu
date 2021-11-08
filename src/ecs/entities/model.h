@@ -15,7 +15,7 @@ class ModelEntity : public Entity {
     : Entity(name)
   {
     auto &visual = add<VisualComponent>();
-    visual.set_mesh(mesh);
+    visual.setMesh(mesh);
   }
 
   MeshHandle mesh() {

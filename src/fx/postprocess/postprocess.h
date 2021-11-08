@@ -60,12 +60,12 @@ class Postprocess {
   void deinit();
 
   // To call when the camera / framebuffer has been resized.
-  void setup_textures(Camera const& camera);
+  void setupTextures(Camera const& camera);
 
   void begin();
   void end(Camera const& camera); //
 
-  GLuint buffer_texture(BufferTextureName_t const name) { 
+  inline GLuint bufferTextureID(BufferTextureName_t const name) const noexcept { 
     return buffers_[current_buffer_][name];
   }
 
@@ -75,14 +75,14 @@ class Postprocess {
  private:
   using InternalBuffers_t = std::array<GLuint, kNumBufferTextureName>;
 
-  void create_textures();
-  void release_textures();
+  void createTextures();
+  void releaseTextures();
 
   // Post capture processing.
-  void post_effects(Camera const& camera);
+  void applyEffects(Camera const& camera);
 
   // Render screen quad for final composition.
-  void render_screen();
+  void renderScreen();
 
 
   bool bEnable_;

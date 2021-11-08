@@ -31,8 +31,8 @@ class Gizmo {
   void init();
   void deinit();
 
-  void begin_frame(float dt, Camera const& camera);
-  void end_frame(Camera const& camera);
+  void beginFrame(float dt, Camera const& camera);
+  void endFrame(Camera const& camera);
 
  private:
   GLuint vao_;

@@ -60,14 +60,14 @@ void Gizmo::deinit() {
   glDeleteBuffers(1, &vbo_);
 }
 
-void Gizmo::begin_frame(float dt, Camera const& camera) {
+void Gizmo::beginFrame(float dt, Camera const& camera) {
   IM3D_ASSERT(vao_ && vbo_ && pgm_.points && pgm_.lines && pgm_.triangles);
 
 // At the top of each frame, the application must fill the Im3d::AppData struct and then call Im3d::NewFrame().
 // The example below shows how to do this, in particular how to generate the 'cursor ray' from a mouse position
 // which is necessary for interacting with gizmos.
 
-  TEventData const event = GetEventData();
+  auto const& events = Events::Get();
 
   AppData& ad = GetAppData();
 
@@ -76,54 +76,63 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
   ad.m_viewOrigin    = Vec3(camera.position());
   ad.m_viewDirection = Vec3(camera.direction());
   ad.m_worldUp       = Vec3(0.0f, 1.0f, 0.0f);
-  ad.m_projOrtho     = camera.is_ortho(); 
+  ad.m_projOrtho     = camera.isOrtho(); 
   ad.m_flipGizmoWhenBehind = kbFlipGizmoWhenBehind;
 
   auto const W = camera.proj()[0][0];
   auto const H = camera.proj()[1][1];
 
  // m_projScaleY controls how gizmos are scaled in world space to maintain a constant screen height
-  ad.m_projScaleY = camera.is_ortho()
+  ad.m_projScaleY = camera.isOrtho()
     ? 2.0f / H
     : tanf(camera.fov() * 0.5f) * 2.0f
     ;  
   ad.m_projScaleY *= kGizmoScaling;
 
-  Vec2 cursorPos(event.mouseX, event.mouseY);
-  cursorPos = (cursorPos / ad.m_viewportSize) * 2.0f - Vec2(1.0f);
-  cursorPos.y = -cursorPos.y;
-  
-  auto const worldMatrix = Mat4(camera.world());
+  // Set cursor ray.
+  {
+    // Mouse position.
+    auto const mouse_fx = static_cast<float>(events.mouseX());
+    auto const mouse_fy = static_cast<float>(events.mouseY());
+    Vec2 cursorPos( mouse_fx, mouse_fy);
+    cursorPos = (cursorPos / ad.m_viewportSize) * 2.0f - Vec2(1.0f);
+    cursorPos.y = -cursorPos.y;
+    
+    // Camera world matrix.
+    auto const worldMatrix = Mat4(camera.world());
 
-  Vec3 rayOrigin, rayDirection;
-  if (camera.is_ortho())
-  {
-    rayOrigin.x  = cursorPos.x / W;
-    rayOrigin.y  = cursorPos.y / H;
-    rayOrigin.z  = 0.0f;
-    rayOrigin    = worldMatrix * Vec4(rayOrigin, 1.0f);
-    rayDirection = worldMatrix * Vec4(0.0f, 0.0f, -1.0f, 0.0f); 
+    // View rays.
+    Vec3 rayOrigin, rayDirection;
+    if (camera.isOrtho())
+    {
+      rayOrigin.x  = cursorPos.x / W;
+      rayOrigin.y  = cursorPos.y / H;
+      rayOrigin.z  = 0.0f;
+      rayOrigin    = worldMatrix * Vec4(rayOrigin, 1.0f);
+      rayDirection = worldMatrix * Vec4(0.0f, 0.0f, -1.0f, 0.0f); 
+    }
+    else
+    {
+      rayOrigin = ad.m_viewOrigin;
+      rayDirection.x  = cursorPos.x / W;
+      rayDirection.y  = cursorPos.y / H;
+      rayDirection.z  = -1.0f;
+      rayDirection    = worldMatrix * Vec4(Normalize(rayDirection), 0.0f);
+    }
+
+    ad.m_cursorRayOrigin = rayOrigin;
+    ad.m_cursorRayDirection = rayDirection;
   }
-  else
-  {
-    rayOrigin = ad.m_viewOrigin;
-    rayDirection.x  = cursorPos.x / W;
-    rayDirection.y  = cursorPos.y / H;
-    rayDirection.z  = -1.0f;
-    rayDirection    = worldMatrix * Vec4(Normalize(rayDirection), 0.0f);
-  }
-  ad.m_cursorRayOrigin = rayOrigin;
-  ad.m_cursorRayDirection = rayDirection;
 
  // Set cull frustum planes. This is only required if IM3D_CULL_GIZMOS or IM3D_CULL_PRIMTIVES is enable via
  // im3d_config.h, or if any of the IsVisible() functions are called.
   //ad.setCullFrustum(g_Example->m_camViewProj, true);
 
-  bool const bSelect           = event.bLeftMouse;
-  bool const bSnap             = event.bLeftCtrl; 
-  bool const bGizmoTranslation = (event.lastChar == 't');
-  bool const bGizmoRotation    = (event.lastChar == 'r');
-  bool const bGizmoScale       = (event.lastChar == 's');
+  bool const bSelect           = events.buttonDown(0); //bLeftMouse;
+  bool const bSnap             = events.keyDown(341); // bLeftCtrl; 
+  bool const bGizmoTranslation = (events.lastInputChar() == 't'); // events.keyDown(symbols::Keyboard::T);
+  bool const bGizmoRotation    = (events.lastInputChar() == 'r');
+  bool const bGizmoScale       = (events.lastInputChar() == 's');
 
   // Handle switching from local / global space.
   // ---------------
@@ -148,11 +157,11 @@ void Gizmo::begin_frame(float dt, Camera const& camera) {
   ad.m_snapRotation    = bSnap ? kRotationSnapUnit : 0.0f;
   ad.m_snapScale       = bSnap ? kScalingSnapUnit : 0.0f;
 
-  Im3d::SetAlpha(0.66);
+  Im3d::SetAlpha(0.66f);
   Im3d::NewFrame();
 }
 
-void Gizmo::end_frame(Camera const& camera) {
+void Gizmo::endFrame(Camera const& camera) {
 // After all Im3d calls have been made for a frame, the user must call Im3d::EndFrame() to finalize draw data, then
 // access the draw lists for rendering. Draw lists are only valid between calls to EndFrame() and NewFrame().
 // The example below shows the simplest approach to rendering draw lists; variations on this are possible. See the 

@@ -86,13 +86,13 @@ void skinning_DQBS(in uvec4 _indices, in vec4 _weights, inout vec3 v, inout vec3
 /// SKINNING : LINEAR BLENDING
 ///----------------------------------------------------------------------------
 
-void get_skinning_matrix(in uint jointId, out mat3x4 skMatrix) {
-  if (jointId == kNoJoint) {
+void get_skinning_matrix(in uint _jointId, out mat3x4 skMatrix) {
+  if (_jointId == kNoJoint) {
     skMatrix = mat3x4(1.0f);
     return;
   }
 
-  const int matrixId = 3 * int(jointId);
+  const int matrixId = 3 * int(_jointId);
   skMatrix[0] = texelFetch(uSkinningDatas, matrixId + 0);
   skMatrix[1] = texelFetch(uSkinningDatas, matrixId + 1);
   skMatrix[2] = texelFetch(uSkinningDatas, matrixId + 2);

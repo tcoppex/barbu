@@ -3,6 +3,8 @@
 
 // ----------------------------------------------------------------------------
 
+#ifdef __GNUC__
+#pragma GCC diagnostic
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wduplicated-branches"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
@@ -10,12 +12,16 @@
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif // __GNUC__
 
 #define STBI_NO_PSD
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic
 #pragma GCC diagnostic pop
+#endif // __GNUC__
 
 // ----------------------------------------------------------------------------
 
@@ -103,18 +109,18 @@ void ImageManager::setup_crossed_hdr(Image &img) {
   };
 
   // Copy the first five face, line by line, top to bottom.
-  int32_t const linewidth = w * img.channels;
-  int32_t const linesize = linewidth * sizeof(float);
-  for (int i=0; i<kCubeFaces - 1; ++i) {
+  int32_t const kLineWidth{ w * img.channels };
+  size_t const kLineSize{ kLineWidth * sizeof(float) };
+  for (int i = 0; i < kCubeFaces - 1; ++i) {
     int32_t const x = offsets[i][0] * w;
     int32_t const y = offsets[i][1] * h;
     int32_t const face_index = i * face_size;
 
-    for (int j=0; j<h; ++j) {
+    for (int j = 0; j < h; ++j) {
       int32_t const dst_index = face_index + j * w * img.channels;
       int32_t const src_index = ((y + j) * img.width + x) * img.channels;
 
-      memcpy( data + dst_index, (float*)img.pixels + src_index, linesize);
+      memcpy( data + dst_index, (float*)img.pixels + src_index, kLineSize);
     }
   }
 
@@ -125,14 +131,13 @@ void ImageManager::setup_crossed_hdr(Image &img) {
   int32_t const x = offsets[kCubeFaces-1][0] * w;
   int32_t const y = offsets[kCubeFaces-1][1] * h;
   int32_t const face_index = (kCubeFaces-1) * face_size;
-  for (int j=0; j<h; ++j) {
+  for (int j = 0; j < h; ++j) {
     int32_t const dst_index = face_index + j * w * img.channels;
     int32_t const src_index = ((y-j-1) * img.width + x) * img.channels;
 
-
-    for (int k=0; k<linewidth; k+=img.channels) {
+    for (int k = 0; k < kLineWidth; k+=img.channels) {
       int32_t dst = dst_index + k;
-      int32_t src = src_index + linewidth - k - img.channels;
+      int32_t src = src_index + kLineWidth - k - img.channels;
 
       data[dst + 0] = ((float*)img.pixels)[src + 0];
       data[dst + 1] = ((float*)img.pixels)[src + 1];

@@ -8,7 +8,7 @@
 
 // ----------------------------------------------------------------------------
 
-void RawMeshData::recalculate_normals() {
+void RawMeshData::recalculateNormals() {
   int const numfaces = nfaces();
   std::vector<glm::vec3> vnormals( vertices.size(), glm::vec3(0.0f));
   
@@ -48,7 +48,7 @@ void RawMeshData::recalculate_normals() {
   }
 }
 
-void RawMeshData::recalculate_tangents() {
+void RawMeshData::recalculateTangents() {
   assert(!vertices.empty());
 
   // -- More informations on http://www.mikktspace.com/ --

@@ -28,7 +28,7 @@ class TransformComponent final : public ComponentParams<Component::Transform> {
   inline glm::vec3 position() const noexcept { return matrix_[3]; }
   inline glm::vec3 front() const noexcept { return -matrix_[2]; }
 
-  inline void set_position(glm::vec3 const& pos) noexcept { 
+  inline void setPosition(glm::vec3 const& pos) noexcept { 
     matrix_[3] = glm::vec4( pos, matrix_[3][3]); 
   }
 

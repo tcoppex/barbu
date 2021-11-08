@@ -119,8 +119,9 @@ endfunction()
 # matched the required minimum version.
 function(helpers_checkCompilerVersion COMPILER_ID MIN_VERSION_REQUIRED)
   # Check we use the same compiler family for both C and CXX.
-  if(   (CMAKE_C_COMPILER_ID MATCHES COMPILER_ID) 
-    AND (CMAKE_CXX_COMPILER_ID MATCHES COMPILER_ID))
+
+  if(  (CMAKE_C_COMPILER_ID MATCHES ${COMPILER_ID}) 
+   AND (CMAKE_CXX_COMPILER_ID MATCHES ${COMPILER_ID}))
     # C version
     if(CMAKE_C_COMPILER_VERSION VERSION_LESS MIN_VERSION_REQUIRED)
       message(
@@ -128,6 +129,7 @@ function(helpers_checkCompilerVersion COMPILER_ID MIN_VERSION_REQUIRED)
         "Detected C compiler ${COMPILER_ID} ${CMAKE_C_COMPILER_VERSION} < ${MIN_VERSION_REQUIRED}."
       )
     endif()
+
     # CXX version
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS MIN_VERSION_REQUIRED)
       message(
@@ -135,7 +137,7 @@ function(helpers_checkCompilerVersion COMPILER_ID MIN_VERSION_REQUIRED)
         "Detected CXX compiler ${COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} < ${MIN_VERSION_REQUIRED}."
       )
     endif()
-  elseif()
+  else()
     message(
       FATAL_ERROR
       "Detected C and CXX compilers does not match ID ${COMPILER_ID}."

@@ -78,10 +78,10 @@ class MarchingCube {
   void init_buffers();
   void init_shaders();
 
-  void create_chunk( glm::ivec3 const& coords );
-  void build_density_volume(ChunkInfo_t &chunk);
-  void list_triangles();
-  void generate_vertices(ChunkInfo_t &chunk);
+  void createChunk( glm::ivec3 const& coords );
+  void buildDensityVolume(ChunkInfo_t &chunk);
+  void listTriangles();
+  void generateVertices(ChunkInfo_t &chunk);
 
   std::vector<ChunkInfo_t> grid_;
   glm::ivec3 grid_dim_;
@@ -96,7 +96,6 @@ class MarchingCube {
   TextureHandle density_tex_;
   
   //-------------------
-
   struct {
     GLuint vao;
     GLuint in_vbo;

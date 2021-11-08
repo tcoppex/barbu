@@ -10,8 +10,10 @@
 #include "ecs/components/visual.h"
 #include "ecs/components/skin.h"
 #include "ecs/components/sphere_collider.h"
+#include "ecs/components/light.h"
 
 #include "ecs/entities/model.h"
+#include "ecs/entities/bsphere.h"
 
 // ----------------------------------------------------------------------------
 

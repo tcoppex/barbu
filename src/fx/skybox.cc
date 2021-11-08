@@ -46,7 +46,7 @@ void Skybox::init() {
   // [should probably be moved elsewhere]
   // Compute the integrate BRDF Lookup texture.
   if constexpr(true) {
-    calculate_integrated_brdf();
+    computeIntegratedBRDF();
   }
 
   // Skybox cube mesh.
@@ -63,11 +63,7 @@ void Skybox::deinit() {
   // sky_map_.reset();
 }
 
-void Skybox::render(Camera const& camera) {
-  render(RenderMode::Sky, camera);
-}
-
-void Skybox::setup_texture(ResourceId resource_id) {
+void Skybox::setup(ResourceId resource_id) {
   assert(sky_map_ == nullptr); //
 
   // (we might want to use mipmaps to improve the quality of  late convolutions)
@@ -76,6 +72,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
   auto const kSkyboxCubemapID = TEXTURE_ASSETS.findUniqueID( "skybox::Cubemap" );
   auto const basename   = Logger::TrimFilename(resource_id);
   bool const is_crossed = basename.find("cross") != std::string::npos;
+  bool loaded = false;
 
   // Environment sky map.
   if (is_crossed) {
@@ -83,7 +80,7 @@ void Skybox::setup_texture(ResourceId resource_id) {
 
     sky_map_ = TEXTURE_ASSETS.createCubemapHDR( kSkyboxCubemapID, kLevels, resource_id);
 
-    if (sky_map_ && sky_map_->loaded()) {
+    if (loaded = sky_map_ && sky_map_->loaded(); loaded) {
       Irradiance::PrefilterHDR( ResourceInfo(resource_id), sh_matrices_);
       has_sh_matrices_ = true;
     }
@@ -96,12 +93,13 @@ void Skybox::setup_texture(ResourceId resource_id) {
 
     // Input spherical texture [tmp].
     auto spherical_tex = TEXTURE_ASSETS.create2d( resource_id, 1, kFormat); //
-    
+    loaded = spherical_tex && spherical_tex->loaded();
+
     // Output sky cubemap.
     sky_map_ = TEXTURE_ASSETS.createCubemap( kSkyboxCubemapID, kLevels, kFormat, kResolution, kResolution ); //
-
+   
     // Transform spherical map to cubical.
-    {
+    if (loaded &= (sky_map_ && sky_map_->loaded()); loaded) {
       auto const pgm = pgm_.cs_transform->id;  
 
       constexpr int32_t texture_unit = 0;
@@ -131,14 +129,21 @@ void Skybox::setup_texture(ResourceId resource_id) {
       glBindImageTexture( image_unit, 0, 0, GL_FALSE, 0, GL_WRITE_ONLY, kFormat); //
     }
   }
+  
+  if (loaded) {
+    computeConvolutionMaps(basename);
+  }
 
-  calculate_convolution_envmaps(basename);
   LOG_DEBUG_INFO( "Skybox map", basename, "use",  has_sh_matrices_ ? "SH matrices." : "an irradiance map." );
+}
+
+void Skybox::render(Camera const& camera) {
+  render(RenderMode::Sky, camera);
 }
 
 // ----------------------------------------------------------------------------
 
-void Skybox::calculate_integrated_brdf() {
+void Skybox::computeIntegratedBRDF() {
   // Setup the 2D texture.
   constexpr int32_t kFormat     = GL_RG16F;
   constexpr int32_t kResolution = 512;
@@ -177,7 +182,7 @@ void Skybox::calculate_integrated_brdf() {
   CHECK_GX_ERROR();
 }
 
-void Skybox::calculate_convolution_envmaps(std::string const& basename) {
+void Skybox::computeConvolutionMaps(std::string const& basename) {
   Probe probe;
 
   // Be sure to have set the proper pipeline states (supposedely already set in the renderer).
@@ -209,7 +214,7 @@ void Skybox::calculate_convolution_envmaps(std::string const& basename) {
     constexpr int32_t kSpecularMapNumSamples = 2048; //
     constexpr int32_t kSpecularMapResolution = 256; //
     int32_t const kSpecularMapLevel = Texture::GetMaxMipLevel(kSpecularMapResolution);
-    float const kInvMaxLevel        = 1.0f / (kSpecularMapLevel - 1.0f);
+    float const kInvMaxLevel = 1.0f / static_cast<float>(kSpecularMapLevel - 1);
 
     LOG_DEBUG_INFO( "Computing prefiltered convolution for :", basename );
 
@@ -218,7 +223,7 @@ void Skybox::calculate_convolution_envmaps(std::string const& basename) {
     probe.setup( kSpecularMapResolution, kSpecularMapLevel, false); //
     
     probe.capture( [this, kInvMaxLevel](Camera const& camera, int32_t level) {
-      const float roughness = level * kInvMaxLevel;
+      const float roughness = static_cast<float>(level) * kInvMaxLevel;
       pgm_.prefilter->setUniform( "uRoughness",  roughness); //
       render( RenderMode::Prefilter, camera); 
     });
@@ -243,7 +248,7 @@ void Skybox::render(RenderMode mode, Camera const& camera) {
   // maximum scaling, that's just show the alternative. ]
   glm::mat4 view = camera.view();
   view[3] = glm::vec4(glm::vec3(0.0f), view[3].w);
-  auto const mvp = camera.proj() * glm::scale( view, glm::vec3(camera.far()));
+  auto const mvp = camera.proj() * glm::scale( view, glm::vec3(camera.zfar()));
   gx::SetUniform( pgm, "uMVP", mvp);
 
   uint32_t tex_id = sky_map_->id;

@@ -25,24 +25,29 @@ void Renderer::init() {
   ui_view = std::make_shared<views::RendererView>(params_);
 }
 
-void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<void()> user_update_cb, std::function<void()> user_draw_cb) {
-  float const deltatime = GlobalClock::Get().delta_time();
+void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb) {
+  float const dt = static_cast<float>(GlobalClock::Get().deltaTime()); //
 
-  gizmo_.begin_frame( deltatime, camera);
+  gizmo_.beginFrame( dt, camera);
 
-  user_update_cb(); //
+  // User's update.
+  update_cb(); //
+
+  // [ should this be updated before or after user's ? ]
+  camera.update(dt);
+  scene.update(dt, camera);
 
   // UPDATE
   {
     // Postprocessing, resize textures when needed [to improve]
-    postprocess_.setup_textures(camera); //
+    postprocess_.setupTextures(camera); //
 
     // Grid.
-    grid_.update(deltatime, camera);
+    grid_.update(dt, camera);
 
     // Particles.
     if (params_.enable_particle) {
-      particle_.update( deltatime, camera);
+      particle_.update( dt, camera);
     }
     
     // Hair.
@@ -51,11 +56,12 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
         auto const& e = colliders.front();
         auto const& bsphere = e->get<SphereColliderComponent>();
 
-        auto data = scene.global_matrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
-        data.w = bsphere.radius();
-        hair_.set_bounding_sphere( data );  
+        // [debug bounding sphere]
+        auto bsParams = scene.globalMatrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
+        bsParams.w = bsphere.radius();
+        hair_.set_bounding_sphere( bsParams );  
       }
-      hair_.update(deltatime);
+      hair_.update(dt);
     }
   }
   CHECK_GX_ERROR();
@@ -68,20 +74,22 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
     // 'Deferred'-pass, post-process the solid objects.
    
     postprocess_.begin();
-      draw_pass( RendererPassBit::PASS_DEFERRED, scene, camera);
+    drawPass( RendererPassBit::PASS_DEFERRED, scene, camera);
     postprocess_.end(camera);
 
     // Forward-pass, render the special effects.
-    draw_pass(RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
+    drawPass( RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
 
     // [ should have a final composition pass here to tonemap the forwards ].
   }
   CHECK_GX_ERROR();
   
-  user_draw_cb(); //
+  // User's draw.
+  draw_cb(); //
+
   scene.gizmos(false); //
 
-  gizmo_.end_frame(camera);
+  gizmo_.endFrame(camera);
 }
 
 // void Renderer::register_draw_cb(DrawCallback_t const& draw_cb) {
@@ -90,7 +98,7 @@ void Renderer::frame(SceneHierarchy &scene, Camera const& camera, std::function<
 
 // ----------------------------------------------------------------------------
 
-void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera) {
+void Renderer::drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera) {
   // Reset default states.
   gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Fill);
   gx::Disable( gx::State::Blend );
@@ -129,8 +137,8 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
   if (bitmask & SCENE_OPAQUE_BIT)
   {
     if (!params_.show_wireframe) {
-      draw_entities( RenderMode::Opaque, scene, camera );
-      draw_entities( RenderMode::CutOff, scene, camera );
+      drawEntities( RenderMode::Opaque, scene, camera );
+      drawEntities( RenderMode::CutOff, scene, camera );
     }
   }
   CHECK_GX_ERROR();
@@ -143,8 +151,8 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
     gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Line );
 
     if (params_.show_wireframe) {
-      draw_entities( RenderMode::Opaque, scene, camera );
-      draw_entities( RenderMode::CutOff, scene, camera );
+      drawEntities( RenderMode::Opaque, scene, camera );
+      drawEntities( RenderMode::CutOff, scene, camera );
 
       if (params_.enable_hair) {
         hair_.render(camera);
@@ -177,7 +185,7 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
     gx::Enable( gx::State::Blend );
     gx::Disable( gx::State::CullFace );
 
-    if constexpr (true) {
+    if constexpr (false) {
       gx::BlendFunc( gx::BlendFactor::SrcAlpha, gx::BlendFactor::One);
       particle_.set_sorting(false);
     } else {
@@ -213,10 +221,10 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
     gx::Enable( gx::State::CullFace );
     {
       gx::CullFace( gx::Face::Front );
-      draw_entities( RenderMode::Transparent, scene, camera);
+      drawEntities( RenderMode::Transparent, scene, camera);
   
       gx::CullFace( gx::Face::Back );
-      draw_entities( RenderMode::Transparent, scene, camera);
+      drawEntities( RenderMode::Transparent, scene, camera);
     }
     gx::Disable( gx::State::CullFace );
 
@@ -236,11 +244,11 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
 
     // Display rigs with debug shapes.
     if (params_.show_rigs) {
-      scene.render_debug_rigs();
+      scene.renderDebugRigs();
     }
 
     // Display colliders with debug shapes.
-    scene.render_debug_colliders();
+    scene.renderDebugColliders();
   }
 
   CHECK_GX_ERROR();
@@ -248,10 +256,10 @@ void Renderer::draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, C
 
 // ----------------------------------------------------------------------------
 
-void Renderer::draw_entities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera) {
+void Renderer::drawEntities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera) {
   auto render_drawables = [this, render_mode, &scene, &camera](EntityHandle drawable) {
     // global matrix of the entity.
-    auto const& world = scene.global_matrix(drawable->index());
+    auto const& world = scene.globalMatrix(drawable->index());
 
     // External, per-mesh render attributes.
     RenderAttributes attributes;
@@ -262,15 +270,15 @@ void Renderer::draw_entities(RenderMode render_mode, SceneHierarchy const& scene
     // (vertex skinning)
     if (drawable->has<SkinComponent>()) {
       auto const& skin = drawable->get<SkinComponent>();
-      attributes.skinning_texid    = skin.texture_id(); //
-      attributes.skinning_mode     = skin.skinning_mode();
+      attributes.skinning_texid    = skin.textureID(); //
+      attributes.skinning_mode     = skin.skinningMode();
     }
 
     // (fragment)
-    attributes.brdf_lut_texid      = skybox_.brdf_lut_map()->id;
-    attributes.prefilter_texid     = skybox_.prefilter_map() ? skybox_.prefilter_map()->id : 0u;
-    attributes.irradiance_texid    = skybox_.irradiance_map() ? skybox_.irradiance_map()->id : 0u;
-    attributes.irradiance_matrices = skybox_.has_irradiance_matrice() ? skybox_.irradiance_matrices() : nullptr;
+    attributes.brdf_lut_texid      = skybox_.textureBRDFLookup()->id;
+    attributes.prefilter_texid     = skybox_.texturePrefilter() ? skybox_.texturePrefilter()->id : 0u;
+    attributes.irradiance_texid    = skybox_.textureIrradiance() ? skybox_.textureIrradiance()->id : 0u;
+    attributes.irradiance_matrices = skybox_.hasIrradianceMatrices() ? skybox_.irradianceMatrices() : nullptr;
     attributes.eye_position        = camera.position();
     //attributes.tonemap_mode      = tonemap_mode; // [todo]
 

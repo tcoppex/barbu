@@ -63,14 +63,14 @@ struct AnimationClip_t : Action_t {
   AnimationClip_t(std::string_view _name, int32_t _size, float _duration) 
     : Action_t(_name)
     , framecount(_size)
-    , framerate(framecount / _duration) //
+    , framerate(static_cast<float>(framecount) / _duration) //
   {
     LOG_DEBUG_INFO("* AnimationClip :", _name, _size, _duration, framerate);
     samples.resize(_size);
   }
 
   float duration() const override {
-    return framecount / framerate;
+    return static_cast<float>(framecount) / framerate;
   }
 };
 

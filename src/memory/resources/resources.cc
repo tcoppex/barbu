@@ -2,6 +2,32 @@
 
 // ----------------------------------------------------------------------------
 
+void Resources::WatchUpdate(std::function<void()> update_cb) {
+  // [ to put inside a thread, eventually ]
+  // It would be more interesting to have different watch time depending on the resources,
+  // (eg. a shader should be quicker to reload than a texture).
+  static float sCurrentTick = 0.0f; //
+  
+  if (1000.0f * sCurrentTick > Resources::kUpdateMilliseconds) {
+    // release internal memory from last frames.
+    Resources::ReleaseAll(); // 
+
+    // watch for resource modifications.
+    sImage.update();
+    sMeshData.update();
+    sShader.update();
+
+    // upload newly modified dependencies to their assets.
+    //Assets::UpdateAll();
+    update_cb();
+
+    sCurrentTick = 0.0f;
+  }
+  sCurrentTick += static_cast<float>(GlobalClock::Get().deltaTime()); //
+}
+
+// ----------------------------------------------------------------------------
+
 #define DEFINE_MANAGER(name) \
   name##Manager Resources::s##name ; \
   \

@@ -125,22 +125,22 @@ class AssetFactory {
   static constexpr bool kReleaseWipeOutDefault = false;
 
   AssetFactory() = default;
-
-  virtual ~AssetFactory() {}
+  
+  virtual ~AssetFactory() = default;
 
   // Create an asset from its parameters.
-  Handle create(AssetId const& id, Parameters_t const& params) {
-    assert( !id.path.empty() );
+  Handle create(AssetId const& _id, Parameters_t const& _params) {
+    assert( !_id.path.empty() );
 
     // [ might be problematic, as parameters might be different ]
-    if (has(id)) {
-      return assets_.at(id);
+    if (has(_id)) {
+      return assets_.at(_id);
     }
 
     // Create the handle.
-    Handle h = std::make_shared<TAsset>(params);
+    Handle h = std::make_shared<TAsset>(_params);
     if (!h) {
-      LOG_ERROR( "Could not create the asset \"", id.c_str(), "\".");
+      LOG_ERROR( "Could not create the asset \"", _id.c_str(), "\".");
       return nullptr;
     }
 
@@ -148,68 +148,68 @@ class AssetFactory {
     h->allocate();
 
     // Initialize.
-    if (!setup(id, h)) {
-      LOG_ERROR( "Could not initialize the asset \"", id.c_str(), "\".");
+    if (!setup(_id, h)) {
+      LOG_ERROR( "Could not initialize the asset \"", _id.c_str(), "\".");
       return nullptr;
     }
 
     // Register the handle in the hashmap.
-    assets_[id] = h;
+    assets_[_id] = h;
 
     return h;
   }
 
   // Create the asset associate to its resource, with default setting.
   // This version will automatically bind a resource of the same id.
-  Handle create(AssetId const& id) {
+  Handle create(AssetId const& _id) {
     Parameters_t params;
-    params.dependencies.add_resource(id);
-    return create( id, params );
+    params.dependencies.add_resource(_id);
+    return create( _id, params );
   }
 
   // Release memory for the specified asset.
   // If bWipeOut is true clear the internal reference as well.
-  void release(AssetId const& id, bool bWipeOut = kReleaseWipeOutDefault) {
-    if (has(id)) {
-      assets_.at(id)->release();
-      if (bWipeOut) {
-        assets_.erase(id);
+  void release(AssetId const& _id, bool _bWipeOut = kReleaseWipeOutDefault) {
+    if (has(_id)) {
+      assets_.at(_id)->release();
+      if (_bWipeOut) {
+        assets_.erase(_id);
       }
     }
   }
 
   // Release internal data associated with all assets references,
   // If bWipeOut is true clear the whole structure as well.
-  void release_all(bool bWipeOut = kReleaseWipeOutDefault) {
+  void release_all(bool _bWipeOut = kReleaseWipeOutDefault) {
     for (auto &tuple : assets_) {
       release(tuple.first);
     }
-    if (bWipeOut) {
+    if (_bWipeOut) {
       assets_.clear();
     }
   }
 
   // Return true if the specified asset is in memory.
-  inline bool has(AssetId const& id) const noexcept { 
-    return assets_.find(id) != assets_.end();
+  inline bool has(AssetId const& _id) const noexcept { 
+    return assets_.find(_id) != assets_.end();
   }
 
-  AssetId findUniqueID(std::string_view basename) {
-    return AssetId::FindUnique( basename, [this](AssetId const& _id) { return has(_id); });
+  AssetId findUniqueID(std::string_view _basename) {
+    return AssetId::FindUnique( _basename, [this](AssetId const& _id) { return has(_id); });
   }
 
   // Return the specificed asset if present in memory.
-  inline Handle get(AssetId const& id) const noexcept {
-    return has(id) ? assets_.at(id) : nullptr;
+  inline Handle get(AssetId const& _id) const noexcept {
+    return has(_id) ? assets_.at(_id) : nullptr;
   }
 
   // Wrapper around the asset setup, to be able to call a post_setup factory method.
-  bool setup(AssetId const& id, Handle h) {
-    return h->setup() && post_setup(id, h);
+  bool setup(AssetId const& _id, Handle _h) {
+    return _h->setup() && post_setup(_id, _h);
   }
 
   // Called after a successful setup. Optionnal.
-  virtual bool post_setup(AssetId const& id, Handle h) { 
+  virtual bool post_setup(AssetId const& _id, Handle _h) { 
     return true; 
   }
 
@@ -222,7 +222,7 @@ class AssetFactory {
       auto handle   = tuple.second;
       
       // (The asset could be destroyed once its has a unique reference left.)
-      if ((handle.use_count()-1) == 1) {
+      if ((handle.use_count() - 1) == 1) {
         release_ids.push_back(id);
       }
 

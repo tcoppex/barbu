@@ -1,6 +1,6 @@
 #version 430 core
 
-layout(location=0) in ivec2 inPosition;    // Note : set as integer
+layout(location=0) in ivec2 inPosition;    // grid coords point as integer
 
 out block {
   ivec3 coords_case_numTri;
@@ -24,8 +24,9 @@ void main() {
                       (coords.z & 0x3f) << 12;
 
   const vec3  uvw    = kTexelSize * (coords + uMargin + 0.5f);
-  const vec2  offset = vec2(kTexelSize, 0.0f);
+  const vec2  offset = vec2(0.51*kTexelSize, 0.0f);
 
+#if 1
   vec4 sideA;
   sideA.x = texture(uDensityVolume_nearest, uvw + offset.yyy).r; 
   sideA.y = texture(uDensityVolume_nearest, uvw + offset.yxy).r;
@@ -37,6 +38,11 @@ void main() {
   sideB.y = texture(uDensityVolume_nearest, uvw + offset.yxx).r;
   sideB.z = texture(uDensityVolume_nearest, uvw + offset.xxx).r;
   sideB.w = texture(uDensityVolume_nearest, uvw + offset.xyx).r;
+#else
+  // [to test with a sampler2DArray]
+  const vec4 sideA = textureGather( uDensityVolume_nearest, uvw);
+  const vec4 sideB = textureGatherOffset( uDensityVolume_nearest, uvw, offset.yyx); 
+#endif
 
 # define SATURATE(v)  ivec4(step(0.0f, v))
   const ivec4 iA = SATURATE(sideA);

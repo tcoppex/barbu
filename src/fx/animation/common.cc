@@ -7,12 +7,12 @@ bool SequenceClip_t::evaluate_localtime(float const global_time, float &local_ti
   LOG_CHECK( clip_duration > glm::epsilon<float>() );
 
   local_time = global_time - global_start;
-  local_time *= abs(rate);
+  local_time *= glm::abs(rate);
 
   // clamp the local time if the action loops a finite number of time.
   if (!action_ptr->bLoop || (action_ptr->bLoop && (nloops > 0))) {
-    int32_t const total_loops = (action_ptr->bLoop) ? nloops : 1u;
-    float const finish_time = total_loops * clip_duration;
+    int32_t const total_loops = (action_ptr->bLoop) ? nloops : 1;
+    float const finish_time = static_cast<float>(total_loops) * clip_duration;
 
     if (local_time >= finish_time) {
       return true;

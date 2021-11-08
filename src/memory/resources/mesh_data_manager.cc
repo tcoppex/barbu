@@ -224,7 +224,7 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
     }
   
     // Create a default vertex group if none were specified.
-    if (!raw.has_vertex_groups()) {
+    if (!raw.hasVertexGroups()) {
       raw.vgroups.resize(1);
       raw.vgroups[0].name = MeshData::kDefaultGroupName;
     }
@@ -431,7 +431,7 @@ bool MeshDataManager::load_obj(std::string_view filename, MeshData &meshdata) {
     if (LoadFile(fn, &buffer, &buffersize)) {
       ParseMTL( buffer, mtl);
     }
-    meshfile.prefix_material_vg_names(mtl);
+    meshfile.prefixMaterialVertexGroupNames(mtl);
 
     // Transform relative paths to absolute ones.
     for (auto &mat : mtl.infos) {
@@ -500,7 +500,7 @@ std::string SetupTextureGLTF(cgltf_texture *tex, std::string const& dirname, std
       // Create the resource internally.
       Resources::LoadInternal<Image>( 
         ResourceId(texname), 
-        buffer_view->size, 
+        static_cast<int32_t>(buffer_view->size), 
         ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
         img->mime_type
       ); 
@@ -844,7 +844,9 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           } else {
             for (cgltf_size index = 0; index < prim.indices->count; ++index) {
               auto const vid = cgltf_accessor_read_index(prim.indices, index);
-              raw.elementsAttribs.push_back(glm::ivec3( last_vertex_index + vid ));
+              raw.elementsAttribs.push_back(
+                glm::ivec3( static_cast<int32_t>(last_vertex_index + vid) )
+              );
             }
           }
 
@@ -853,8 +855,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             VertexGroup vg;
 
             vg.name = material_names[mat];
-            vg.start_index = raw.elementsAttribs.size() - prim.indices->count; // 
-            vg.end_index   = raw.elementsAttribs.size(); //
+            vg.start_index = static_cast<int32_t>(raw.elementsAttribs.size() - prim.indices->count); // 
+            vg.end_index   = static_cast<int32_t>(raw.elementsAttribs.size()); //
             raw.vgroups.push_back(vg);
           }
         } else {
@@ -875,7 +877,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         std::unordered_map< cgltf_node*, int32_t> joint_indices( njoints );
         for (cgltf_size index = 0; index < njoints; ++index) {
           auto *joint = skin->joints[index];
-          joint_indices[ joint ] = index;
+          joint_indices[joint] = static_cast<int32_t>(index);
         }
         
         // Fill skeleton data.
@@ -968,7 +970,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
       meshfile.material_id = fn; 
       mtl.id = fn.substr(fn.find_last_of('/') + 1);
       mtl.id = mtl.id.substr(0, mtl.id.find_last_of('.'));
-      meshfile.prefix_material_vg_names(mtl);
+      meshfile.prefixMaterialVertexGroupNames(mtl);
     }
 
     // -- ANIMATION DATAS.

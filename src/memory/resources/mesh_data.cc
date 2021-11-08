@@ -1,9 +1,10 @@
 #include "memory/resources/mesh_data.h"
 
-#include <map>
 #include "glm/gtc/type_ptr.hpp"
 
 #include "memory/assets/assets.h"
+
+#define MATHUTILS_MAP_VECTOR
 #include "utils/mathutils.h"
 
 // ----------------------------------------------------------------------------
@@ -33,7 +34,8 @@ void MeshData::Plane(MeshData &mesh, float size) {
   // (this elements arrays could be discarded)
   constexpr std::array<int32_t, 4> indices{ 0, 1, 2, 3 };
   for (auto &index : indices) {
-    raw.elementsAttribs.push_back( glm::ivec3(index) );
+    raw.addIndex(index);
+    //raw.elementsAttribs.push_back( glm::ivec3(index) );
   }
 
   mesh.setup( PrimitiveType::TRIANGLE_STRIP, raw );
@@ -52,8 +54,16 @@ void MeshData::Grid(MeshData &mesh, int resolution, float size) {
   // Vertices datas.
   std::vector<float> lines(buffersize);
   for (int i = 0; i <= resolution; ++i) {
-    uint32_t const index{ 4u * ncomponents * i };    
-    float const cursor{ cell_padding * static_cast<float>(i) - offset };
+
+    // hack to have middle lines draw last.
+    int const i_offset{ (i < resolution/2) ? 0 : (i < resolution) ? 1 : -resolution/2 };
+
+    // Position on the grid.
+    float const fp_i{ static_cast<float>(i + i_offset) };
+    float const cursor{ cell_padding * fp_i - offset };
+    
+    // buffer index.
+    uint32_t const index{ 4u * ncomponents * i };
 
     // horizontal lines
     lines[index + 0u] = - offset;
@@ -70,8 +80,7 @@ void MeshData::Grid(MeshData &mesh, int resolution, float size) {
   // Indices (as lines).
   RawMeshData raw;
   raw.vertices.resize(nvertices);
-  for (int i = 0; i < nvertices; ++i)
-  { 
+  for (int i = 0; i < nvertices; ++i) { 
     auto& dst = raw.vertices[i];
     dst[0] = lines[i*ncomponents + 0];
     dst[1] = lines[i*ncomponents + 1];
@@ -133,8 +142,7 @@ void MeshData::Cube(MeshData &mesh, float size) {
   raw.vertices.resize(vertices.size());
   raw.texcoords.resize(texcoords.size());
   raw.normals.resize(normals.size());
-  for (int i = 0; i < nvertices; ++i)
-  { 
+  for (int i = 0; i < nvertices; ++i) { 
     // Positions  
     {
       auto const& src = vertices[i];
@@ -206,10 +214,9 @@ void MeshData::WireCube(MeshData &mesh, float size) {
   }
 
   // Indices (as lines).
-  raw.elementsAttribs.resize(indices.size());
-  for (int i = 0; i < nelems; ++i) {
-    auto const& index = indices[i];
-    raw.elementsAttribs[i] = glm::ivec3( index );
+  raw.elementsAttribs.reserve(indices.size());
+  for (auto &index : indices) {
+    raw.addIndex( index );
   }
 
   // -----
@@ -220,7 +227,7 @@ void MeshData::WireCube(MeshData &mesh, float size) {
 // ----------------------------------------------------------------------------
 
 void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
-  float constexpr Pi     = M_PI;
+  float constexpr Pi     = glm::pi<float>();
   float constexpr TwoPi  = 2.0f * Pi;
 
   RawMeshData raw;
@@ -250,21 +257,21 @@ void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
     ++vertex_id;
 
     for (int j = 1; j < rows-1; ++j) {
-      float const dj = j * DeltaY;
+      float const dj = static_cast<float>(j) * DeltaY;
 
       float const theta = (dj - 0.5f) * Pi;
       float const ct = cosf(theta);
       float const st = sinf(theta);
 
       for (int i = 0; i < cols; ++i) {
-        float const di = i * DeltaX;
+        float const di = static_cast<float>(i) * DeltaX;
 
         float const phi = di * TwoPi;
         float const cp = cosf(phi);
         float const sp = sinf(phi);
 
         Normals[vertex_id]   = glm::normalize(glm::vec3( ct * cp, st, ct * sp));
-        Texcoords[vertex_id] = glm::vec2( i*DeltaX, j*DeltaY );
+        Texcoords[vertex_id] = glm::vec2( di, dj);
         Positions[vertex_id] = radius * Normals[vertex_id];
         ++vertex_id;
       }
@@ -297,9 +304,11 @@ void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
         Indices[index++] = glm::ivec3( first_vertex_id + i + cols );
       }
     }
+
+    auto const npositions = static_cast<int32_t>(Positions.size());
     for (int i = 0; i < cols; ++i) {
-      Indices[index++] = glm::ivec3( Positions.size() - cols - 1 + i );
-      Indices[index++] = glm::ivec3( Positions.size() - 1 );
+      Indices[index++] = glm::ivec3( npositions - cols - 1 + i );
+      Indices[index++] = glm::ivec3( npositions - 1 );
     }
   }
 
@@ -363,13 +372,13 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
       if (_raw.normals.empty()) {
         LOG_DEBUG_INFO( "Recalculating normals for :", meshname );
 
-        _raw.recalculate_normals();
+        _raw.recalculateNormals();
       }
 
       // [only recalculate tangent when the material contains normal map ?]
       if (bNeedTangents) {
         LOG_DEBUG_INFO( "Recalculating tangents for :", meshname );
-        _raw.recalculate_tangents();
+        _raw.recalculateTangents();
       }
     }
     
@@ -393,7 +402,7 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
           mapVertices[key] = index;
           attribIndices.push_back( glm::ivec4(key, i) );
         } else {
-          index = it->second;  
+          index = static_cast<int32_t>(it->second);  
         }
         
         indices.push_back(index);
@@ -449,7 +458,7 @@ bool MeshData::setup(RawMeshFile &meshfile, bool bNeedTangents) {
 
 // ----------------------------------------------------------------------------
 
-void MeshData::calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const {
+void MeshData::calculateBounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const {
   auto const resultX = std::minmax_element(vertices.begin(), vertices.end(), 
     [](auto const &a, auto const &b) { return a.position.x < b.position.x; }
   );

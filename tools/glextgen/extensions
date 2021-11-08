@@ -46,6 +46,7 @@ glDeleteSamplers
 glDeleteShader
 glDeleteTransformFeedbacks
 glDeleteVertexArrays
+glDepthRangef
 glDetachShader
 glDisableVertexAttribArray
 glDispatchCompute

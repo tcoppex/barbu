@@ -35,9 +35,9 @@ class HairView : public ParametrizedUIView<Hair::Parameters_t> {
     ImGui::Separator();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Tesselation")) {
-      ImGui::DragInt("instances", &params_.tess.ninstances, 0.1, 1, 16);
-      ImGui::DragInt("lines", &params_.tess.nlines, 0.1, 1, 16);
-      ImGui::DragInt("subsegments", &params_.tess.nsubsegments, 0.1, 1, 16);
+      ImGui::DragInt("instances", &params_.tess.ninstances, 0.1f, 1, 16);
+      ImGui::DragInt("lines", &params_.tess.nlines, 0.1f, 1, 16);
+      ImGui::DragInt("subsegments", &params_.tess.nsubsegments, 0.1f, 1, 16);
       
       ImGui::TreePop();
     }
@@ -49,15 +49,14 @@ class HairView : public ParametrizedUIView<Hair::Parameters_t> {
       ImGui::DragFloat("line width", &params_.render.linewidth, 0.0001f, 0.003f, 0.05f);
       ImGui::DragFloat("length scale factor", &params_.render.lengthScale, 0.01f, 0.01f, 10.0f);
       ImGui::Checkbox("Show control points", &params_.render.bShowDebugCP);
-      
+     
+      // ImGui::Spacing(); 
+      // ImGui::Separator();
+      if (params_.ui_marschner) {
+        params_.ui_marschner->render();
+      }
+
       ImGui::TreePop();
-    }
-
-    //ImGui::Spacing();
-    ImGui::Separator();
-
-    if (params_.ui_marschner) {
-      params_.ui_marschner->render();
     }
   }
 };

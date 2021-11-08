@@ -40,6 +40,15 @@ struct Program : Asset<ProgramParameters, Shader> {
  public:
   uint32_t id = 0u;
 
+  // Used to load program manually.
+  // bool load( Parameters_t const& _params ) {
+  //   assert( !loaded() );
+  //   allocate();
+  //   setup();
+  //   gx::LinkProgram(id);
+  //   return gx::CheckProgramStatus(id);
+  // }
+
  private:
   void allocate() final;
   void release() final;
@@ -68,7 +77,7 @@ class ProgramFactory : public AssetFactory<Program> {
   Handle createCompute(AssetId const& id, ResourceId const& cs = nullptr);
 
  private:
-  bool post_setup(AssetId const& assetId, ProgramFactory::Handle h) final;
+  bool post_setup(AssetId const& assetId, ProgramFactory::Handle h) final; //
 };
 
 // ----------------------------------------------------------------------------

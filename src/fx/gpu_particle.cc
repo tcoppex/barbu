@@ -17,7 +17,7 @@ uint32_t constexpr GPUParticle::kBatchEmitCount;
 
 namespace {
 
-// Layout of the indirect buffer (Dispatch + Draw)
+// Layout of the indirect buffer (Dispatch + Draw) [28bytes].
 struct TIndirectValues {
   uint32_t dispatch_x;
   uint32_t dispatch_y;
@@ -40,11 +40,11 @@ uint32_t GetNumTrailingBits(uint32_t const n) {
   return r;
 }
 
-void SwapUint(uint32_t &a, uint32_t &b) {
-  a ^= b;
-  b ^= a;
-  a ^= b;
-}
+// void SwapUint(uint32_t &a, uint32_t &b) {
+//   a ^= b;
+//   b ^= a;
+//   a ^= b;
+// }
 
 }  // namespace
 
@@ -72,7 +72,7 @@ void GPUParticle::init() {
   init_shaders();
 
   // Query used for benchmarking.
-  glCreateQueries(GL_TIME_ELAPSED, 1, &query_time_);
+  //glCreateQueries(GL_TIME_ELAPSED, 1, &query_time_);
 
   init_ui_views();
 
@@ -82,7 +82,7 @@ void GPUParticle::init() {
 void GPUParticle::deinit() {
   randbuffer_.deinit();
 
-  glDeleteQueries(1, &query_time_);
+  //glDeleteQueries(1, &query_time_);
 
   glDeleteBuffers(2u, gl_atomic_buffer_ids_.data());
   glDeleteBuffers(1u, &gl_indirect_buffer_id_);
@@ -284,7 +284,7 @@ void GPUParticle::init_vao() {
     // Positions.
     {
       uint32_t const attrib_index = 0u;
-      uint32_t const num_component = static_cast<uint32_t>((sizeof TParticle::position) / sizeof(TParticle::position[0u]));
+      uint32_t const num_component = static_cast<uint32_t>(sizeof(TParticle::position) / sizeof(TParticle::position[0u]));
       glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, position));
       glVertexAttribBinding(attrib_index, binding_index);
       glEnableVertexAttribArray(attrib_index);
@@ -292,7 +292,7 @@ void GPUParticle::init_vao() {
     // Velocities.
     {
       uint32_t const attrib_index = 1u;
-      uint32_t const num_component = static_cast<uint32_t>((sizeof TParticle::velocity) / sizeof(TParticle::velocity[0u]));
+      uint32_t const num_component = static_cast<uint32_t>(sizeof(TParticle::velocity) / sizeof(TParticle::velocity[0u]));
       glVertexAttribFormat(attrib_index, num_component, GL_FLOAT, GL_FALSE, offsetof(TParticle, velocity));
       glVertexAttribBinding(attrib_index, binding_index);
       glEnableVertexAttribArray(attrib_index);
@@ -328,10 +328,10 @@ void GPUParticle::init_buffers() {
 
   // Dispatch and Draw Indirect buffer.
   {
-    TIndirectValues constexpr default_indirect[]{
-      1u, 1u, 1u,     // Dispatch values
-      0, 1u, 0u, 0u   // Draw values
-    };
+    TIndirectValues constexpr default_indirect[]{{
+      1u, 1u, 1u ,     // Dispatch values
+      0u, 1u, 0u, 0u   // Draw values
+    }};
     glCreateBuffers(1u, &gl_indirect_buffer_id_);
     glNamedBufferStorage(gl_indirect_buffer_id_, sizeof default_indirect, default_indirect, 0);
   }
@@ -342,13 +342,13 @@ void GPUParticle::init_buffers() {
     auto const sort_buffer_max_count = GetClosestPowerOfTwo(kMaxParticleCount); //
 
     // DotProducts buffer.
-    GLuint const dp_buffer_size = sort_buffer_max_count * sizeof(GLfloat);
+    GLsizeiptr const dp_buffer_size = sort_buffer_max_count * sizeof(GLfloat);
     glCreateBuffers(1u, &gl_dp_buffer_id_);
     glNamedBufferStorage( gl_dp_buffer_id_, dp_buffer_size, nullptr, 0);
 
     // Double-sized buffer for indices sorting.
     // [we might want to use u16 instead, when below ~64K particles]
-    GLuint const sort_indices_buffer_size = 2u * sort_buffer_max_count * sizeof(GLuint);
+    GLsizeiptr const sort_indices_buffer_size = 2u * sort_buffer_max_count * sizeof(GLuint);
     glCreateBuffers(1u, &gl_sort_indices_buffer_id_);
     glNamedBufferStorage(gl_sort_indices_buffer_id_, sort_indices_buffer_size, nullptr, 0);
   }
@@ -586,7 +586,8 @@ void GPUParticle::_sorting(glm::mat4 const& view) {
 void GPUParticle::_postprocess() {
   if (simulated_) {
     // Swap atomic counter to have number of alives particles in the first slot.
-    SwapUint(gl_atomic_buffer_ids_[0u], gl_atomic_buffer_ids_[1u]);
+    //SwapUint(gl_atomic_buffer_ids_[0u], gl_atomic_buffer_ids_[1u]);
+    std::swap(gl_atomic_buffer_ids_[0u], gl_atomic_buffer_ids_[1u]);
 
     // Copy non sorted alives particles back to the first buffer.
     if (!enable_sorting_) {

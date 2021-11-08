@@ -113,7 +113,7 @@ struct MeshData : public Resource {
   }
 
   /* Calculate the pivot and bound for the current vertices data. */
-  void calculate_bounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const;
+  void calculateBounds(glm::vec3 &pivot, glm::vec3 &bounds, float &radius) const;
 
   inline int32_t nvertices() const { 
     return static_cast<int32_t>(vertices.size()); 
@@ -141,7 +141,7 @@ struct MeshData : public Resource {
     return static_cast<int32_t>(nelems);
   }
 
-  inline bool has_materials() const { 
+  inline bool hasMaterials() const { 
     return !material.infos.empty(); 
   }
 

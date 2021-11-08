@@ -109,10 +109,8 @@ class GPUParticle {
     gl_indirect_buffer_id_(0u),
     gl_dp_buffer_id_(0u),
     gl_sort_indices_buffer_id_(0u),
-    query_time_(0u),
     simulated_(false),
-    enable_sorting_(false),
-    enable_vectorfield_(false)
+    enable_sorting_(false)
   {}
 
   void init();
@@ -180,11 +178,11 @@ private:
     ProgramHandle render_stretched_sprite;
   } pgm_;                                         //< Pipeline's shaders.
 
-  GLuint query_time_;                             //< QueryObject for benchmarking.
+  // GLuint query_time_;                             //< QueryObject for benchmarking.
 
   bool simulated_;                                //< True if particles has been simulated.
   bool enable_sorting_;                           //< True if back-to-front sort is enabled.
-  bool enable_vectorfield_;                       //< True if the vector field is used.
+  // bool enable_vectorfield_;                       //< True if the vector field is used.
 
   Parameters_t params_;
 };

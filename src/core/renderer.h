@@ -29,7 +29,7 @@ enum RendererPassBit : uint32_t {
   SCENE_TRANSPARENT_BIT   = 1 << 5,
   SCENE_DEBUG_BIT         = 1 << 6,
 
-  PASS_DEFERRED           = SCENE_SKYBOX_BIT | SCENE_OPAQUE_BIT,
+  PASS_DEFERRED           = SCENE_SKYBOX_BIT | SCENE_OPAQUE_BIT, // | SCENE_HAIR_BIT | SCENE_WIRE_BIT,
   PASS_FORWARD            = SCENE_EVERYTHING ^ PASS_DEFERRED,
 };
 
@@ -50,6 +50,9 @@ class Renderer {
     std::shared_ptr<UIView> sub_view = nullptr; //
   };
 
+  using UpdateCallback_t = std::function<void()>;
+  using DrawCallback_t   = std::function<void()>;
+
   std::shared_ptr<UIView> ui_view = nullptr;
 
  public:
@@ -58,7 +61,7 @@ class Renderer {
 
   void init();
 
-  void frame(SceneHierarchy &scene, Camera const& camera, std::function<void()> user_update_cb, std::function<void()> user_draw_cb);
+  void frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb);
 
   inline Parameters_t& params() { return params_; }
 
@@ -69,8 +72,8 @@ class Renderer {
   inline Hair&          hair()      noexcept { return hair_; }
 
  private:
-  void draw_pass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera);
-  void draw_entities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera);
+  void drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera);
+  void drawEntities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera);
 
   Postprocess postprocess_;
   Gizmo gizmo_;

@@ -12,8 +12,12 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
   MarschnerView(TParameters &params) : ParametrizedUIView(params) {}
 
   void render() final {
-    if (ImGui::Button("Open Marschner parameters")) {
-      show_window_ = true;
+    std::string const btn_label{
+      std::string(show_window_ ? "Close" : "Open") +  " Marschner parameters"
+    };
+    
+    if (ImGui::Button(btn_label.c_str())) {
+      show_window_ = !show_window_;
     }
 
     if (!show_window_) {
@@ -29,7 +33,7 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
       ImGui::DragFloat("Long. width", &params_.shading.br, 0.01f, 5.0f, 10.0f);
       
       if (auto tex = params_.tex_ptr[0]; tex != nullptr) {
-        auto id = reinterpret_cast<ImTextureID>(*tex);
+        auto id = (void*)(intptr_t)(*tex);
         ImGui::Image( id, ImVec2(256, 256));
       }
       ImGui::TreePop();
@@ -47,7 +51,7 @@ class MarschnerView : public ParametrizedUIView<Marschner::Parameters_t> {
       // ImGui::DragFloat("Delta caustic", &params_.shading.deltaCaustic, 0.001f, 0.2f, 0.4f);
       
       if (auto tex = params_.tex_ptr[1]; tex != nullptr) {
-        auto id = reinterpret_cast<ImTextureID>(*tex);
+        auto id = (void*)(intptr_t)(*tex);
         ImGui::Image( id, ImVec2(256, 256), ImVec2(0, 0), ImVec2(1,-1));
       }
       ImGui::TreePop();

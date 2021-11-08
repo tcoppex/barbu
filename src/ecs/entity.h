@@ -4,6 +4,7 @@
 #include <cassert>
 #include <array>
 #include <vector>
+#include <string>
 #include <string_view>
 
 #include "ecs/component.h"
@@ -27,6 +28,14 @@ class Entity {
   friend class SceneHierarchy;
 
   using EntityChildren_t = std::vector<EntityHandle>;
+
+  /* Wrapper around specific EntityHandle allocator. */
+  template<class T = Entity, class... U> 
+  static 
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>> 
+  Create(U&&... u) {
+    return std::make_shared<T>(std::forward<U>(u)...);
+  }
 
  public:
   Entity() = default;
@@ -59,33 +68,38 @@ class Entity {
 
   // -- Components access.
 
-  // Return true if the entity possess the component.
-  template<typename T> bool has() const noexcept {
+  /* Return true if the entity possess the component. */
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, bool> has() const noexcept {
     return static_cast<bool>(components_[T::Type]);
   }
   
-  // Return a reference to the component [ return shared_ptr<T> instead ? ].
-  template<typename T> T & get() {
+  /* Return a reference to the component [ return shared_ptr<T> instead ? ]. */
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, T&> get() {
     assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
-  // Return a constant reference to the component.
-  template<typename T> T const& get() const {
+  /* Return a constant reference to the component. */
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, T const&> get() const {
     assert( has<T>() );
     return static_cast<T&>(*components_[T::Type]);
   }
 
-  // Add then return the given component to the entity.
-  template<typename T> T & add() {
+  /* Add then return the given component to the entity. */
+  template<typename T> 
+  std::enable_if_t<std::is_base_of_v<Component, T>, T&> add() {
     if (!has<T>()) {
       components_[T::Type] = std::make_unique<T>();
     }
     return get<T>();
   }
 
-  // Remove the given component.
-  template<typename T> void remove() {
+  /* Remove the given component. */
+  template<typename T>
+  std::enable_if_t<std::is_base_of_v<Component, T>> remove() {
     static_assert(T::Type != Component::Type::Transform);
     components_[T::Type].reset();
   }
@@ -95,18 +109,18 @@ class Entity {
   inline TransformComponent & transform() { return get<TransformComponent>(); }
   inline TransformComponent const& transform() const { return get<TransformComponent>(); }
 
-  inline glm::mat4 & local_matrix() { return transform().matrix(); }
-  inline glm::mat4 const& local_matrix() const { return transform().matrix(); }
+  inline glm::mat4 & localMatrix() { return transform().matrix(); }
+  inline glm::mat4 const& localMatrix() const { return transform().matrix(); }
   
   inline glm::vec3 position() const { return transform().position(); }
-  inline void set_position(glm::vec3 const& pos) { transform().set_position(pos); }
+  inline void setPosition(glm::vec3 const& pos) { transform().setPosition(pos); }
 
-  // Return the barycenter of an object in local space, depending on its components. 
+  /* Return the barycenter of an object in local space, depending on its components. */
   glm::vec3 centroid() const;
 
   // -- Miscs.
 
-  // Let view the entity as a subtype. [bug prone]
+  /* Let view the entity as a subtype. [bug prone] */
   template<typename T> T& as() {
     return *((T*)this);
   }
@@ -120,7 +134,7 @@ class Entity {
 
  private:
   // [ should probably use a map, and be set externally ]
-  using ComponentBuffer = std::array< ComponentHandle, Component::kNumComponentType >;
+  using ComponentBuffer = std::array< ComponentHandle, Component::kCount >;
 
   ComponentBuffer components_;
 };

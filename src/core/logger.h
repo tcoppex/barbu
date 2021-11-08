@@ -3,13 +3,14 @@
 
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "glm/gtx/string_cast.hpp" // glm::to_string
 
 #include "utils/singleton.h"
+
 
 // ----------------------------------------------------------------------------
 
@@ -44,14 +45,14 @@ class Logger : public Singleton<Logger> {
   };
 
   ~Logger() {
-    display_stats();
+    displayStats();
   }
 
   template<typename T, typename ... Args>
   bool log(char const* file, char const* fn, int line, bool useHash, LogType type, T first, Args ... args) {
     // Clear the local stream and retrieve the full current message.
     out_.str(std::string());
-    sub_log(first, args ...);
+    subLog(first, args ...);
 
     // Trim filename for display.
     std::string filename(file);
@@ -152,17 +153,17 @@ class Logger : public Singleton<Logger> {
 
  private:
   template<typename T>
-  void sub_log(T first) {
+  void subLog(T first) {
     out_ << first;
   }
 
   template<typename T, typename ... Args>
-  void sub_log(T first, Args ... args) {
+  void subLog(T first, Args ... args) {
     out_ << first << " ";
-    sub_log(args ...);
+    subLog(args ...);
   }
 
-  void display_stats() {
+  void displayStats() {
 #ifndef NDEBUG
     if (warning_count_ > 0 || error_count_ > 0) {
       std::cerr << std::endl <<
@@ -183,25 +184,42 @@ class Logger : public Singleton<Logger> {
 
 // ----------------------------------------------------------------------------
 
-#define LOG_MESSAGE( ... )      Logger::Get().message( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_INFO( ... )         Logger::Get().info( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_WARNING( ... )      Logger::Get().warning( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_ERROR( ... )        Logger::Get().error( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_FATAL_ERROR( ... )  Logger::Get().fatal_error( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define LOG_MESSAGE( ... )      Logger::Get().message     ( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_INFO( ... )         Logger::Get().info        ( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_WARNING( ... )      Logger::Get().warning     ( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_ERROR( ... )        Logger::Get().error       ( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+#define LOG_FATAL_ERROR( ... )  Logger::Get().fatal_error ( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 
 #ifdef BARBU_ENABLE_DEBUG_LOG
-#define LOG_DEBUG( ... )        Logger::Get().message( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
-#define LOG_DEBUG_INFO( ... )   Logger::Get().info( __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+  #define LOG_DEBUG( ... )        Logger::Get().message   ( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+  #define LOG_DEBUG_INFO( ... )   Logger::Get().info      ( __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 #else
-#define LOG_DEBUG( ... )        
-#define LOG_DEBUG_INFO( ... )
+  #define LOG_DEBUG( ... )        
+  #define LOG_DEBUG_INFO( ... )
 #endif
 
 #ifndef NDEBUG
-#define LOG_CHECK( x )          if (!(x)) Logger::Get().warning( __FILE__, __FUNCTION__, __LINE__, #x, " test fails\n")
+  #define LOG_CHECK( x )          if (!(x)) Logger::Get().warning( __FILE__, __FUNCTION__, __LINE__, #x, " test fails")
 #else
-#define LOG_CHECK( x )          if (!(x)) {}
+  #define LOG_CHECK( x )          if (!(x)) {}
 #endif
+
+// ----------------------------------------------------------------------------
+
+// #ifdef __ANDROID__
+
+// #include <android/log.h>
+// #define LOG_TAG    "Barbu-droid"
+
+// #define LOG_MESSAGE( ... )      __android_log_print( ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+// #define LOG_INFO( ... )         __android_log_print( ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+// #define LOG_WARNING( ... )      __android_log_print( ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+// #define LOG_ERROR( ... )        __android_log_print( ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+// #define LOG_FATAL_ERROR( ... )  __android_log_print( ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+// #define LOG_DEBUG( ... )
+// #define LOG_DEBUG_INFO( ... )
+
+// #endif
 
 // ----------------------------------------------------------------------------
 

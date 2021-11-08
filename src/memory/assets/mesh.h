@@ -39,17 +39,17 @@ class Mesh : public Asset<MeshParameters, MeshData> {
 
   // Draw the mesh using its internal mode when kInternal is set or the one provided otherwise.
   void draw(int32_t count = 1, MeshData::PrimitiveType primitive = MeshData::kInternal) const;
-  void draw_submesh(int32_t index, int32_t count = 1, MeshData::PrimitiveType primitive = MeshData::kInternal) const;
+  void drawSubMesh(int32_t index, int32_t count = 1, MeshData::PrimitiveType primitive = MeshData::kInternal) const;
 
   inline int32_t nfaces() const noexcept { return nfaces_; }
   inline int32_t nvertices() const noexcept { return nvertices_; }
 
   // Return the number of sub geometry contains in the mesh, which is always at least 1.
-  inline int32_t nsubgeometry() const noexcept { return std::max( 1, static_cast<int32_t>(vgroups_.size())); };
+  inline int32_t numSubMesh() const noexcept { return std::max( 1, static_cast<int32_t>(vgroups_.size())); };
 
-  inline bool has_materials() const noexcept { return !vgroups_.empty(); }
-  inline VertexGroups_t const& vertex_groups() const noexcept { return vgroups_; }
-  inline VertexGroup const& vertex_group(int32_t index) const { return vgroups_.at(index); }
+  inline bool hasMaterials() const noexcept { return !vgroups_.empty(); }
+  inline VertexGroups_t const& vertexGroups() const noexcept { return vgroups_; }
+  inline VertexGroup const& vertexGroup(int32_t index) const { return vgroups_.at(index); }
 
   inline SkeletonHandle skeleton() { return skeleton_; }
 
@@ -62,7 +62,7 @@ class Mesh : public Asset<MeshParameters, MeshData> {
   void release() final;
   bool setup() final;
 
-  uint32_t get_draw_mode(MeshData::PrimitiveType primitive) const;
+  uint32_t getInternalDrawMode(MeshData::PrimitiveType primitive) const; //
 
   // Buffer ids.
   uint32_t vao_ = 0u;

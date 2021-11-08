@@ -6,7 +6,7 @@
 
 // ----------------------------------------------------------------------------
 
-int32_t Material::update_uniforms(RenderAttributes const& attributes, int32_t default_unit) {
+int32_t Material::updateUniforms(RenderAttributes const& attributes, int32_t default_unit) {
   texture_unit_ = default_unit; //
 
   bool const use_new_program{ texture_unit_ == 0 };
@@ -30,13 +30,15 @@ int32_t Material::update_uniforms(RenderAttributes const& attributes, int32_t de
     // (vertex skinning)
     if (attributes.skinning_texid > 0u) {
       bind_texture( "uSkinningDatas",   attributes.skinning_texid,  gx::SamplerName::LinearClamp);
-      
+
       // [ improve ]
+ #ifndef GL_ES_VERSION_2_0
       skinning_subroutines_[ SkinningMode::LinearBlending ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_LBS");
       skinning_subroutines_[ SkinningMode::DualQuaternion ] = glGetSubroutineIndex(pgm, GL_VERTEX_SHADER, "skinning_DQBS");
       auto const& su_index = skinning_subroutines_[ attributes.skinning_mode ];
       LOG_CHECK( su_index != GL_INVALID_INDEX );
       glUniformSubroutinesuiv(GL_VERTEX_SHADER, 1, &su_index);
+ #endif
     }
 
     // (fragment)
@@ -56,7 +58,7 @@ int32_t Material::update_uniforms(RenderAttributes const& attributes, int32_t de
   CHECK_GX_ERROR();
 
   auto const last_unit = texture_unit_;
-  update_internals();
+  updateInternals();
   texture_unit_ = last_unit;
 
   return texture_unit_;

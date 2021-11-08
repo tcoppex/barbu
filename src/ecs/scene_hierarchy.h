@@ -36,75 +36,138 @@ class SceneHierarchy {
 
   ~SceneHierarchy();
 
-  void init(); //
+  void init();
 
-  // Update the scene and its entity.
+  /* Update the scene and its entity. */
   void update(float const dt, Camera const& camera);
 
-  // Add an entity to the scene hierarchy placed on the root when no parent is
-  // specified. 
-  void add_entity(EntityHandle entity, EntityHandle parent = nullptr);
+  /* Add an entity to the scene hierarchy from its parent, or the root if none exists. */
+  template<class T = Entity>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  addChildEntity(EntityHandle parent, std::shared_ptr<T> entity) noexcept {
+    assert( nullptr != entity );
+    assert( nullptr == entity->parent_ );
 
-  // Remove an entity to the list of entity and update its relationship links.
-  void remove_entity(EntityHandle entity, bool bRecursively = false);
+    if (nullptr == parent) {
+      parent = root_;
+    }
 
-  // Reset the entity local transform.
-  void reset_entity(EntityHandle entity, bool bRecursively = false);
+    // [fixme]
+    // New entities don't have an index and corresponding perFrame internal structures
+    // while the hierarchy has not been update. Hence using their perFrame data directly
+    // afterwards, in the same frame, can crash the app.
+    // One obvious solution would be to update the subhierarchy after every add.
+    // + Or use two updates : one pre-user_update & one pre-use_draw calls.
+    // + Or don't allow indexing use externally.
+    entity->index_ = -1; //entities_.empty() ? 0 : static_cast<int32_t>(entities_.size()-1);
 
-  // Create a model entity by importing an external model file.
-  EntityHandle import_model(std::string_view filename);
+    entity->parent_ = parent;
+    parent->children_.push_back( entity );
+    entities_.push_back( entity );
 
-  // Update locals matrices based on their modified globals.
-  void update_selected_local_matrices();
+    return entity;
+  }
+
+  /* Add an entity to the root. */
+  template<class T = Entity>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  addEntity(std::shared_ptr<T> entity) noexcept {
+    return addChildEntity( nullptr, entity);
+  }
+
+  /* Create an entity, empty or from a template, attached to its parent. */
+  template<class T = Entity, class... U>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  createChildEntity(EntityHandle parent, U&&... u) {
+    auto e = Entity::Create<T>( std::forward<U>(u)... ); 
+    return e ? addChildEntity<T>(parent, e) : nullptr;
+  }
+
+  /* Create an entity, empty or from a template, attached to the root. */
+  template<class T = Entity, class... U>
+  std::enable_if_t<std::is_base_of_v<Entity, T>, std::shared_ptr<T>>
+  createEntity(U&&... u) {
+    auto e = Entity::Create<T>( std::forward<U>(u)... );
+    return e ? addEntity<T>(e) : nullptr;
+  }
+
+  /* Remove an entity to the list of entity and update its relationship links. */
+  void removeEntity(EntityHandle entity, bool bRecursively = false);
+
+  /* Reset the entity local transform. */
+  void resetEntity(EntityHandle entity, bool bRecursively = false);
+
+  /* Create a model entity by importing an external model file. */
+  EntityHandle importModel(std::string_view filename);
   
-  // Return the global matrix for the given entity index.
-  inline glm::mat4 & global_matrix(int32_t index) { return frame_.globals[index]; }
-  inline glm::mat4 const& global_matrix(int32_t index) const { return frame_.globals[index]; }
+  /* Select / Deselect entities depending on status. */
+  void select(EntityHandle entity, bool status);
 
-  // Return the entity position in world space.
-  inline glm::vec3 entity_global_position(EntityHandle e) const {
-    return glm::vec3(parent_global_matrix(e) * glm::vec4(e->position(), 1.0)); //
+  /* Select all entities when true, deselect otherwise. */
+  void toggleSelect(bool status);
+
+  /* Select all entities. */
+  void selectAll() { toggleSelect(true); }
+  
+  /* Deselect all entities. */
+  void deselectAll() { toggleSelect(false); }
+
+  /* Getters */
+
+  /* Return the global matrix for the given entity index. */
+  inline glm::mat4& globalMatrix(int32_t index) { return frame_.globals[index]; }
+  inline glm::mat4 const& globalMatrix(int32_t index) const { return frame_.globals[index]; }
+
+  /* Return the entity position in world space. */
+  inline glm::vec3 globalPosition(EntityHandle e) const {
+    return glm::vec3(parentGlobalMatrix(e) * glm::vec4(e->position(), 1.0)); //
   }
 
-  // Return the entity centroid in world space.
-  inline glm::vec3 entity_global_centroid(EntityHandle e) const {
-    return glm::vec3(parent_global_matrix(e) * glm::vec4(e->centroid(), 1.0)); //
+  /* Return the entity centroid in world space. */
+  inline glm::vec3 globalCentroid(EntityHandle e) const {
+    return glm::vec3(parentGlobalMatrix(e) * glm::vec4(e->centroid(), 1.0)); //
   }
 
-  EntityHandle first() const { return entities_.empty() ? nullptr : entities_.front(); } //
-
+  /* Return the first entity of the list, if any. */
+  inline EntityHandle first() const { return entities_.empty() ? nullptr : entities_.front(); } //
+  
+  /* Return the list of all entities. */
   inline EntityList_t const& all() const { return entities_; }
+
+  /* Return the list of selected entities. */
   inline EntityList_t const& selected() const { return frame_.selected; }
+  
+  /* Return the list of drawable entities. */
   inline EntityList_t const& drawables() const { return frame_.drawables; }
+  
+  /* Return the list of collidable entities. */
   inline EntityList_t const& colliders() const { return frame_.colliders; }
 
-  // Select / Unselect entities depending on status.
-  void select(EntityHandle entity, bool status);
-  void select_all(bool status);
-
-  // Return true when the entity is selected.
-  bool is_selected(EntityHandle entity) const;
+  /* Return true when the entity is selected. */
+  bool isSelected(EntityHandle entity) const;
 
   // Return the pivot / centroid of the scene from the entities root.
   // If selected is true, will be limited to the selection.
   glm::vec3 pivot(bool selected=true) const;
   glm::vec3 centroid(bool selected=true) const;
 
-  // ----------------------
 
-  EntityHandle next(EntityHandle entity, int32_t step=1) const;
+  /* Experimental */
 
-  // Add a bounding model entity for physic collision.
-  EntityHandle add_bounding_sphere(float radius=1.0f); //
+  /* Return the next entity in hierarchy given a base and a step size. */
+  EntityHandle next(EntityHandle entity, int32_t step = 1) const;
 
-  // Render availables rigs from the scene for debug display.
-  void render_debug_rigs() const; //
-  void render_debug_colliders() const; //
+  /* Add a bounding model entity for physic collision. */
+  EntityHandle add_bounding_sphere(float radius = 1.0f); //
 
-  // Update / display selected gizmos.
+  /* Render debug rigs from the scene for debug display. */
+  void renderDebugRigs() const; //
+
+  /* Render debug colliders from the scene for debug display. */
+  void renderDebugColliders() const; //
+
+  /* Update / display selected gizmos. */
   void gizmos(bool use_centroid);
-
-  // ----------------------
 
  private:
   // Set of buffers modified each frame.
@@ -125,7 +188,6 @@ class SceneHierarchy {
     // Entities with colliders.
     EntityList_t colliders;
 
-    
     void clear() {
       assert(matrices_stack.empty());
       globals.clear();
@@ -135,35 +197,30 @@ class SceneHierarchy {
     }
   };
 
-  // Create a model entity from a mesh and a basename.
-  EntityHandle create_model_entity(std::string const& basename, MeshHandle mesh);
+  /* Hierarchically prefix-update entities. */
+  void updateHierarchy(float const dt);
+  void subUpdateHierarchy(float const dt, EntityHandle entity, int &index);
 
-  // Hierarchically prefix-update entities.
-  void update_hierarchy(float const dt);
-  void update_sub_hierarchy(float const dt, EntityHandle entity, int &index);
+  /* Update locals matrices based on their modified globals. */
+  void updateSelectedLocalMatrices();
 
-  // Sort drawable entities front to back, relative to the camera.
-  void sort_drawables(Camera const& camera);
+  /* Sort drawable entities front to back, relative to the camera. */
+  void sortDrawables(Camera const& camera);
 
-  // Return the entity's parent global matrix, or the identity if none exists.
-  inline glm::mat4 const& parent_global_matrix(EntityHandle e) const { 
+  /* Return the entity's parent global matrix, or the identity if none exists. */
+  inline glm::mat4 const& parentGlobalMatrix(EntityHandle e) const { 
     if (auto index = e->parent()->index(); index >= 0) {
-      return global_matrix(index);
+      return globalMatrix(index);
     }
     return sIdentity; 
   }
 
-  // Render a node depending on its relations in hierarchy.
-  void render_debug_node(EntityHandle node) const;
-
-  // Entry to the entity hierarchy.
-  EntityHandle root_;
-
-  // List of all current entities.
-  EntityList_t entities_;
-
-  // Holds per frame data.
-  PerFrame_t frame_;
+  /* Render a node depending on its relations in hierarchy. */
+  void renderDebugNode(EntityHandle node) const;
+  
+  EntityHandle root_;                 //< Entry to the entity hierarchy.
+  EntityList_t entities_;             //< List of all current entities.
+  PerFrame_t frame_;                  //< Holds per frame data.
 };
 
 // ----------------------------------------------------------------------------

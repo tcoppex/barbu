@@ -26,17 +26,21 @@ class HBAO {
 
  private:
   static constexpr float kDefaultScaling{ 0.5f };
+  
+  static const int kHBAOTileWidth;
+  static const int kBlurRadius;
 
  public:
   HBAO() = default;
 
-  void init(); //
+  void init();
   void deinit();
 
-  void process(Camera const& camera, GLuint const tex_linear_depth, GLuint &tex_ao_out);
+  void createTextures(int32_t w, int32_t h, float const scaling = kDefaultScaling);
+  void releaseTextures();
 
-  void create_textures(int32_t w, int32_t h, float const scaling = kDefaultScaling);
-  void release_textures();
+  /**/
+  void applyEffect(Camera const& camera, GLuint const tex_linear_depth, GLuint &tex_ao_out);
 
  private:
   enum TextureName_t {
@@ -54,15 +58,14 @@ class HBAO {
     GL_R32F,
   };
 
-  static const int kHBAOTileWidth;
-  static const int kBlurRadius;
+  /**/
+  void updateParameters(Camera const& camera);
+
+  /* Run HBAO kernels. */
+  void computeHBAO(GLuint const tex_linear_depth);
   
-  void init_shaders();
-
-  void update_parameters(Camera const& camera);
-
-  void run_kernel_hbao(GLuint const tex_linear_depth);
-  void run_kernel_blur_ao();
+  /* Run Blur AO kernels. */
+  void computeBlurAO();
 
   std::array<GLuint, kNumTextureName> textures_; //
 

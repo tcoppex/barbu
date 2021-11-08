@@ -30,6 +30,7 @@ class Assets final {
   static TextureFactory       sTexture;
   static MeshFactory          sMesh;
   static ProgramFactory       sProgram;
+  
   static MaterialAssetFactory sMaterialAsset;
 };
 

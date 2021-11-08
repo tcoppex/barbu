@@ -40,7 +40,7 @@ void Probe::setup(int32_t const resolution, int32_t const levels, bool bUseDepth
   // Initialize the shared camera if needed.
   if (!sCamera.initialized()) {
     LOG_DEBUG_INFO( "Setup the probe shared camera." );
-    sCamera.set_default();
+    sCamera.setDefault();
   }
 
   if (fbo_ <= 0u) {
@@ -82,7 +82,7 @@ void Probe::capture(DrawCallback_t draw_cb) {
   begin();
   for (int32_t lvl=0; lvl<levels_; ++lvl) {
     for (auto const& face : kIterFaces) {
-      setup_face(face, lvl);
+      setupFace(face, lvl);
       draw_cb(sCamera, lvl);
     }
   }
@@ -92,23 +92,22 @@ void Probe::capture(DrawCallback_t draw_cb) {
 // ----------------------------------------------------------------------------
 
 void Probe::begin() {
-  sCamera.set_controller(&view_controller_);
+  sCamera.setController(&view_controller_);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
 }
 
 void Probe::end() {
-  sCamera.set_controller(nullptr);
+  sCamera.setController(nullptr);
   glBindFramebuffer(GL_FRAMEBUFFER, 0u);
   glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
 
   CHECK_GX_ERROR();
 }
 
-void Probe::setup_face(CubeFace face, int32_t level) {
+void Probe::setupFace(CubeFace face, int32_t level) {
   // Setup the viewport to appropriate level resolution.
-  float const scale = 1.0f / static_cast<float>(1 << level);
-  int32_t const res = scale * resolution_;
-  gx::Viewport( res, res);
+  int32_t const kFaceResolution{ resolution_ / (1 << level) };
+  gx::Viewport( kFaceResolution, kFaceResolution);
 
   // Attach the cubemap face to the framebuffer color output.
   auto const face_id{ static_cast<int32_t>(face) };
@@ -119,7 +118,7 @@ void Probe::setup_face(CubeFace face, int32_t level) {
   //glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
   
   // Update camera internal matrices.
-  view_controller_.set_face(face);
+  view_controller_.setFace(face);
   sCamera.rebuild();
 }
 

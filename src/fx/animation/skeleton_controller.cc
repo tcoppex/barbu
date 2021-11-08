@@ -4,6 +4,7 @@
 #include "glm/gtx/quaternion.hpp"
 
 #include "core/logger.h"
+#include "utils/mathutils.h"
 
 #ifdef BARBU_NPROC_MAX
 #define LOOP_NTHREADS  (BARBU_NPROC_MAX)
@@ -47,7 +48,7 @@ bool ComputePose(float const global_time,
 {
   // [todo: handle compressed joints data]
   
-  float local_time(0.0f);
+  float local_time{0.0f};
 
   if (sequence_clip.evaluate_localtime(global_time, local_time)) {
     sequence_clip.bEnable = false;
@@ -148,7 +149,7 @@ void SkeletonController::blend_poses(Sequence_t const& sequence) {
   auto const& samples = sFrame.samples;
 
   // Bypass the weighting if there is only one active clip.
-  if (sFrame.num_active_clips == 1) {
+  if (1 == sFrame.num_active_clips) {
     auto const joints_start{ samples[0].joints.cbegin() };
     std::copy(joints_start, joints_start + njoints_, local_pose_.joints.begin());
     LOG_DEBUG_INFO( __FUNCTION__, ": single clip copy." );
@@ -192,13 +193,14 @@ void SkeletonController::blend_poses(Sequence_t const& sequence) {
   for (it = ++it; sid < sFrame.num_active_clips; ++it, ++sid) {
     auto const& sample = samples[sid];
 
-    // Cope with antipodality by checking quaternion neighbourhood.
-    float const sign_q = glm::sign(glm::dot(
-      sample.joints[0].qRotation, sample.joints[njoints_-1].qRotation
-    ));
+    // Cope with antipodality by checking the quaternion neighborhood.
+    float const sign_q{ glm::sign(glm::dot(
+      sample.joints[0].qRotation, 
+      sample.joints[njoints_-1].qRotation
+    ))};
 
     float const w   = it->weight / sum_weights;
-    float const w_q = sign_q * w;
+    float const w_q = w * sign_q;
 
     // [could swap the 2 loops and do 3 reduces operations instead]
     #pragma omp parallel for schedule(static) num_threads(LOOP_NTHREADS)
@@ -217,7 +219,6 @@ void SkeletonController::blend_poses(Sequence_t const& sequence) {
     }
   }
 }
-
 
 void SkeletonController::generate_global_pose_matrices(SkeletonHandle skeleton) {
   // [ scaling is not applied ]
@@ -245,14 +246,13 @@ void SkeletonController::generate_global_pose_matrices(SkeletonHandle skeleton) 
 }
 
 void SkeletonController::generate_skinning_datas(SkinningMode const mode, SkeletonHandle skeleton) {
+  // Generate skinning matrices, transposed to fill a 3x4 matrix.
   #pragma omp parallel for schedule(static) num_threads(LOOP_NTHREADS)
   for (int32_t i = 0; i < njoints_; ++i) {
-    // Generate skinning matrices.
-    glm::mat4 m = global_pose_matrices_[i] 
-                * skeleton->inverse_bind_matrices[i]
-                ;
-    // (transposed to fill the 3x4 matrix)
-    skinning_matrices_[i] = glm::mat3x4(glm::transpose(m)); //
+    glm::mat4 const skin_matrix{
+      global_pose_matrices_[i] * skeleton->inverse_bind_matrices[i]
+    };
+    skinning_matrices_[i] = glm::mat3x4(glm::transpose(skin_matrix));
   }
 
   // Convert Skinning Matrices to Dual Quaternions.

@@ -20,7 +20,16 @@
 //
 //  For now we keep the full pathname locally.
 //
+//  TODO : differentiate between "real path" and "virtual id" (eg. with a prefix).
+//
 struct HashId {
+  static
+  HashId fromPath(std::string_view _path) noexcept {
+    return HashId(
+      ((_path.size() > 0) && _path[0] == '/') ? _path : (ASSETS_DIR "/") + std::string(_path)
+    );
+  }
+
   explicit
   HashId(std::string_view _s) 
     : path(_s)

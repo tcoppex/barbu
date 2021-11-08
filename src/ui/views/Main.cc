@@ -81,9 +81,10 @@ void Main::render() {
 
   // Framerate info.
   {
-    double const ms = 1000.0f / ImGui::GetIO().Framerate;
-    auto const fps = static_cast<int>(ImGui::GetIO().Framerate);
-    ImGui::Text("%.3f ms/frame (%d FPS)", ms, fps);
+    float const ms = 1000.0f / ImGui::GetIO().Framerate;
+    int const fps = static_cast<int>(ImGui::GetIO().Framerate);
+
+    ImGui::Text("%.3f ms/frame (%d FPS)", (double)ms, fps);
     ImGui::SameLine();
     ImGui::Checkbox("", &params_.regulate_fps);
   }

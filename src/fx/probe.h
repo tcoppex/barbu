@@ -54,27 +54,27 @@ class Probe {
   void setup(int32_t const resolution, int32_t const levels, bool bUseDepth);
   void release();
 
-  // Update all 6 faces of the cubemap by providing a draw callback.
+  /* Update all 6 faces of the cubemap by providing a draw callback. */
   void capture(DrawCallback_t draw_cb);
 
   inline int32_t resolution() const { return resolution_; }
   inline TextureHandle texture() const { return texture_; }
 
  private:
-  // Setup the internal framebuffer for capture.
+  /* Setup the internal framebuffer for capture. */
   void begin();
   void end();
 
-  // Prepare the face to render, shall be called between begin() / end().
-  void setup_face(CubeFace face, int32_t level);
+  /* Prepare the face to render, shall be called between begin() / end(). */
+  void setupFace(CubeFace face, int32_t level);
 
-  // Probe camera view controller.
+  /* Probe camera view controller. */
   class ViewController final : public Camera::ViewController {
    public:
     virtual ~ViewController() {}
 
-    inline void set_face(CubeFace face) { face_ = face; }
-    inline void get_view_matrix(float *m) final { memcpy(m, glm::value_ptr(Probe::kViewMatrices[face_]), 16 * sizeof(float)); } //
+    inline void setFace(CubeFace face) { face_ = face; }
+    inline void getViewMatrix(float *m) final { memcpy(m, glm::value_ptr(Probe::kViewMatrices[face_]), 16 * sizeof(float)); } //
     inline glm::vec3 target() const final { return glm::vec3(0.0f); } //
 
    private:

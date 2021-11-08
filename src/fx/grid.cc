@@ -27,7 +27,6 @@ void Grid::deinit() {
 void Grid::update(float const dt, Camera const& camera) {
   // Reset rendering params.
   matrix_ = glm::mat4(1.0f);
-  alpha_  = kGridAlpha;
 
   if (!kEnableSideGrid) {
     return;
@@ -46,7 +45,7 @@ void Grid::update(float const dt, Camera const& camera) {
   auto const dp = glm::abs(glm::dot(front, up));
   float factor = (glm::abs(abc->target().y) < 1.0e-5f) ? glm::smoothstep(0.0f, 0.75f*epsX, dp) : 1.0f;
   
-  if (abc->is_sideview_set())
+  if (abc->isSideView())
   {
     auto const afront = glm::abs(front);
 
@@ -76,23 +75,27 @@ void Grid::update(float const dt, Camera const& camera) {
     }
   }
 
-  alpha_ = glm::mix(0.0f, alpha_, factor);
+  alpha_ = glm::mix(0.0f, kGridAlpha, factor);
 }
 
 void Grid::render(Camera const& camera) {
   float const kGridSize = kGridScale * static_cast<float>(kGridNumCell);
 
-  glm::vec4 const color(0.25f, 0.25f, 0.25f, alpha_);
+  glm::vec4 const color(glm::vec3(kGridValue), alpha_); // 
 
   auto const pgm = pgm_->id;
-  gx::SetUniform( pgm, "uModel",       matrix_);
-  gx::SetUniform( pgm, "uViewproj",    camera.viewproj());
-  gx::SetUniform( pgm, "uColor",       color);
-  gx::SetUniform( pgm, "uScaleFactor", kGridSize);
-  
+  gx::SetUniform( pgm, "uModel",          matrix_);
+  gx::SetUniform( pgm, "uViewproj",       camera.viewproj());
+  gx::SetUniform( pgm, "uColor",          color);
+  gx::SetUniform( pgm, "uScaleFactor",    kGridSize);
+  gx::SetUniform( pgm, "uGridResolution", static_cast<float>(kGridNumCell));
+  gx::SetUniform( pgm, "uSubGridStep",    kSubGridStep);
+
+  glEnable( GL_LINE_SMOOTH ); //
   glUseProgram(pgm);
     mesh_->draw();
   glUseProgram(0u);
+  glDisable( GL_LINE_SMOOTH );
 
   CHECK_GX_ERROR();
 }

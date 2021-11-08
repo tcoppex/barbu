@@ -1,6 +1,9 @@
 #ifndef BARBU_MEMORY_RESOURCES_RESOURCES_H_
 #define BARBU_MEMORY_RESOURCES_RESOURCES_H_
 
+#include <functional>
+
+#include "core/global_clock.h"
 #include "memory/resources/image.h"
 #include "memory/resources/mesh_data.h"
 #include "memory/resources/shader.h"
@@ -18,36 +21,13 @@ class Resources final {
  public:
   static constexpr int32_t kUpdateMilliseconds = 750;
 
-  static void WatchUpdate(float deltatime, void (*update_cb)() ) {
-    // [ to put inside a thread, eventually ]
-    // It would be more interesting to have different watch time depending on the resources,
-    // (eg. a shader should be quicker to reload than a texture).
-    static float current_tick = 0.0f; //
-    
-    if (1000.0f * current_tick > Resources::kUpdateMilliseconds) {
-      // release internal memory from last frames.
-      Resources::ReleaseAll(); // 
-
-      // watch for resource modifications.
-      sImage.update();
-      sMeshData.update();
-      sShader.update();
-
-      // upload newly modified dependencies to their assets.
-      //Assets::UpdateAll();
-      update_cb();
-
-      current_tick = 0.0f;
-    }
-    current_tick += deltatime;
-  }
+  static void WatchUpdate(std::function<void()> update_cb);
 
   static void ReleaseAll() {
     sImage.release_all();
     sMeshData.release_all();
     sShader.release_all();
   }
-
 
   template<typename T>
   static bool Has( ResourceId const& id );

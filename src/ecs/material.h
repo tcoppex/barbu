@@ -57,30 +57,30 @@ class Material {
   virtual void setup(MaterialInfo const& info) = 0;
 
   // Update commons uniforms for the material before rendering.
-  int32_t update_uniforms(RenderAttributes const& attributes, int32_t default_unit = 0);
+  int32_t updateUniforms(RenderAttributes const& attributes, int32_t default_unit = 0);
 
   inline ProgramHandle program() {
     return program_; //
   }
 
-  inline RenderMode render_mode() const noexcept {
+  inline RenderMode renderMode() const noexcept {
     return render_mode_;
   }
 
-  inline bool double_sided() const noexcept {
+  inline bool isDoubleSided() const noexcept {
     return bDoubleSided_;
   }
 
-  inline void set_render_mode(RenderMode const& render_mode) noexcept {
+  inline void setRenderMode(RenderMode const& render_mode) noexcept {
     render_mode_ = render_mode;
   }
 
-  inline void set_double_sided(bool status) noexcept {
+  inline void setDoubleSided(bool status) noexcept {
     bDoubleSided_ = status;
   }
 
  protected:
-  virtual void update_internals() = 0;
+  virtual void updateInternals() = 0;
 
   RenderMode render_mode_;
   ProgramHandle program_;

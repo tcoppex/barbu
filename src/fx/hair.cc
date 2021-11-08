@@ -37,20 +37,23 @@ void Hair::init() {
   marschner_.generate();
 
   init_ui_views();
-
 }
 
 void Hair::setup(ResourceId const& scalp_id) {
-  auto scalp_resource = Resources::Get<MeshData>( scalp_id );
+  auto scalp_resource{ Resources::Get<MeshData>(scalp_id) };
+
   if (!scalp_resource.is_valid()) {
     LOG_ERROR( "The scalp mesh resource was not found.\n", scalp_id.str() );
     return; 
   }
 
-  auto &scalp_mesh_data = *scalp_resource.data;
-  glm::vec3 pivot(0), bounds(0);
-  float radius;
-  scalp_mesh_data.calculate_bounds(pivot, bounds, radius);
+  auto &scalp_mesh_data{ *scalp_resource.data };
+
+  glm::vec3 pivot{};
+  glm::vec3 bounds{};
+  float radius{};
+  scalp_mesh_data.calculateBounds(pivot, bounds, radius); //
+  //scalp_mesh_data.calculateBounds(&pivot, &bounds, &radius); // TODO
 
   nroots_ = scalp_mesh_data.nvertices();
   model_ = glm::translate( glm::mat4(1.0f), pivot);
@@ -185,13 +188,13 @@ void Hair::render(Camera const& camera) {
         gx::SetUniform( pgm, "uAzimuthalLUT",     1);
         gx::SetUniform( pgm, "uAlbedo",           params_.render.albedo);
 
-        marschner_.bind_lookups();
+        marschner_.bindLUTs();
 
         glBindVertexArray(tess_stream_.vao);
           glDrawTransformFeedback(GL_LINES, tess_stream_.tf); //
         glBindVertexArray(0);
 
-        marschner_.unbind_lookups();
+        marschner_.unbindLUTs();
 
       gx::UseProgram(0);
     }
@@ -267,14 +270,17 @@ void Hair::init_simulation(MeshData const& scalpMesh) {
     auto const& n = normals_[rootVertexIndex];
 
     // (dirty 'organic' size randomness scaling)
-    auto const stoch = 1.0f + 0.1f*(1.0f - 2.0f*rand()/static_cast<float>(RAND_MAX));  //
+    float const random_value{static_cast<float>( 
+      1.0 + 0.1 * (1.0 - 2.0 * static_cast<double>(rand()) / static_cast<double>(RAND_MAX)) //
+    )};
 
     float lastOffset = 0.0f;
     for (int i = 0u; i < kNumControlPoints; ++i) {
-      int const idx = rootVertexIndex + i;
-
+      int const idx{ rootVertexIndex + i };
       // Segment length grow exponentially. [! makes the system less stable]
-      float const offset = i * scaleOffset * stoch;
+      float const offset{ 
+        static_cast<float>(i) * scaleOffset * random_value
+      };
       Positions[idx]  = glm::vec4(v + offset * n, offset - lastOffset);
       Velocities[idx] = glm::vec4(0.0);
       lastOffset      = offset;
@@ -293,11 +299,11 @@ void Hair::init_simulation(MeshData const& scalpMesh) {
     for (int j = 0u; j < nroots_; ++j) {
       int const A = j * kNumControlPoints;
       int const B = A + (kNumControlPoints - 1u);
-      float const dj = (j+1) * inv_nroots;
+      float const dj = static_cast<float>(j + 1) * inv_nroots;
 
       if (bCurly) {
-        float n = 1.25f * glm::simplex( glm::vec2(sinf(3.0f*dj), cosf(5.0f)) );
-        curly = glm::vec3(cosf(n*4.0f*kPi), -0.71f*n, sinf(n*2.7f*kPi));
+        float n = 1.25f * glm::simplex( glm::vec2(sinf(3.0f * dj), cosf(5.0f)) );
+        curly = glm::vec3(cosf(n * 4.0f * kPi), -0.71f * n, sinf(n * 2.7f * kPi));
       }
 
       // Outer tangent.
@@ -305,16 +311,17 @@ void Hair::init_simulation(MeshData const& scalpMesh) {
       Tangents[B] = .2f*glm::vec4(-normals_[A] + curly, 0);
 
       // Inner tangents.
-      float const inv_dist = 1.0f / (B - A);
+      float const dist_AB = static_cast<float>(B - A);
+      float const inv_dist = 1.0f / dist_AB;
       for (int i = A + 1u; i < B; ++i) {
       
         if (bCurly) {  
-          float di = 10.0f * (B - i) / static_cast<float>(kNumControlPoints - 2u);
-          float n = di * glm::simplex( glm::vec2(sinf(43.0f*dj), cosf(5.0f*di)) );
-          curly = -5.8f*glm::vec3(10.7f*cosf(n*kPi), -2.3f*n, 20.5f*sinf(n*kPi));
+          float const di = 10.0f * static_cast<float>(B - i) / (dist_AB - 1.0f);
+          float const n = di * glm::simplex( glm::vec2(sinf(43.0f * dj), cosf(5.0f * di)) );
+          curly = -5.8f * glm::vec3(10.7f * cosf(n * kPi), -2.3f * n, 20.5f * sinf(n * kPi));
         }
 
-        float const s = 0.1f*(i - A) * inv_dist * scaleMaxLength;
+        float const s = 0.1f * static_cast<float>(i - A) * inv_dist * scaleMaxLength;
         Tangents[i] = s * glm::vec4(curly, 0);
       }
     }
@@ -328,7 +335,7 @@ void Hair::init_simulation(MeshData const& scalpMesh) {
   // Upload the data from host to device.
   auto const buffer_id = pbuffer_.read_ssbo_id();
   auto const attrib_bytesize = pbuffer_.attrib_buffer_bytesize();
-  for (int i=0; i < NUM_SSBO_HAIR_SIM_ATTRIBS; ++i) {
+  for (int i = 0; i < NUM_SSBO_HAIR_SIM_ATTRIBS; ++i) {
     glNamedBufferSubData(buffer_id, i*attrib_bytesize, attrib_bytesize, host_attribs_[i].data());
   }
 
@@ -417,7 +424,7 @@ void Hair::init_transform_feedbacks() {
   // The real value should be around : 
   //    maxTessLevel0 * maxTessLevel1 * maxInstance * (nroots_ * kNumControlPoints) * sizeof(float3)
   // !! We should check that the buffer could handle it.
-  auto const kStreamBufferBytesize = 64 * 1024 * 1024;  //  [xxx bug prone]
+  auto const kStreamBufferBytesize{ 64 * 1024 * 1024 };  //  [xxx bug prone]
 
   // 1) Create the buffer to hold the raw tesselated strands.
   glCreateBuffers( 1u, &buffer);
@@ -463,7 +470,7 @@ void Hair::init_shaders() {
 
       // Set transform feedback outputs.
       std::array<GLchar const*, 1> varyings{ "position_xyz_coeff_w" };
-      glTransformFeedbackVaryings(pgm, varyings.size(), varyings.data(), GL_INTERLEAVED_ATTRIBS); //
+      glTransformFeedbackVaryings(pgm, static_cast<GLsizei>(varyings.size()), varyings.data(), GL_INTERLEAVED_ATTRIBS); //
 
       // (linked manually because of TF)
       gx::LinkProgram(pgm);

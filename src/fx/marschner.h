@@ -18,10 +18,15 @@ class UIView;
 //
 class Marschner {
  public:
-  constexpr static int kNumLUTs = 2;
+  std::shared_ptr<UIView> ui_view = nullptr;
+
+ public:
   constexpr static int kTextureResolution = 128;
+  constexpr static int kComputeBlockSize  = 16; //
   constexpr static GLenum kTextureFormat  = GL_RGBA16F; //
-  constexpr static int kComputeBlockSize  = 16; // 
+
+  constexpr static int kNumLUTs = 2;
+  constexpr static float kInvTextureResolution = 1.0f / static_cast<float>(kTextureResolution);
 
   struct ShadingParameters_t {
     // Fiber Properties.
@@ -39,7 +44,7 @@ class Marschner {
     float deltaCaustic    = 0.2f;
     float deltaHm         = 0.5f;
 
-    bool operator==(ShadingParameters_t const& o) {
+    bool operator==(ShadingParameters_t const& o) const noexcept {
       return (eta == o.eta)
           && (absorption == o.absorption)
           && (eccentricity == o.eccentricity)
@@ -51,15 +56,15 @@ class Marschner {
           && (deltaHm == o.deltaHm)
           ;
     }
+    bool operator!=(ShadingParameters_t const& o) const noexcept {
+      return !(*this == o);
+    }
   };
 
   struct Parameters_t {
     ShadingParameters_t shading;
     GLuint const* tex_ptr[kNumLUTs]{ nullptr, nullptr };
   };
-
-
-  std::shared_ptr<UIView> ui_view = nullptr;
 
  public:
   Marschner() = default;
@@ -69,8 +74,8 @@ class Marschner {
   void update(bool bForceUpdate = false);
   void generate();
 
-  void bind_lookups(int baseUnit = 0);
-  void unbind_lookups(int baseUnit = 0);
+  void bindLUTs(int baseUnit = 0);
+  void unbindLUTs(int baseUnit = 0);
 
  private:
   Parameters_t params_;
