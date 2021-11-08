@@ -202,7 +202,8 @@ void CheckError(std::string_view errMsg, char const* file, int line);
 #ifdef NDEBUG
 # define CHECK_GX_ERROR()
 #else
-# define CHECK_GX_ERROR(tString)    gx::CheckError( "" # tString, __FILE__, __LINE__)
+// # define CHECK_GX_ERROR(tString)    gx::CheckError( "" # tString, __FILE__, __LINE__)
+# define CHECK_GX_ERROR()    gx::CheckError( __FUNCTION__, __FILE__, __LINE__)
 #endif
 
 // ----------------------------------------------------------------------------
