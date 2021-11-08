@@ -3,6 +3,8 @@
 
 // ----------------------------------------------------------------------------
 
+#ifdef __GNUC__
+#pragma GCC diagnostic
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wduplicated-branches"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
@@ -10,12 +12,16 @@
 #pragma GCC diagnostic ignored "-Wdouble-promotion"
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#endif // __GNUC__
 
 #define STBI_NO_PSD
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
+#ifdef __GNUC__
+#pragma GCC diagnostic
 #pragma GCC diagnostic pop
+#endif // __GNUC__
 
 // ----------------------------------------------------------------------------
 
