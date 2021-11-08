@@ -20,7 +20,6 @@ void UIController::init(/*GLFWwindow* window*/) {
   io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
   io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
 
-
   // Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
   io.KeyMap[ImGuiKey_Tab]         = symbols::Keyboard::Tab;
   io.KeyMap[ImGuiKey_LeftArrow]   = symbols::Keyboard::Left;
@@ -78,12 +77,12 @@ void UIController::update(std::shared_ptr<AbstractWindow> window) {
   int const display_h = window->height(); //
 
   io.DisplaySize = ImVec2(static_cast<float>(w), static_cast<float>(h));
-  io.DisplayFramebufferScale = ImVec2((w > 0) ? (static_cast<float>(display_w) / w) : 0.0f,
-                                      (h > 0) ? (static_cast<float>(display_h) / h) : 0.0f);
+  io.DisplayFramebufferScale = ImVec2((w > 0) ? (static_cast<float>(display_w) / io.DisplaySize.x) : 0.0f,
+                                      (h > 0) ? (static_cast<float>(display_h) / io.DisplaySize.y) : 0.0f);
 
   // Setup time step
   auto& gc = GlobalClock::Get();
-  io.DeltaTime = gc.deltaTime();
+  io.DeltaTime = static_cast<float>(gc.deltaTime());
 
   // [TODO] Setup special keys.
   // io.KeyCtrl  = io.KeysDown[GLFW_KEY_LEFT_CONTROL] || io.KeysDown[GLFW_KEY_RIGHT_CONTROL];
@@ -94,12 +93,17 @@ void UIController::update(std::shared_ptr<AbstractWindow> window) {
   // Setup inputs
   // (we already got mouse wheel, keyboard keys & characters from glfw callbacks polled in glfwPollEvents())
   if (window->hasFocus()) {
+    int mouse_x{0}, mouse_y{0};
     if (io.WantSetMousePos) {
-      window->setCursorPosition(io.MousePos.x, io.MousePos.y);
+      mouse_x = static_cast<int>(io.MousePos.x);
+      mouse_y = static_cast<int>(io.MousePos.y);
+      window->setCursorPosition(mouse_x, mouse_y);
     } else {
-      int mouse_x, mouse_y;
       window->getCursorPosition(&mouse_x, &mouse_y);
-      io.MousePos = ImVec2((float)mouse_x, (float)mouse_y);
+      io.MousePos = ImVec2(
+        static_cast<float>(mouse_x), 
+        static_cast<float>(mouse_y)
+      );
     }
   } else {
     io.MousePos = ImVec2(-FLT_MAX,-FLT_MAX);
@@ -274,7 +278,7 @@ void UIController::render_frame(ImDrawData* draw_data) {
         CHECK_GX_ERROR();
 
         glScissor(static_cast<GLint>(pcmd->ClipRect.x),
-                  static_cast<GLint>(fb_height - pcmd->ClipRect.w),
+                  fb_height - static_cast<GLint>(pcmd->ClipRect.w),
                   static_cast<GLint>(pcmd->ClipRect.z - pcmd->ClipRect.x),
                   static_cast<GLint>(pcmd->ClipRect.w - pcmd->ClipRect.y));
         glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset);
