@@ -31,6 +31,10 @@
 /* Automatically generated pointers to extensions's entrypoints. */
 #include "core/impl/opengl/_extensions.inl"
 
+#ifndef GL_TEXTURE_MAX_ANISOTROPY_EXT
+  #define GL_TEXTURE_MAX_ANISOTROPY_EXT          0x84FE
+#endif
+
 #endif  // USE_GLEW && __ANDROID__
 
 // ----------------------------------------------------------------------------
