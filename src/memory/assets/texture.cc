@@ -121,6 +121,13 @@ void GetTextureInfo(int32_t internalFormat, int32_t &format, int32_t &type) {
       type = GL_FLOAT;
     break;
 
+    // [wip] Depth (should not be used)
+    case GL_DEPTH_COMPONENT24:
+    case GL_DEPTH_COMPONENT32F:
+      format = GL_RED;
+      type = GL_FLOAT;
+    break;
+
     default:
       LOG_FATAL_ERROR( "Internal format", internalFormat, "is not implemented." );
     break;
