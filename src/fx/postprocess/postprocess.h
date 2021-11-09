@@ -4,7 +4,9 @@
 #include <array>
 
 #include "glm/vec2.hpp"
+
 #include "core/graphics.h"
+#include "fx/fbo.h"
 #include "fx/postprocess/hbao.h"
 
 class Camera;
@@ -31,6 +33,7 @@ class Postprocess {
   enum BufferTextureName_t {
     COLOR_RGBA8,
     DEPTH,
+
     kNumBufferTextureName
   };
 
@@ -51,9 +54,8 @@ class Postprocess {
     : bEnable_(true)
     , bTextureInit_(false)
     , current_buffer_(0)
-    , vao_(0u)
-    , w_(0)
-    , h_(0)
+    , width_(0)
+    , height_(0)
   {}
 
   void init();
@@ -62,15 +64,19 @@ class Postprocess {
   /* To call when the camera / framebuffer has been resized. */
   void setupTextures(Camera const& camera);
 
+  /**/
   void begin();
   void end(Camera const& camera); //
 
-  inline GLuint bufferTextureID(BufferTextureName_t const name) const noexcept { 
-    return buffers_[current_buffer_][name];
-  }
+  /**/
+  GLuint bufferTextureID(BufferTextureName_t const name) const noexcept;
 
+  /**/
   inline bool enabled() const noexcept { return bEnable_; }
   inline void toggle(bool status) noexcept { bEnable_ = status; }
+
+  /* Render internal textures in UI for debugging. */
+  void debugDraw(std::string_view const& _name = "") const noexcept;
 
  private:
   void createTextures();
@@ -89,34 +95,31 @@ class Postprocess {
   bool bTextureInit_;
 
   // Input buffers.
-  std::array<GLuint, kNumBuffers> fbos_{0};  //
-  std::array<InternalBuffers_t, kNumBuffers> buffers_{};
+  std::array<Fbo, kNumBuffers> FBOs_;
   int current_buffer_;
+  int32_t width_;
+  int32_t height_;
 
-  // Mapscreen VAO.
-  GLuint vao_;
-  
-  // Composition programs.
+  // Screen mapping.
   struct {
-    ProgramHandle mapscreen;
-    ProgramHandle lindepth;
-  } pgm_;
+    ProgramHandle pgm;
+    GLuint vao = 0u;
+  } mapscreen_;
 
-  // Output textures.
+  // Linearize depth.
   struct {
-    GLuint lindepth_r32f  = 0u; //
-    GLuint ext_ao_r32f    = 0u; //
-  } out_;
-
-  // Buffer resolution.
-  int32_t w_;
-  int32_t h_;
-
-  // Linearized depth resolution.
-  glm::vec2 lindepth_res_; //
+    ProgramHandle pgm;
+    TextureHandle tex;
+    glm::vec2 resolution;
+  } lindepth_;
 
   // Sub-effects.
   HBAO ssao_;
+  
+  // Output textures.
+  struct {
+    GLuint ao = 0u;
+  } output_texid_;
 
  private:
   Postprocess(Postprocess const&) = delete;
