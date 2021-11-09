@@ -22,6 +22,7 @@ glBufferData
 glBufferStorage
 glBufferSubData
 glCheckFramebufferStatus
+glCheckNamedFramebufferStatus
 glClearNamedBufferSubData
 glClearNamedFramebufferfi
 glClearNamedFramebufferfv
