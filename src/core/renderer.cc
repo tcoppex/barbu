@@ -55,6 +55,7 @@ void Renderer::update(float const dt, SceneHierarchy &scene, Camera &camera) {
   scene.update(dt, camera);
 
   // Postprocessing, resize textures when needed [to improve]
+  postprocess_.toggle(params_.enable_postprocess);
   postprocess_.setupTextures(camera); //
 
   // Grid.
