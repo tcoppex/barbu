@@ -23,6 +23,10 @@ glBufferStorage
 glBufferSubData
 glCheckFramebufferStatus
 glClearNamedBufferSubData
+glClearNamedFramebufferfi
+glClearNamedFramebufferfv
+glClearNamedFramebufferiv
+glClearNamedFramebufferuiv
 glCompileShader
 glCopyImageSubData
 glCopyNamedBufferSubData
