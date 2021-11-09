@@ -26,69 +26,21 @@ void Renderer::init() {
 }
 
 void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb) {
-  float const dt = static_cast<float>(GlobalClock::Get().deltaTime()); //
+  float const dt{ static_cast<float>(GlobalClock::Get().deltaTime()) }; //
 
-  gizmo_.beginFrame( dt, camera);
-
-  // User's update.
-  update_cb(); //
-
-  // [ should this be updated before or after user's ? ]
-  camera.update(dt);
-  scene.update(dt, camera);
-
-  // UPDATE
+  gizmo_.beginFrame(dt, camera);
   {
-    // Postprocessing, resize textures when needed [to improve]
-    postprocess_.setupTextures(camera); //
+    // Update.
+    update_cb(); // [should this be call before or after update ?]
+    update(dt, scene, camera);
 
-    // Grid.
-    grid_.update(dt, camera);
+    // Draw.
+    draw(scene, camera);
+    draw_cb();
 
-    // Particles.
-    if (params_.enable_particle) {
-      particle_.update( dt, camera);
-    }
-    
-    // Hair.
-    if (params_.enable_hair && hair_.initialized()) {
-      if (auto const& colliders = scene.colliders(); !colliders.empty()) {
-        auto const& e = colliders.front();
-        auto const& bsphere = e->get<SphereColliderComponent>();
-
-        // [debug bounding sphere]
-        auto bsParams = scene.globalMatrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
-        bsParams.w = bsphere.radius();
-        hair_.set_bounding_sphere( bsParams );  
-      }
-      hair_.update(dt);
-    }
+    // Specify gizmos to be rendered and whose matrices to be updated.
+    scene.processGizmos(); //
   }
-  CHECK_GX_ERROR();
-
-  // RENDER
-  {
-    gx::Viewport( camera.width(), camera.height());
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //
-
-    // 'Deferred'-pass, post-process the solid objects.
-   
-    postprocess_.begin();
-    drawPass( RendererPassBit::PASS_DEFERRED, scene, camera);
-    postprocess_.end(camera);
-
-    // Forward-pass, render the special effects.
-    drawPass( RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
-
-    // [ should have a final composition pass here to tonemap the forwards ].
-  }
-  CHECK_GX_ERROR();
-  
-  // User's draw.
-  draw_cb(); //
-
-  scene.gizmos(false); //
-
   gizmo_.endFrame(camera);
 }
 
@@ -97,6 +49,51 @@ void Renderer::frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t upd
 // }
 
 // ----------------------------------------------------------------------------
+
+void Renderer::update(float const dt, SceneHierarchy &scene, Camera &camera) {
+  camera.update(dt);
+  scene.update(dt, camera);
+
+  // Postprocessing, resize textures when needed [to improve]
+  postprocess_.setupTextures(camera); //
+
+  // Grid.
+  grid_.update(dt, camera);
+
+  // Particles.
+  if (params_.enable_particle) {
+    particle_.update(dt, camera);
+  }
+  
+  // Hair.
+  if (params_.enable_hair && hair_.initialized()) {
+    if (auto const& colliders = scene.colliders(); !colliders.empty()) {
+      auto const& e = colliders.front();
+      auto const& bsphere = e->get<SphereColliderComponent>();
+
+      // [wip : debug bounding sphere]
+      auto bsParams = scene.globalMatrix(e->index()) * glm::vec4(bsphere.center(), 1.0);
+      bsParams.w = bsphere.radius();
+      hair_.set_bounding_sphere( bsParams );  
+    }
+    hair_.update(dt);
+  }
+}
+
+void Renderer::draw(SceneHierarchy &scene, Camera &camera) {
+  gx::Viewport( camera.width(), camera.height());
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //
+
+  // "Deferred"-pass, post-process the solid objects.
+  postprocess_.begin();
+  drawPass( RendererPassBit::PASS_DEFERRED, scene, camera);
+  postprocess_.end(camera);
+
+  // Forward-pass, render the special effects.
+  drawPass( RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
+
+  // [ should have a final composition pass here to tonemap the forwards ].
+}
 
 void Renderer::drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera) {
   // Reset default states.

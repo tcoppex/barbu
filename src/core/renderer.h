@@ -60,7 +60,6 @@ class Renderer {
   ~Renderer();
 
   void init();
-
   void frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb);
 
   inline Parameters_t& params() { return params_; }
@@ -72,6 +71,9 @@ class Renderer {
   inline Hair&          hair()      noexcept { return hair_; }
 
  private:
+  void update(float const dt, SceneHierarchy &scene, Camera &camera);
+  void draw(SceneHierarchy &scene, Camera &camera);
+
   void drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera);
   void drawEntities(RenderMode render_mode, SceneHierarchy const& scene, Camera const& camera);
 
@@ -81,7 +83,7 @@ class Renderer {
   Skybox skybox_;
   Grid grid_;
 
-  // [ should probably be reserved for components ]
+  // Experimentals [ futures components ]
   GPUParticle particle_;
   Hair hair_;
 
