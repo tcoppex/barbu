@@ -351,7 +351,7 @@ void SceneHierarchy::renderDebugColliders() const {
   } 
 }
 
-void SceneHierarchy::gizmos(bool use_centroid) {
+void SceneHierarchy::processGizmos(bool use_centroid) {
   // 1) Use global matrices for gizmos.
   for (auto e : selected()) {
     auto &global = globalMatrix( e->index() );

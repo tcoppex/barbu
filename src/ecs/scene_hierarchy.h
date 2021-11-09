@@ -167,7 +167,7 @@ class SceneHierarchy {
   void renderDebugColliders() const; //
 
   /* Update / display selected gizmos. */
-  void gizmos(bool use_centroid);
+  void processGizmos(bool use_centroid = false);
 
  private:
   // Set of buffers modified each frame.
