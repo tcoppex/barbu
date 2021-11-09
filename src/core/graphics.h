@@ -185,6 +185,12 @@ void DispatchCompute(int x = 1, int y = 1, int z = 1) {
   ); 
 }
 
+// Getter ----------------------------------------------------------------------
+
+bool GetB(uint32_t pname);
+int32_t GetI(uint32_t pname);
+float GetF(uint32_t pname);
+
 // Error ----------------------------------------------------------------------
 
 bool CheckFramebufferStatus();

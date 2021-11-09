@@ -491,6 +491,27 @@ void SetUniform(uint32_t pgm, int32_t loc, glm::mat4 const* value, int32_t n) {
   glProgramUniformMatrix4fv( pgm, loc, n, GL_FALSE, glm::value_ptr(*value));
 }
 
+// ----------------------------------------------------------------------------
+
+bool GetB(uint32_t pname) {
+  GLboolean v;
+  glGetBooleanv(pname, &v);
+  return static_cast<bool>(v);
+}
+
+int32_t GetI(uint32_t pname) {
+  GLint v;
+  glGetIntegerv(pname, &v);
+  return v;
+}
+
+float GetF(uint32_t pname) {
+  GLfloat v;
+  glGetFloatv(pname, &v);
+  return v;
+}
+
+// ----------------------------------------------------------------------------
 
 bool CheckFramebufferStatus() {
   return (GL_FRAMEBUFFER_COMPLETE == glCheckFramebufferStatus(GL_FRAMEBUFFER));
