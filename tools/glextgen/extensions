@@ -91,6 +91,7 @@ glMemoryBarrier
 glNamedBufferData
 glNamedBufferStorage
 glNamedBufferSubData
+glNamedFramebufferDrawBuffers
 glNamedFramebufferRenderbuffer
 glNamedFramebufferTexture
 glNamedFramebufferTextureLayer
