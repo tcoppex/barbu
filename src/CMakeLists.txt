@@ -17,6 +17,8 @@ list(APPEND Sources
   ecs/components/skin.cc
   ecs/materials/generic.cc
 
+  fx/fbo.cc
+  
   fx/gpu_particle.cc
   fx/grid.cc
   fx/hair.cc
