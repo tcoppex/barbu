@@ -90,6 +90,7 @@ glNamedFramebufferRenderbuffer
 glNamedFramebufferTexture
 glNamedFramebufferTextureLayer
 glNamedRenderbufferStorage
+glNamedRenderbufferStorageMultisample
 glPatchParameteri
 glProgramUniform1f
 glProgramUniform1i
