@@ -10,16 +10,13 @@
 // ----------------------------------------------------------------------------
 
 void Postprocess::init() {
-  // VAO.
   glCreateVertexArrays(1, &vao_);
   
-  // Shader.
   pgm_.mapscreen = PROGRAM_ASSETS.createRender(
-    "pp::composition",
+    "Postprocess::Composition",
     SHADERS_DIR "/postprocess/vs_mapscreen.glsl",
     SHADERS_DIR "/postprocess/fs_composition.glsl"
   );
-
   pgm_.lindepth = PROGRAM_ASSETS.createCompute( 
     SHADERS_DIR "/postprocess/linear_depth/cs_lindepth.glsl"
   );
@@ -32,13 +29,17 @@ void Postprocess::init() {
 void Postprocess::setupTextures(Camera const& camera) {
   auto const w = camera.width();
   auto const h = camera.height();
-  bool const bResized = (w_ != w) || (h_ != h);
 
-  if (bResized) {
+  // Initialize the FBOs with their internal buffer textures.
+  if (fbos_[0] <= 0) {
+    glCreateFramebuffers(kNumBuffers, fbos_.data());
+  }
+
+  // Reallocate when dimensions changed.
+  if ((w_ != w) || (h_ != h)) {
     if (bTextureInit_) {
       releaseTextures();
     }
-
     w_ = w;
     h_ = h;
     createTextures();
@@ -46,9 +47,7 @@ void Postprocess::setupTextures(Camera const& camera) {
 }
 
 void Postprocess::createTextures() {
-  // Initialize the FBOs with their internal buffer textures.
-  glCreateFramebuffers(kNumBuffers, fbos_);
-  
+  // Framebuffers.
   for (int i = 0; i < kNumBuffers; ++i) {
     auto &buffer = buffers_[i];
     glCreateTextures(GL_TEXTURE_2D, kNumBufferTextureName, buffer.data());
@@ -62,6 +61,7 @@ void Postprocess::createTextures() {
     }
   }
 
+  // Buffers' textures.
   for (auto &buffer : buffers_) {
     for (int j = 0; j < kNumBufferTextureName; ++j) {
       glTextureStorage2D( buffer[j], 1, kBufferTextureFormats[j], w_, h_);
@@ -69,20 +69,21 @@ void Postprocess::createTextures() {
   }
   current_buffer_ = 0;
 
-  // sub-effects.
+  // SubEffects textures.
   {
     // LinearDepth.
-    glCreateTextures(GL_TEXTURE_2D, 1, &out_.lindepth_r32f);
-
-    // (we might want to scaled down the texture for post-effects)
     lindepth_res_ = glm::vec2( w_, h_);
-    glTextureStorage2D(out_.lindepth_r32f, 1, kLinearDepthFormat, w_, h_);  
+    int32_t const width  = static_cast<int32_t>(lindepth_res_.x);
+    int32_t const height = static_cast<int32_t>(lindepth_res_.y);
+    int32_t const levels = 1;
+    glCreateTextures(GL_TEXTURE_2D, 1, &out_.lindepth_r32f);
+    glTextureStorage2D(out_.lindepth_r32f, levels, kLinearDepthFormat, width, height);
   
-    ssao_.createTextures(w_, h_);
+    // Screen-Space Ambient Occlusion.
+    ssao_.createTextures(w_, h_); //
   }
 
   bTextureInit_ = true;
-
   CHECK_GX_ERROR();
 }
 
@@ -91,9 +92,8 @@ void Postprocess::releaseTextures() {
     return;
   }
 
-  glDeleteFramebuffers(kNumBuffers, fbos_);
   for (int i = 0; i < kNumBuffers; ++i) {
-    glDeleteTextures( kNumBufferTextureName, buffers_[i].data());
+    glDeleteTextures(kNumBufferTextureName, buffers_[i].data());
   }
   glDeleteTextures(1, &out_.lindepth_r32f);
   out_.lindepth_r32f = 0u;
@@ -105,9 +105,12 @@ void Postprocess::releaseTextures() {
 }
 
 void Postprocess::deinit() {
+  glDeleteFramebuffers(kNumBuffers, fbos_.data()); //
+  glDeleteVertexArrays(1, &vao_); //
+
   releaseTextures();
-  glDeleteVertexArrays(1, &vao_);
-  //ssao_.deinit();
+
+  // ssao_.deinit();
 
   CHECK_GX_ERROR();
 }
@@ -121,8 +124,6 @@ void Postprocess::begin() {
 
   glBindFramebuffer(GL_FRAMEBUFFER, fbos_[current_buffer_]);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-  CHECK_GX_ERROR();
 }
 
 void Postprocess::end(Camera const& camera) {
@@ -180,9 +181,9 @@ void Postprocess::applyEffects(Camera const& camera) {
     glBindImageTexture( ++image_unit, out_.lindepth_r32f, 0, GL_FALSE, 0, GL_WRITE_ONLY, kLinearDepthFormat); //
     gx::SetUniform( pgm, "uLinearDepthOut", image_unit);
 
-    // uint32_t const width  = static_cast<uint32_t>(lindepth_res_.x); //
-    // uint32_t const height = static_cast<uint32_t>(lindepth_res_.y); //
-    gx::DispatchCompute<LINEARDEPTH_BLOCK_DIM, LINEARDEPTH_BLOCK_DIM>( w_, h_);
+    uint32_t const width  = static_cast<uint32_t>(lindepth_res_.x); //
+    uint32_t const height = static_cast<uint32_t>(lindepth_res_.y); //
+    gx::DispatchCompute<LINEARDEPTH_BLOCK_DIM, LINEARDEPTH_BLOCK_DIM>( width, height);
   } 
   gx::UseProgram();
 
@@ -234,12 +235,12 @@ void Postprocess::renderScreen() {
 
   // ------------
 
-  #if 0
+#ifndef NDEBUG
   ImGui::Begin("pp textures", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
   {
     auto const render_tex = [](GLuint tex) {
       auto const s = 320;
-      auto const id = reinterpret_cast<ImTextureID>(tex);
+      auto const id = (void*)(intptr_t)(tex);
       ImGui::Image( id, ImVec2(s, 3*s/4), ImVec2(0, 0), ImVec2(1,-1));
     };
 
@@ -248,7 +249,7 @@ void Postprocess::renderScreen() {
     }
   }
   ImGui::End();
-  #endif
+#endif
 }
 
 // ----------------------------------------------------------------------------

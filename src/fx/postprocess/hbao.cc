@@ -5,7 +5,9 @@
 #include "memory/assets/assets.h"
 #include "ui/imgui_wrapper.h"
 
-#define SHOW_UI 0
+// ----------------------------------------------------------------------------
+
+static constexpr bool kShowUI = true;
 
 // ----------------------------------------------------------------------------
 
@@ -35,14 +37,10 @@ void HBAO::init() {
   CHECK_GX_ERROR();
 }
 
-void HBAO::deinit() {
-  //
-}
-
 void HBAO::createTextures(int32_t w, int32_t h, float const scaling) {
-  glm::vec2 const res{ static_cast<float>(w), static_cast<float>(h)};
-  params_.full_resolution = glm::vec4( res.x, res.y, 1.0f / res.x, 1.0f / res.y);
-  params_.ao_resolution   = scaling * params_.full_resolution;
+  glm::vec2 const res{ static_cast<float>(w), static_cast<float>(h) };
+  params_.full_resolution = glm::vec4( res, 1.0f / res);
+  params_.ao_resolution   = glm::vec4( scaling * res, 1.0f / (scaling * res));
 
   GLsizei const width  = static_cast<GLsizei>(params_.ao_resolution.x); 
   GLsizei const height = static_cast<GLsizei>(params_.ao_resolution.y);
@@ -98,14 +96,14 @@ void HBAO::updateParameters(Camera const& camera) {
   P.blur_depth_threshold        = 2.0f * sqrt_ln_two * (scene_scale / ui_params_.blur_sharpness);
   P.blur_falloff                = inv_ln_two / (2.0f * blur_sigma * blur_sigma);
 
-  #if SHOW_UI
-  ImGui::Begin("HBAO", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::DragFloat("radius",         &ui_params_.radius,         0.0005f, 0.001f, 0.5f);
-    ImGui::DragFloat("Blur radius",    &ui_params_.blur_radius,    0.05f, 0.01f, 16.0f);
-    ImGui::DragFloat("Blur sharpness", &ui_params_.blur_sharpness, 0.1f, 0.01f, 64.0f);
-    ImGui::DragFloat("Angle bias",     &ui_params_.angle_bias,     0.01f, 0.01f, 1.14f);
-  ImGui::End();
-  #endif
+  if constexpr(kShowUI) {
+    ImGui::Begin("HBAO", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+      ImGui::DragFloat("radius",         &ui_params_.radius,         0.0005f, 0.001f, 0.5f);
+      ImGui::DragFloat("Blur radius",    &ui_params_.blur_radius,    0.05f, 0.01f, 16.0f);
+      ImGui::DragFloat("Blur sharpness", &ui_params_.blur_sharpness, 0.1f, 0.01f, 64.0f);
+      ImGui::DragFloat("Angle bias",     &ui_params_.angle_bias,     0.01f, 0.01f, 1.14f);
+    ImGui::End();
+  }
 }
 
 void HBAO::computeHBAO(GLuint const tex_linear_depth) {

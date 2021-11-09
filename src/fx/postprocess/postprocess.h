@@ -59,7 +59,7 @@ class Postprocess {
   void init();
   void deinit();
 
-  // To call when the camera / framebuffer has been resized.
+  /* To call when the camera / framebuffer has been resized. */
   void setupTextures(Camera const& camera);
 
   void begin();
@@ -69,32 +69,32 @@ class Postprocess {
     return buffers_[current_buffer_][name];
   }
 
-  inline bool is_enable() const { return bEnable_; }
-  inline void toggle(bool status) { bEnable_ = status; }
+  inline bool enabled() const noexcept { return bEnable_; }
+  inline void toggle(bool status) noexcept { bEnable_ = status; }
 
  private:
-  using InternalBuffers_t = std::array<GLuint, kNumBufferTextureName>;
-
   void createTextures();
   void releaseTextures();
 
-  // Post capture processing.
+  /* Post capture processing. */
   void applyEffects(Camera const& camera);
 
-  // Render screen quad for final composition.
+  /* Render screen quad for the final composition. */
   void renderScreen();
 
+ private:
+  using InternalBuffers_t = std::array<GLuint, kNumBufferTextureName>;
 
   bool bEnable_;
   bool bTextureInit_;
 
   // Input buffers.
-  GLuint fbos_[kNumBuffers];  //
-  InternalBuffers_t buffers_[kNumBuffers];
+  std::array<GLuint, kNumBuffers> fbos_{0};  //
+  std::array<InternalBuffers_t, kNumBuffers> buffers_{};
   int current_buffer_;
 
   // Mapscreen VAO.
-  GLuint vao_; //
+  GLuint vao_;
   
   // Composition programs.
   struct {
@@ -102,13 +102,17 @@ class Postprocess {
     ProgramHandle lindepth;
   } pgm_;
 
-  // Outputs textures.
+  // Output textures.
   struct {
-    GLuint lindepth_r32f = 0; //
-    GLuint ext_ao_r32f = 0; //
+    GLuint lindepth_r32f  = 0u; //
+    GLuint ext_ao_r32f    = 0u; //
   } out_;
 
-  int32_t w_, h_;
+  // Buffer resolution.
+  int32_t w_;
+  int32_t h_;
+
+  // Linearized depth resolution.
   glm::vec2 lindepth_res_; //
 
   // Sub-effects.
