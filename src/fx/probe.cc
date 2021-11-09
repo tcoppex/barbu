@@ -48,7 +48,7 @@ void Probe::setup(int32_t const resolution, int32_t const levels, bool bUseDepth
   }
 
   // Attach a renderbuffer for depth testing when needed.
-  if (bUseDepth && renderbuffer_ <= 0u) {
+  if (bUseDepth && (renderbuffer_ <= 0u)) {
     glCreateRenderbuffers( 1, &renderbuffer_);
     glNamedRenderbufferStorage( renderbuffer_, GL_DEPTH_COMPONENT24, resolution_, resolution_);
     glNamedFramebufferRenderbuffer( fbo_, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, renderbuffer_);
