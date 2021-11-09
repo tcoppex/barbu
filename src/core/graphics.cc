@@ -81,9 +81,12 @@ char const* GetErrorString(GLenum err) {
       
     case GL_OUT_OF_MEMORY:
       return GX_STRINGIFY(GL_OUT_OF_MEMORY);
-      
+    
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+      return GX_STRINGIFY(GL_INVALID_FRAMEBUFFER_OPERATION);
+
     default:
-      return "GetErrorString : Unknown constant";
+      return "gx::GetErrorString : Unknown constant.";
   }
 }
 
