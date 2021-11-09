@@ -4,7 +4,6 @@
 // ----------------------------------------------------------------------------
 
 #ifdef __GNUC__
-#pragma GCC diagnostic
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wduplicated-branches"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
@@ -19,7 +18,6 @@
 #include "stb/stb_image.h"
 
 #ifdef __GNUC__
-#pragma GCC diagnostic
 #pragma GCC diagnostic pop
 #endif // __GNUC__
 
