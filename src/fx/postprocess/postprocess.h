@@ -39,8 +39,8 @@ class Postprocess {
 
   // Internal format of buffer textures.
   static constexpr std::array<GLenum, kNumBufferTextureName> kBufferTextureFormats{
-    GL_RGBA8, //
-    GL_DEPTH_COMPONENT24,
+    GL_RGBA8, //                     // GL_COLOR_ATTACHMENT0
+    GL_DEPTH_COMPONENT24,            // GL_DEPTH_ATTACHMENT
   };
 
   // Number of copy for N-buffering.
@@ -76,7 +76,7 @@ class Postprocess {
   inline void toggle(bool status) noexcept { bEnable_ = status; }
 
   /* Render internal textures in UI for debugging. */
-  void debugDraw(std::string_view const& _name = "") const noexcept;
+  void debugDraw(std::string_view const& _label = "") const noexcept;
 
  private:
   void createTextures();
@@ -87,6 +87,11 @@ class Postprocess {
 
   /* Render screen quad for the final composition. */
   void renderScreen();
+
+  /* Return the current framebuffer object. */
+  inline Fbo const& currentFBO() const noexcept { 
+    return FBOs_[current_buffer_];
+  }
 
  private:
   using InternalBuffers_t = std::array<GLuint, kNumBufferTextureName>;

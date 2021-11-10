@@ -67,7 +67,7 @@ void Postprocess::createTextures() {
   );
 
   // Screen-Space Ambient Occlusion.
-  ssao_.createTextures(width_, height_); //
+  ssao_.createTextures(width_, height_);
 
   bTextureInit_ = true;
   CHECK_GX_ERROR();
@@ -85,7 +85,7 @@ void Postprocess::releaseTextures() {
 }
 
 void Postprocess::deinit() {
-  glDeleteVertexArrays(1, &mapscreen_.vao); //
+  glDeleteVertexArrays(1, &mapscreen_.vao);
   releaseTextures();
 }
 
@@ -95,7 +95,9 @@ void Postprocess::begin() {
     return;
   }
 
-  FBOs_[current_buffer_].begin();
+  auto &fbo{ currentFBO() };
+  fbo.begin();
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); //
 }
 
@@ -104,13 +106,12 @@ void Postprocess::end(Camera const& camera) {
     return;
   }
 
-  auto &fbo{ FBOs_[current_buffer_] };
-
+  auto &fbo{ currentFBO() };
   fbo.end();
- 
+
   glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
 
-  // Filters input buffers.
+  // Apply post-processing filters.
   if constexpr(true) {
     applyEffects(camera);
   } else {
@@ -123,17 +124,7 @@ void Postprocess::end(Camera const& camera) {
 
   // Copy the depth buffer to the main one to continue forward rendering.
   // (we might as well do this in the CS renderScreen pass)
-  auto const w = camera.width();
-  auto const h = camera.height();
-  auto const read_fbo  = fbo.id();
-  auto const write_fbo = 0u;
-  glBlitNamedFramebuffer(
-    read_fbo, write_fbo, 
-    0, 0, w, h, 
-    0, 0, w, h, 
-    GL_DEPTH_BUFFER_BIT, 
-    GL_NEAREST
-  );
+  fbo.draw(0, 0, camera.width(), camera.height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST); //
 
   // Swap internal buffers.
   current_buffer_ = (current_buffer_ + 1) % kNumBuffers;
@@ -145,7 +136,7 @@ GLuint Postprocess::bufferTextureID(BufferTextureName_t const name) const noexce
   auto const attachment = (name == COLOR_RGBA8) ? GL_COLOR_ATTACHMENT0 
                                                 : GL_DEPTH_ATTACHMENT
                                                 ;
-  return FBOs_[current_buffer_].texture(attachment)->id;
+  return currentFBO().texture(attachment)->id;
 }
 
 // ----------------------------------------------------------------------------
@@ -167,8 +158,8 @@ void Postprocess::applyEffects(Camera const& camera) {
     glBindImageTexture( ++image_unit, tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, kLinearDepthFormat); //
     gx::SetUniform( pgm, "uLinearDepthOut", image_unit);
 
-    uint32_t const width  = static_cast<uint32_t>(lindepth_.resolution.x); //
-    uint32_t const height = static_cast<uint32_t>(lindepth_.resolution.y); //
+    auto const width  = static_cast<uint32_t>(lindepth_.resolution.x);
+    auto const height = static_cast<uint32_t>(lindepth_.resolution.y);
     gx::DispatchCompute<LINEARDEPTH_BLOCK_DIM, LINEARDEPTH_BLOCK_DIM>( width, height);
   } 
   gx::UseProgram();
@@ -222,8 +213,8 @@ void Postprocess::renderScreen() {
 #endif
 }
 
-void Postprocess::debugDraw(std::string_view const& _name) const noexcept {
-  ImGui::Begin(_name.data(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+void Postprocess::debugDraw(std::string_view const& _label) const noexcept {
+  ImGui::Begin(_label.data(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
   {
     auto const render_tex = [](GLuint tex) {
       auto const s = 320;
