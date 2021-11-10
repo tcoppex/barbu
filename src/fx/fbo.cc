@@ -40,6 +40,34 @@ bool CheckInternalFormatMatchAttachment(int32_t _internalFormat, GLenum _attachm
   return true;
 }
 
+// static
+// void Blit(Fbo const& read_fbo, Fbo& write_fbo, Rectangle src_rect, Rectangle dst_rect, GLbitfield mask, GLenum filter) {
+//   GLuint const read_fbo  = read_fbo.id();
+//   GLuint const write_fbo = write_fbo.id();
+//   glBlitNamedFramebuffer(
+//     read_fbo, 
+//     write_fbo, 
+//     src.x, src.y, src.z, src.w,
+//     dst.x, dst.y, dst.z, dst.w,
+//     mask, 
+//     filter
+//   );
+// }
+
+// static
+// void Draw(Fbo const& read_fbo, Rectangle src, Rectangle dst, GLbitfield mask, GLenum filter) {
+//   GLuint const read_fbo  = read_fbo.id();
+//   GLuint const write_fbo = 0u;
+//   glBlitNamedFramebuffer(
+//     read_fbo, 
+//     write_fbo, 
+//     src.x, src.y, src.z, src.w,
+//     dst.x, dst.y, dst.z, dst.w,
+//     mask, 
+//     filter
+//   );
+// }
+
 }
 
 /* -------------------------------------------------------------------------- */
@@ -160,10 +188,42 @@ void Fbo::clearDepthStencilBuffer(float _depth, int32_t _stencil) const noexcept
   glClearNamedFramebufferfi(fbo_, GL_DEPTH_STENCIL, 0, _depth, _stencil);
 }
 
-void Fbo::debugDraw(std::string_view const& _name) const noexcept {
+TextureHandle Fbo::texture(GLenum _attachment) const noexcept {
+  for (size_t i(0); i < attachments_.size(); ++i) {
+    if (attachments_[i] == _attachment) {
+      return textures_[i];
+    }
+  }
+  return nullptr;
+}
+
+TextureHandle Fbo::colorTexture(int32_t _attachment_index) const noexcept {
+  return texture(GL_COLOR_ATTACHMENT0 + _attachment_index);
+}
+
+TextureHandle Fbo::depthTexture() const noexcept {
+  if (auto tex = texture(GL_DEPTH_ATTACHMENT); tex) {
+    return tex;
+  }
+  return texture(GL_DEPTH_STENCIL_ATTACHMENT);
+}
+
+void Fbo::draw(float _x, float _y) const noexcept {
+  auto const read_fbo  = fbo_;
+  auto const write_fbo = 0u;
+  glBlitNamedFramebuffer(
+    read_fbo, write_fbo, 
+    0, 0, width_, height_, 
+    _x, _y, width_, height_, 
+    GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, 
+    GL_NEAREST
+  );
+}
+
+void Fbo::debugDraw(std::string_view const& _label) const noexcept {
   std::string const window_id{ 
-    _name.empty() ? std::string("FBO textures ") + std::to_string((uintptr_t)this)
-                  : _name
+    _label.empty() ? std::string("FBO textures ") + std::to_string((uintptr_t)this)
+                   : _label
   };
 
   ImGui::Begin( window_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);

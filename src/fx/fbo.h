@@ -74,14 +74,13 @@ class Fbo {
   void clearDepthStencilBuffer(float _depth, int32_t _stencil) const noexcept;
 
   /* Return the texture for the given attachment, if any. */
-  TextureHandle texture(GLenum _attachment) const noexcept {
-    for (size_t i(0); i < attachments_.size(); ++i) {
-      if (attachments_[i] == _attachment) {
-        return textures_[i];
-      }
-    }
-    return nullptr;
-  }
+  TextureHandle texture(GLenum _attachment) const noexcept;
+
+  /* Return the color texture of the given attachment id, if any. */
+  TextureHandle colorTexture(int32_t _attachment_index = 0) const noexcept;
+
+  /* Return the depth or depthStencil texture, if any. */
+  TextureHandle depthTexture() const noexcept;
 
   /* Return true when the underlying framebuffer object is initialized. */
   inline bool isInitialized() const noexcept {
@@ -93,8 +92,11 @@ class Fbo {
     return renderbuffer_ > 0u;
   }
 
-  /* Render internal textures in UI for debugging. */
-  void debugDraw(std::string_view const& _name = "") const noexcept;
+  /* Draw the content of the framebuffer to the screen at the given coordinates. */
+  void draw(float _x, float _y) const noexcept;
+
+  /* Draw internal textures in a UI window for debugging. */
+  void debugDraw(std::string_view const& _label = "") const noexcept;
 
   /* [tmp] return the GL identifier. */
   inline GLuint id() const noexcept {
