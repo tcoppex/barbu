@@ -18,7 +18,7 @@ class Fbo {
  public:
   static constexpr char const* kDefaultFboTextureName{ "FBO::Texture" };
   
-  static constexpr int32_t kDefaultInternalFormat = GL_RGB8;
+  static constexpr int32_t kDefaultInternalFormat = GL_RGBA8;
   static constexpr int32_t kDefaultMSAANumSamples = 0;
   static constexpr int32_t kDefaultTextureLevels  = 1;
 
@@ -38,7 +38,8 @@ class Fbo {
     release();
   }
 
-  /* Create the framebuffer with a default texture target attached to it, of type _internalFormat. */
+  /* Create the framebuffer with a default texture target attached to it, of type _internalFormat. 
+   * When kUseDepthBuffer is true, will also create a default depth render buffer. */
   bool setup(int32_t _width, int32_t _height, int32_t _internalFormat = kDefaultInternalFormat);
   void release();
 
@@ -46,8 +47,8 @@ class Fbo {
   bool checkStatus() const noexcept;
 
   /* Bind the framebuffer for read / write. */ 
-  void begin() noexcept;
-  void end() noexcept;
+  void begin() const noexcept;
+  void end() const noexcept;
 
   /* Create internal color texture attachments. */
   TextureHandle addColorAttachment(int32_t _internalFormat, int32_t _attachment_index) noexcept;
@@ -93,6 +94,7 @@ class Fbo {
   }
 
   /* Draw the content of the framebuffer to the screen at the given coordinates. */
+  void draw(float _x, float _y, float _w, float _h, GLbitfield _mask, GLenum _filter) const noexcept;
   void draw(float _x, float _y) const noexcept;
 
   /* Draw internal textures in a UI window for debugging. */

@@ -55,13 +55,13 @@ bool CheckInternalFormatMatchAttachment(int32_t _internalFormat, GLenum _attachm
 // }
 
 // static
-// void Draw(Fbo const& read_fbo, Rectangle src, Rectangle dst, GLbitfield mask, GLenum filter) {
+// void Draw(Fbo const& read_fbo, Rectangle dst, GLbitfield mask, GLenum filter) {
 //   GLuint const read_fbo  = read_fbo.id();
 //   GLuint const write_fbo = 0u;
 //   glBlitNamedFramebuffer(
 //     read_fbo, 
 //     write_fbo, 
-//     src.x, src.y, src.z, src.w,
+//     0, 0, read_fbo.width(), read_fbo.height(),
 //     dst.x, dst.y, dst.z, dst.w,
 //     mask, 
 //     filter
@@ -122,12 +122,12 @@ bool Fbo::checkStatus() const noexcept {
   return GL_FRAMEBUFFER_COMPLETE == glCheckNamedFramebufferStatus(fbo_, GL_FRAMEBUFFER);
 }
 
-void Fbo::begin() noexcept {
+void Fbo::begin() const noexcept {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
   // gx::Viewport( width_, height_);
 }
 
-void Fbo::end() noexcept {
+void Fbo::end() const noexcept {
   glBindFramebuffer(GL_FRAMEBUFFER, 0u);
   // gx::Viewport( old_viewport_width_, old_viewport_height_);
   CHECK_GX_ERROR();
@@ -208,12 +208,21 @@ TextureHandle Fbo::depthTexture() const noexcept {
   return texture(GL_DEPTH_STENCIL_ATTACHMENT);
 }
 
-void Fbo::draw(float _x, float _y) const noexcept {
+void Fbo::draw(float _x, float _y, float _w, float _h, GLbitfield _mask, GLenum _filter) const noexcept {
   auto const read_fbo  = fbo_;
   auto const write_fbo = 0u;
   glBlitNamedFramebuffer(
-    read_fbo, write_fbo, 
-    0, 0, width_, height_, 
+    read_fbo, 
+    write_fbo, 
+    0, 0, width_, height_,  //  Source rectangle. 
+    _x, _y, _w, _h,         //  Destination rectangle.
+    _mask, 
+    _filter
+  );
+}
+
+void Fbo::draw(float _x, float _y) const noexcept {
+  draw(
     _x, _y, width_, height_, 
     GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, 
     GL_NEAREST
