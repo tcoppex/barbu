@@ -171,6 +171,12 @@ set(TARGET_APP ${TARGET_BASENAME})
 add_executable(${TARGET_APP} ${AppSources})
 target_link_libraries(${TARGET_APP} ${TARGET_LIB})
 
+# Transform link flags from a list to a string.
+set(LinkFlags "")
+foreach(flag ${CustomLinkFlags})
+  set(LinkFlags "${LinkFlags} ${flag}")
+endforeach()
+
 # Set targets properties.
 list(APPEND Targets ${TARGET_APP} ${TARGET_LIB})
 foreach(target ${Targets})
@@ -192,6 +198,8 @@ foreach(target ${Targets})
 
   if (NOT ("${CustomLinkFlags}" MATCHES ""))
     set_target_properties(${target} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
+  else()
+    set_target_properties(${target} PROPERTIES LINK_FLAGS ${LinkFlags})
   endif()
 
   # Force Debug / Release output in the same directory (for MSVC).

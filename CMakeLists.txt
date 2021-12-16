@@ -214,11 +214,6 @@ if(USE_GCC OR USE_CLANG)
     # -Wconversion
   )
 
-  # To avoid warnings about the previous mismatched GCC / Clang options.
-  if (USE_CLANG)
-    list(APPEND CXX_FLAGS -Wno-unknown-warning-option)
-  endif()
-
   # Features.
   list(APPEND CXX_FLAGS
     -fdiagnostics-color
@@ -241,8 +236,15 @@ if(USE_GCC OR USE_CLANG)
   # Linker flags.
   list(APPEND CustomLinkFlags 
     -Wl,--gc-sections 
-    -Wl,--color-diagnostics
   )
+  
+  # To avoid warnings about the previous mismatched GCC / Clang options.
+  if (USE_CLANG)
+    list(APPEND CXX_FLAGS -Wno-unknown-warning-option)
+    list(APPEND CustomLinkFlags 
+      -Wl,--color-diagnostics
+    )
+  endif()
 
   # [improve] Used only for static library compilation.
   if(NOT OPT_BUILD_SHARED_LIBS)
