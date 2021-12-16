@@ -240,10 +240,8 @@ if(USE_GCC OR USE_CLANG)
   
   # To avoid warnings about the previous mismatched GCC / Clang options.
   if (USE_CLANG)
-    list(APPEND CXX_FLAGS -Wno-unknown-warning-option)
-    list(APPEND CustomLinkFlags 
-      -Wl,--color-diagnostics
-    )
+    list(APPEND CXX_FLAGS         -Wno-unknown-warning-option)
+    list(APPEND CustomLinkFlags   -Wl,--color-diagnostics)
   endif()
 
   # [improve] Used only for static library compilation.

@@ -195,12 +195,7 @@ foreach(target ${Targets})
 #      $<INSTALL_INTERFACE:include>
   )
   target_link_libraries(${target} ${CustomLibs})
-
-  if (NOT ("${CustomLinkFlags}" MATCHES ""))
-    set_target_properties(${target} PROPERTIES LINK_FLAGS ${CustomLinkFlags})
-  else()
-    set_target_properties(${target} PROPERTIES LINK_FLAGS ${LinkFlags})
-  endif()
+  set_target_properties(${target} PROPERTIES LINK_FLAGS ${LinkFlags})
 
   # Force Debug / Release output in the same directory (for MSVC).
   helpers_setTargetOutputDirectory(${target} ${BARBU_BINARY_DIR})
