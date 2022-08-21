@@ -3,8 +3,11 @@
 
 #include <string_view>
 
+#include "glm/vec2.hpp" //
+
 #include "core/display.h"
 #include "core/event_callbacks.h"
+
 class Events;
 
 // ----------------------------------------------------------------------------
@@ -68,13 +71,22 @@ class AbstractWindow {
   
   // Get the cursor position.
   virtual void getCursorPosition(int *x, int *y) const noexcept = 0; //
-  
-  // ---------------------
+
+  // [ Work In Progress ]
+ public:
   // [bug prone, use virtual instead]
-  inline SurfaceSize width() const { return window_w_; } //
-  inline SurfaceSize height() const { return window_h_; } //
-  inline SurfaceSize screenWidth() const { return screen_w_; } //
-  inline SurfaceSize screenHeight() const { return screen_h_; } //
+  inline SurfaceSize width()        const noexcept { return window_w_; } //
+  inline SurfaceSize height()       const noexcept { return window_h_; } //
+  inline SurfaceSize screenWidth()  const noexcept { return screen_w_; } //
+  inline SurfaceSize screenHeight() const noexcept { return screen_h_; } //
+
+  inline glm::ivec2 resolution() const noexcept {
+    return glm::ivec2( window_w_, window_h_);
+  }
+
+  inline glm::ivec2 screenResolution() const noexcept {
+    return glm::ivec2( screen_w_, screen_h_);
+  }
 
   /* Graphics API extensions utility */
 
@@ -88,8 +100,7 @@ class AbstractWindow {
 
   // Return the window manager specific extensions loaders functions.
   virtual ExtensionLoaderFuncs_t getExtensionLoaderFuncs() const noexcept = 0;
-  // ---------------------
-
+  
  protected:
   SurfaceSize window_w_;
   SurfaceSize window_h_;

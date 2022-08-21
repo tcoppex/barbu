@@ -7,12 +7,10 @@ void GenericMaterial::setup(MaterialInfo const& info) {
     color_mode_ = ColorMode::Unlit;
   }
   bDoubleSided_ = info.bDoubleSided;
-  
   color_        = info.diffuse_color;
   alpha_cutoff_ = info.alpha_cutoff;
   roughness_    = info.roughness;
   metallic_     = info.metallic;
-  
   emissive_factor_ = info.emissive_factor;
 
   auto get_texture = [](auto const& str) {
