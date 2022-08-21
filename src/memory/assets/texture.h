@@ -51,10 +51,25 @@ struct Texture : Asset<TextureParameters, Image> {
 
   void generate_mipmaps();
 
-  int32_t levels() const { return params.levels; }
-  int32_t width() const { return params.w; }
-  int32_t height() const { return params.h; }
-  int32_t internal_format() const { return params.internalFormat; } //
+  float ratio() const { 
+    return width() / static_cast<float>(height()); 
+  }
+
+  int32_t levels() const noexcept { 
+    return params.levels; 
+  }
+  
+  int32_t width() const noexcept { 
+    return params.w; 
+  }
+  
+  int32_t height() const noexcept { 
+    return params.h; 
+  }
+  
+  int32_t internal_format() const noexcept { 
+    return params.internalFormat; //
+  }
 
   uint32_t id = 0u; //
 
