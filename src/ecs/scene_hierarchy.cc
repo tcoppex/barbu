@@ -264,7 +264,7 @@ EntityHandle SceneHierarchy::importModel(std::string_view filename) {
   return nullptr;
 }
 
-void SceneHierarchy::select(EntityHandle entity, bool status) {
+void SceneHierarchy::toggleSelect(EntityHandle entity, bool status) {
   if (entity->index() < 0) {
     LOG_ERROR( "Entity index is invalid, it must have been created before scene internal update." );
     return;

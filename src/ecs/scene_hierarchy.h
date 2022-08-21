@@ -99,18 +99,24 @@ class SceneHierarchy {
 
   /* Create a model entity by importing an external model file. */
   EntityHandle importModel(std::string_view filename);
-  
-  /* Select / Deselect entities depending on status. */
-  void select(EntityHandle entity, bool status);
+
+  /* Select all entities when true, deselect otherwise. */
+  void toggleSelect(EntityHandle entity, bool status);
 
   /* Select all entities when true, deselect otherwise. */
   void toggleSelect(bool status);
+  
+  /* Select an entity. */
+  inline void select(EntityHandle entity) { toggleSelect(entity, true); }
+
+  /* Deselect an entity. */
+  inline void deselect(EntityHandle entity) { toggleSelect(entity, false); }
 
   /* Select all entities. */
-  void selectAll() { toggleSelect(true); }
+  inline void selectAll() { toggleSelect(true); }
   
   /* Deselect all entities. */
-  void deselectAll() { toggleSelect(false); }
+  inline void deselectAll() { toggleSelect(false); }
 
   /* Getters */
 
