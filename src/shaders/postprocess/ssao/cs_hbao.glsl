@@ -118,7 +118,7 @@ float computeHBAO(vec2 p, vec2 t, int centerId) {
 }
 
 //------------------------------------------------------------------------------
-// Compute view-space coordinates from the depth texture
+// Compute view-space coordinates from the depth texture.
 //------------------------------------------------------------------------------
 vec2 fetchVSfromDepth(in ivec2 xy, in vec2 sel) {
   const vec2 uv = (vec2(xy) + 0.5f) * uAOResolution.zw;
@@ -137,7 +137,7 @@ vec2 fetchYZ(int x, int y) {
 }
 
 //------------------------------------------------------------------------------
-// Compute HBAO for the left and right directions
+// Compute HBAO for the left and right directions.
 //------------------------------------------------------------------------------
 subroutine(HBAOFunction)
 void HBAO_X(ivec3 threadIdx, ivec3 blockIdx) {
@@ -146,6 +146,8 @@ void HBAO_X(ivec3 threadIdx, ivec3 blockIdx) {
   const int apronStart = tileStart - KERNEL_RADIUS;
   const int apronEnd   = tileStart + KERNEL_RADIUS;
 
+  // ---------------------------------
+  
   const int x = apronStart + threadIdx.x;
   const int y = blockIdx.y;
 
@@ -154,7 +156,9 @@ void HBAO_X(ivec3 threadIdx, ivec3 blockIdx) {
   SMEM(threadIdx.x) = fetchXZ(x, y);
   SMEM(next_id)     = fetchXZ(x + 2*KERNEL_RADIUS, y);
 
-  /*-------*/ barrier(); /*------------*/
+  barrier();
+
+  // ---------------------------------
 
   const ivec2 threadPos = ivec2(tileStart + threadIdx.x, blockIdx.y);  
   const int tileEndClamped = min(tileEnd, int(uAOResolution.x));
@@ -185,16 +189,19 @@ void HBAO_Y(ivec3 threadIdx, ivec3 blockIdx) {
   const int tileEnd    = tileStart + HBAO_TILE_WIDTH;
   const int apronStart = tileStart - KERNEL_RADIUS;
   const int apronEnd   = tileStart + KERNEL_RADIUS;
-
   const int x = blockIdx.y;
   const int y = apronStart + threadIdx.x;
 
-  // Initialize shared memory tile.
+  // ---------------------------------
+
+  // Initializes shared memory tile.
   const int next_id = min( threadIdx.x + 2*KERNEL_RADIUS, SMEM_SIZE-1); 
   SMEM(threadIdx.x) = fetchYZ(x, y);
   SMEM(next_id)     = fetchYZ(x, y + 2*KERNEL_RADIUS);
 
-  /*-------*/ barrier(); /*------------*/
+  barrier();
+
+  // ---------------------------------
 
   const ivec2 threadPos = ivec2(blockIdx.y, tileStart + threadIdx.x);
   const int tileEndClamped = min(tileEnd, int(uAOResolution.y));
