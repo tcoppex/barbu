@@ -6,8 +6,6 @@
 #include <cstdlib>
 #include <string_view>
 
-#include "glm/vec2.hpp"
-
 #include "core/window.h"
 #include "core/camera.h"
 #include "core/renderer.h"
@@ -25,6 +23,9 @@ class App : public EventCallbacks {
   struct Parameters_t {
     bool regulate_fps = true;
     bool show_ui      = true;
+
+    inline void toggleFPSControl() noexcept { regulate_fps ^= true; }
+    inline void toggleUI() noexcept { show_ui ^= true; }
   };
 
  public:
@@ -61,29 +62,16 @@ class App : public EventCallbacks {
    * Prefer the destructor. */
   virtual void finalize() {}
 
-  // -------
+  //virtual void help() {}
+  
+ protected:
+  inline WindowHandle     getWindow()         noexcept { return window_; }
 
-  /* Returns core app parameters. */
-  inline Parameters_t& params() noexcept {
-    return params_;
-  }
-
-  /* Display / Hide UI */
-  inline void toggleUI() noexcept {
-    params_.show_ui ^= true;
-  }
-
-  /* [temporary] Return the resolution of the current window. */
-  inline glm::ivec2 resolution() const {
-    return glm::ivec2( window_->width(), window_->height()); //
-  }
-
-  /* [temporary] */
-  Renderer::Parameters_t& getRendererParameters() {
-    return renderer_.params();
-  }
-
-  // -------
+  inline Renderer&        getRenderer()       noexcept { return renderer_; }
+  inline Camera&          getDefaultCamera()  noexcept { return camera_; }
+  inline SceneHierarchy&  getSceneHierarchy() noexcept { return scene_; }
+  
+  inline Parameters_t&    params()            noexcept { return params_; }
 
  private:
   /* Initialize the core app. */
@@ -91,6 +79,8 @@ class App : public EventCallbacks {
 
   /* Post user initialization */
   void postsetup();
+
+  // ------------------------------------------------
 
  public:
   std::shared_ptr<views::Main> ui_mainview_;    //<! [PUBLIC] UI View.

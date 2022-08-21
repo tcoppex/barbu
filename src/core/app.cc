@@ -48,7 +48,7 @@ int32_t App::run(std::string_view title) {
 
   // Prepare a new frame for the mainloop, returns true when it continues.
   auto &events{ Events::Get() };
-  auto const nextFrame{ [this, &events]() {
+  auto const nextFrame{[this, &events]() {
     // Update internal data for the next frame.
     events.prepareNextFrame();
 
@@ -68,7 +68,7 @@ int32_t App::run(std::string_view title) {
     ui_controller_.update(window_); //
 
     // Frame magick.
-    renderer_.frame( scene_, camera_,
+    renderer_.frame(scene_, camera_,
       [this]() { update(); },
       [this]() { draw(); }
     );
@@ -107,7 +107,7 @@ bool App::presetup(std::string_view title) {
   // Window and Graphics.
   {
     // Create the main window surface.
-    if (started_ = window_->create( Display(), title); !started_) {
+    if (started_ = window_->create(Display(), title); !started_) {
       LOG_ERROR( "The window creation failed (／。＼)" );
       return false;
     }
@@ -151,8 +151,15 @@ bool App::presetup(std::string_view title) {
 void App::postsetup() {
   // Check camera settings.
   if (!camera_.initialized()) {
-    LOG_WARNING( "The camera's projection has not been initialized (￣ε￣). Using the default one instead." );
-    camera_.setDefault();
+    LOG_WARNING( "The camera has not been initialized properly, a default one will be used instead." );
+    if (window_) {
+      camera_.setDefault(window_->resolution());
+    } else {
+      camera_.setDefault();
+    }
+  }
+  if (!camera_.controller()) {
+    LOG_WARNING( "The camera's view controller has not been set." );
   }
   camera_.rebuild();
 
@@ -160,7 +167,7 @@ void App::postsetup() {
   GlobalClock::Start();
 
   // Reindex imported objects.
-  scene_.update( 0.0f, camera_); //
+  scene_.update(0.0f, camera_); //
 }
 
 // ----------------------------------------------------------------------------
