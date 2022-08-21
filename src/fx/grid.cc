@@ -32,14 +32,18 @@ void Grid::update(float const dt, Camera const& camera) {
     return;
   }
 
+  if (!camera.controller()) {
+    return;
+  }
+
+  // SIDE-VIEW grid rendering.
+  auto const* abc = (ArcBallController const*)camera.controller(); //
+
   float constexpr epsX = 0.075f;
   float constexpr epsY = 0.150f;
 
   auto const up    = glm::vec3(0.0, 1.0, 0.0);
   auto const front = camera.direction();
-
-  // SIDE-VIEW grid rendering.
-  auto const* abc = (ArcBallController const*)camera.controller(); //
 
   // Blend the grid only when centered on the y-axis.
   auto const dp = glm::abs(glm::dot(front, up));
