@@ -12,6 +12,7 @@ layout(location = 3) in vec4 inTangentWS;
 
 // Outputs.
 layout(location = 0) out vec4 fragColor;
+layout(location = 1) out vec4 fragExtra;
 
 // ----------------------------------------------------------------------------
 
@@ -219,13 +220,24 @@ vec4 colorize(in int color_mode, in FragInfo_t frag, in Material_t mat) {
 
 // ----------------------------------------------------------------------------
 
+// [Work In Progress]
+vec4 packExtra(in Material_t material) {
+  vec4 extra = vec4(0.0, 0.0, 0.0, 1.0);
+
+  // Emissive Mask.
+  bool emissive_mask = any(greaterThan(material.emissive, vec3(0.0))); 
+  extra.rgb = material.emissive;
+  extra.a = float(emissive_mask);
+
+  return extra;
+}
+
 void main() {
   FragInfo_t fraginfo = get_worldspace_fraginfo();
   Material_t material = get_material(fraginfo);
 
-  fragColor = colorize( uColorMode, fraginfo, material);
-
-  //fragColor.rgb = vec3( material.BRDF, 0.0 );
+  fragColor = colorize(uColorMode, fraginfo, material);
+  fragExtra = packExtra(material);
 }
 
 // ----------------------------------------------------------------------------
