@@ -65,7 +65,7 @@ class HBAO {
   /* Run Blur AO kernels. */
   void computeBlurAO();
 
-  std::array<GLuint, kNumTextureName> textures_; //
+  std::array<GLuint, kNumTextureName> textures_; // [ todo : create them as assets ]
 
   struct {
     ProgramHandle ssao = nullptr;
@@ -94,9 +94,6 @@ class HBAO {
  private:
   HBAO(HBAO const&) = delete;
   HBAO(HBAO&&) = delete;
-
- public:
-  friend class Postprocess; // [for debug display only]
 };
 
 // ----------------------------------------------------------------------------
