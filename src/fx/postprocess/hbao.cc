@@ -96,12 +96,20 @@ void HBAO::updateParameters(Camera const& camera) {
   P.blur_depth_threshold        = 2.0f * sqrt_ln_two * (scene_scale / ui_params_.blur_sharpness);
   P.blur_falloff                = inv_ln_two / (2.0f * blur_sigma * blur_sigma);
 
+  // Debug UI.
   if constexpr(kShowUI) {
     ImGui::Begin("HBAO", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
       ImGui::DragFloat("radius",         &ui_params_.radius,         0.0005f, 0.001f, 0.5f);
       ImGui::DragFloat("Blur radius",    &ui_params_.blur_radius,    0.05f, 0.01f, 16.0f);
       ImGui::DragFloat("Blur sharpness", &ui_params_.blur_sharpness, 0.1f, 0.01f, 64.0f);
       ImGui::DragFloat("Angle bias",     &ui_params_.angle_bias,     0.01f, 0.01f, 1.14f);
+
+      // Display textures.
+      float const width = 320.0f;
+      float const height = params_.full_resolution.y * width / params_.full_resolution.x;
+      for (auto &tex_id : textures_) {
+        imgui_utils::display_texture(tex_id, width, height);
+      }
     ImGui::End();
   }
 }
