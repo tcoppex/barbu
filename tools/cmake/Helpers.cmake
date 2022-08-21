@@ -61,7 +61,7 @@ function(helpers_setDefaultBuildType DEFAULT_BUILD_TYPE)
     #set(DEFAULT_BUILD_TYPE "Debug")
   endif()
   if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-    message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none was specified.")
+    message(STATUS "Setting build type to '${DEFAULT_BUILD_TYPE}' as none were specified.")
     set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE
         STRING "Choose the type of build." FORCE)
     # Set the possible values of build type for cmake-gui
@@ -119,9 +119,8 @@ endfunction()
 # matched the required minimum version.
 function(helpers_checkCompilerVersion COMPILER_ID MIN_VERSION_REQUIRED)
   # Check we use the same compiler family for both C and CXX.
-
-  if(  (CMAKE_C_COMPILER_ID MATCHES ${COMPILER_ID}) 
-   AND (CMAKE_CXX_COMPILER_ID MATCHES ${COMPILER_ID}))
+  if(   (CMAKE_C_COMPILER_ID MATCHES COMPILER_ID) 
+    AND (CMAKE_CXX_COMPILER_ID MATCHES COMPILER_ID))
     # C version
     if(CMAKE_C_COMPILER_VERSION VERSION_LESS MIN_VERSION_REQUIRED)
       message(
@@ -129,7 +128,6 @@ function(helpers_checkCompilerVersion COMPILER_ID MIN_VERSION_REQUIRED)
         "Detected C compiler ${COMPILER_ID} ${CMAKE_C_COMPILER_VERSION} < ${MIN_VERSION_REQUIRED}."
       )
     endif()
-
     # CXX version
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS MIN_VERSION_REQUIRED)
       message(
@@ -137,7 +135,7 @@ function(helpers_checkCompilerVersion COMPILER_ID MIN_VERSION_REQUIRED)
         "Detected CXX compiler ${COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} < ${MIN_VERSION_REQUIRED}."
       )
     endif()
-  else()
+  elseif()
     message(
       FATAL_ERROR
       "Detected C and CXX compilers does not match ID ${COMPILER_ID}."
