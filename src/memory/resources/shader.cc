@@ -19,19 +19,19 @@ namespace {
 // Detect the type of shader file by comparing the file's basename to a
 // prefix or suffix pattern.
 ShaderType GetShaderTypeFromName(std::string const& basename) {
-  std::array< std::string[2], kNumShaderType> const tokens{{ 
+  std::array< std::string[2], kNumShaderType> const tokens{{
     {"vert", "vs"},
     {"tesc", "tcs"},
     {"tese", "tes"},
     {"geom", "gs"},
     {"frag", "fs"},
-    {"comp", "cs"}, 
+    {"comp", "cs"},
   }};
 
   char s[64];
   for (int i = 0; i < kNumShaderType; ++i) {
     auto const& token = tokens[i];
-    sprintf(s, "((%s|%s)_.+\\.glsl)|(.+\\.(%s|%s)(\\.glsl)?)", 
+    sprintf(s, "((%s|%s)_.+\\.glsl)|(.+\\.(%s|%s)(\\.glsl)?)",
       token[0].c_str(), token[1].c_str(), token[0].c_str(), token[1].c_str()
     );
 
