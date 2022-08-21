@@ -28,6 +28,7 @@ glClearNamedFramebufferfi
 glClearNamedFramebufferfv
 glClearNamedFramebufferiv
 glClearNamedFramebufferuiv
+glColorMaski
 glCompileShader
 glCopyImageSubData
 glCopyNamedBufferSubData
@@ -58,6 +59,7 @@ glDispatchCompute
 glDispatchComputeIndirect
 glDrawArraysIndirect
 glDrawArraysInstanced
+glDrawBuffers
 glDrawElementsInstanced
 glDrawTransformFeedback
 glDrawTransformFeedbackStream
