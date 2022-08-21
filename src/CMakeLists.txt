@@ -49,6 +49,7 @@ list(APPEND Sources
   utils/gizmo.cc
   utils/raw_mesh_file.cc
 
+  ui/imgui_wrapper.cc
   ui/ui_controller.cc
   ui/views/Main.cc
   ui/views/RendererView.cc
@@ -195,7 +196,9 @@ foreach(target ${Targets})
 #      $<INSTALL_INTERFACE:include>
   )
   target_link_libraries(${target} ${CustomLibs})
-  set_target_properties(${target} PROPERTIES LINK_FLAGS ${LinkFlags})
+  
+  # [prefers LINK_OPTION with a list on Cmake 3.13+]
+  set_target_properties(${target} PROPERTIES LINK_FLAGS ${LinkFlagsString})
 
   # Force Debug / Release output in the same directory (for MSVC).
   helpers_setTargetOutputDirectory(${target} ${BARBU_BINARY_DIR})
