@@ -118,6 +118,7 @@ class Fbo {
 
   std::vector<TextureHandle> textures_;               //< Internal buffer textures.
   std::vector<GLenum> attachments_;                   //< LUTs for textures attachments.
+  std::vector<GLenum> colorAttachments_;              //< List of color attachments.
 };
 
 // ----------------------------------------------------------------------------

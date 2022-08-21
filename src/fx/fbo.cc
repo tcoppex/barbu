@@ -12,31 +12,31 @@ namespace {
 /* [TODO] Return true when the internal format match the attachment. */
 static
 bool CheckInternalFormatMatchAttachment(int32_t _internalFormat, GLenum _attachment) {
-  switch (_attachment) {
-    case GL_DEPTH:
-      switch (_internalFormat) {
-        default:
-          return true;
-      }
-    break;
+  // switch (_attachment) {
+  //   case GL_DEPTH:
+  //     switch (_internalFormat) {
+  //       default:
+  //         return true;
+  //     }
+  //   break;
 
-    case GL_STENCIL:
-      switch (_internalFormat) {
-        default:
-          return true;
-      }
-    break;
+  //   case GL_STENCIL:
+  //     switch (_internalFormat) {
+  //       default:
+  //         return true;
+  //     }
+  //   break;
 
-    case GL_DEPTH_STENCIL:
-      switch (_internalFormat) {
-        default:
-          return true;
-      }    
-    break;
+  //   case GL_DEPTH_STENCIL:
+  //     switch (_internalFormat) {
+  //       default:
+  //         return true;
+  //     }    
+  //   break;
 
-    default:
-      return true;
-  };
+  //   default:
+  //     return true;
+  // };
   return true;
 }
 
@@ -79,7 +79,7 @@ bool Fbo::setup(int32_t _width, int32_t _height, int32_t _internalFormat) {
   width_  = _width;
   height_ = _height;
 
-  // Create the Framebuffer if it does not exists.
+  // Creates the Framebuffer if it does not exists.
   if (!isInitialized()) {
     glCreateFramebuffers(1, &fbo_);
     if (!isInitialized()) { 
@@ -88,18 +88,15 @@ bool Fbo::setup(int32_t _width, int32_t _height, int32_t _internalFormat) {
   }
   textures_.clear();
   attachments_.clear();
+  colorAttachments_.clear();
 
-  // Attach a renderbuffer when needed.
+  // Attaches a renderbuffer when needed.
   if (kUseDepthBuffer) {
     addRenderbufferAttachment(kDefaultDepthFormat, GL_DEPTH_ATTACHMENT);
   }
 
-  // Create a default color attachment.
+  // Creates a default color attachment.
   addColorAttachment(_internalFormat);
-
-  // ---------------------------
-  // glNamedFramebufferDrawBuffers(fbo_, attachments_.size(), attachments_.data());
-  // ---------------------------
 
   return checkStatus();
 }
@@ -124,17 +121,30 @@ bool Fbo::checkStatus() const noexcept {
 
 void Fbo::begin() const noexcept {
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
+  
+  // glNamedFramebufferDrawBuffers(fbo_, colorAttachments_.size(), colorAttachments_.data());
+  glDrawBuffers(colorAttachments_.size(), colorAttachments_.data());
+
   // gx::Viewport( width_, height_);
 }
 
 void Fbo::end() const noexcept {
   glBindFramebuffer(GL_FRAMEBUFFER, 0u);
   // gx::Viewport( old_viewport_width_, old_viewport_height_);
+
   CHECK_GX_ERROR();
 }
 
 TextureHandle Fbo::addColorAttachment(int32_t _internalFormat, int32_t _attachment_index) noexcept {
-  return addAttachment(_internalFormat, GL_COLOR_ATTACHMENT0 + _attachment_index);
+  auto const attachment = GL_COLOR_ATTACHMENT0 + _attachment_index;
+  auto tex = addAttachment(_internalFormat, attachment);
+
+  // Automatically adds (all) color buffers to outputs.
+  if (tex) {
+    colorAttachments_.push_back(attachment);
+  }
+
+  return tex;
 }
 
 TextureHandle Fbo::addDepthAttachment(int32_t _internalFormat) noexcept {
@@ -153,12 +163,12 @@ void Fbo::addRenderbufferAttachment(int32_t _internalFormat, GLenum _attachment)
   assert(isInitialized());
   assert(CheckInternalFormatMatchAttachment(_internalFormat, _attachment));
 
-  // Allocate the Renderbuffer if needed.
+  // Allocates the Renderbuffer if needed.
   if (!hasRenderbuffer()) {
     glCreateRenderbuffers(1, &renderbuffer_);
   }
 
-  // Create the depth buffer attachement.
+  // Creates the depth buffer attachement.
   glNamedRenderbufferStorageMultisample(renderbuffer_, kDefaultMSAANumSamples, _internalFormat, width_, height_);
   
   glNamedFramebufferRenderbuffer(fbo_, _attachment, GL_RENDERBUFFER, renderbuffer_);
@@ -231,24 +241,21 @@ void Fbo::draw(float _x, float _y) const noexcept {
 
 void Fbo::debugDraw(std::string_view const& _label) const noexcept {
   std::string const window_id{ 
-    _label.empty() ? std::string("FBO textures ") + std::to_string((uintptr_t)this)
-                   : _label
+    _label.empty() ? std::string("FBO textures ") : _label
   };
 
   ImGui::Begin( window_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize);
   {
-    auto const render_tex = [](GLuint tex) {
-      auto const s = 320;
-      auto id = (void*)(intptr_t)(tex);
-      ImGui::Image( id, ImVec2(s, 3*s/4), ImVec2(0, 0), ImVec2(1,-1));
-    };
     for (auto &tex : textures_) {
-      render_tex(tex->id);
+      float const width  = 320.0f; 
+      float const height = width / tex->ratio();
+      imgui_utils::display_texture(tex->id, width, height);
     }
   }
   ImGui::End();
 }
 
+/* -------------------------------------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
 TextureHandle Fbo::addAttachment(int32_t _internalFormat, GLenum _attachment) noexcept {
@@ -269,10 +276,9 @@ TextureHandle Fbo::addAttachment(int32_t _internalFormat, GLenum _attachment) no
   if (tex) {
     textures_.push_back(tex);
     attachments_.push_back(_attachment);
-
-    glNamedFramebufferTexture(fbo_, _attachment, tex->id, 0);
+    glNamedFramebufferTexture(fbo_, _attachment, tex->id, 0 /*level*/);
+    CHECK_GX_ERROR();
   }
-  CHECK_GX_ERROR();
 
   return tex;
 }
