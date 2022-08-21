@@ -59,10 +59,10 @@ We will first create a build directory then generate the CMake cache depending o
 mkdir BUILDs && cd BUILDs
 ```
 
-On **Unix**, using Makefile (*replace `$NUM_THREADS` by the number of threads you want to use*) :
+On **Unix**, using Makefile :
 ```bash
 cmake .. -DCMAKE_BUILD_TYPE=Release
-cmake --build . -- -j $NUM_THREADS
+cmake --build . -- -j `nproc`
 ```
 
 On **Windows**, using MSVC 15 for x64:
