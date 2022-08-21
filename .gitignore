@@ -1,10 +1,11 @@
-src/core/_backend/
-src/core/impl/opengl/_*
-src/_wip/
+.travis.yml
 _docs_/
+android
 assets/
 bin/
 build/
 BUILDs/
 CMakeLists.txt.user
-.travis.yml
+src/_wip/
+src/core/_backend/
+src/core/impl/opengl/_*
