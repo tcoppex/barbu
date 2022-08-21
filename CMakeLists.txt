@@ -4,8 +4,6 @@
 # -----------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.12.0)
 
-project(barbu VERSION 0.2 LANGUAGES CXX C)
-
 # -----------------------------------------------------------------------------
 # CMake policies.
 # -----------------------------------------------------------------------------
@@ -26,7 +24,13 @@ if(POLICY CMP0092)
 endif()
 
 # -----------------------------------------------------------------------------
-# Project options.
+# Project.
+# -----------------------------------------------------------------------------
+
+project(barbu VERSION 0.2 LANGUAGES CXX C)
+
+# -----------------------------------------------------------------------------
+# Options.
 # -----------------------------------------------------------------------------
 
 # GLEW is optional and not provided, by default extensions are loaded manually.
@@ -38,11 +42,13 @@ option(OPT_ENABLE_CLANG_TIDY        "Use clang-tidy ?"                      OFF)
 # Concurrency is used to speedup skinning animations and some loops.
 option(OPT_USE_OPENMP               "Use OpenMP for pragma concurrency ?"   OFF)
 
+# Enable RTTI.
+option(OPT_ENABLE_RTTI              "Use RTTI ?"                            OFF)
+
 # Verbose logs are disabled by default.
 option(OPT_ENABLE_DEBUG_LOG         "Enable complementary debug log ?"      OFF)
 
-# -----------------------------------------------------------------------------
-
+# Choose how to compile the libraries.
 option(OPT_BUILD_SHARED_LIBS        "Compile libraries as shared ?"         ON)
 
 if (OPT_BUILD_SHARED_LIBS)
@@ -81,12 +87,15 @@ list(APPEND CMAKE_MODULE_PATH       ${BARBU_TOOLS_DIR}/cmake)
 # Custom CMake helpers functions.
 include(Helpers)
 
+# -----------------------------------------------------------------------------
 # Determine the host's total number of processors.
+# -----------------------------------------------------------------------------
+
 include(ProcessorCount)
 ProcessorCount(BARBU_NPROC_MAX)
 
 # -----------------------------------------------------------------------------
-# CMake general options.
+# CMake settings.
 # -----------------------------------------------------------------------------
 
 set(CMAKE_VERBOSE_MAKEFILE          OFF)
@@ -125,6 +134,7 @@ helpers_setDefaultBuildType("Debug")
 # Determines if the build is flagged for full debug mode.
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
   set(DEBUG TRUE)
+  message(STATUS "DEBUG build.")
 else()
   set(DEBUG FALSE)
 endif()
@@ -198,7 +208,7 @@ if(USE_GCC OR USE_CLANG)
     -Wcast-align
     -Wlogical-op
     -Wnull-dereference
-    -Wshadow
+    # -Wshadow
     -Wmisleading-indentation
     -Wformat=2 -Wformat-truncation -Wformat-overflow
     -Wduplicated-cond
@@ -206,7 +216,7 @@ if(USE_GCC OR USE_CLANG)
     -Wno-unused-function 
     -Wno-unused-parameter
     -Wno-missing-field-initializers
-    -Wzero-as-null-pointer-constant
+    # -Wzero-as-null-pointer-constant
     -Wdisabled-optimization
     -Wvector-operation-performance
     # -Wold-style-cast
@@ -214,40 +224,54 @@ if(USE_GCC OR USE_CLANG)
     # -Wconversion
   )
 
+  # To avoid warnings about the previous mismatched GCC / Clang options.
+  if (USE_CLANG)
+    list(APPEND CXX_FLAGS         -Wno-unknown-warning-option)
+  endif()
+
   # Features.
-  list(APPEND CXX_FLAGS
-    -fdiagnostics-color
-    # -fvisibility=hidden 
+  list(APPEND CXX_FLAGS 
     -fno-strict-aliasing 
     -fno-builtin-memcmp
     -fno-common
     -ffunction-sections
     -fdata-sections
-    -fno-exceptions
-    -fno-rtti
+    # -fno-exceptions
     # -ftree-loop-distribution
     # -funroll-loops
   )
+  
+  # Force ANSI colored outputs.
+  if(USE_GCC)
+    add_compile_options(-fdiagnostics-color=always)
+  elseif (USE_CLANG)
+    add_compile_options(-fcolor-diagnostics)
+  endif()
+
+  if(NOT OPT_ENABLE_RTTI)
+    list(APPEND CXX_FLAGS -fno-rtti)
+  endif()
 
   list(APPEND CXX_FLAGS_DEBUG           -O0 -g3 -Wundef) #-Wconversion)
   list(APPEND CXX_FLAGS_RELEASE         -O2 -msse4.1)
-  list(APPEND CXX_FLAGS_RELWITHDEBINFO  ${CXX_FLAGS_RELEASE} -g)
+  list(APPEND CXX_FLAGS_RELWITHDEBINFO  ${CXX_FLAGS_RELEASE} -g1)
   
   # Linker flags.
   list(APPEND CustomLinkFlags 
     -Wl,--gc-sections 
   )
-  
-  # To avoid warnings about the previous mismatched GCC / Clang options.
-  if (USE_CLANG)
-    list(APPEND CXX_FLAGS         -Wno-unknown-warning-option)
-    list(APPEND CustomLinkFlags   -Wl,--color-diagnostics)
-  endif()
 
   # [improve] Used only for static library compilation.
   if(NOT OPT_BUILD_SHARED_LIBS)
     list(APPEND CXX_FLAGS         -fvisibility=hidden)
     list(APPEND CustomLinkFlags   -Wl,--no-undefined)
+  endif()
+
+  # Definitions.
+  if(NOT DEBUG)
+    list(APPEND CustomDefinitions 
+      -DNDEBUG=1
+    )
   endif()
 
   # For C++17 filesystem support, might became depecrated.
@@ -263,10 +287,14 @@ elseif(USE_MSVC)
     /w14555   # expression with no effect or side-effect.
     /wd4100   # keep unused parameters.
     /MP       # build with multiple process.
-    #/EHsc-    # no exception.
-    /GR-      # disable RTTI.
+    # /EHsc-    # no exception.
     /permissive-
   )
+  
+  if(NOT OPT_ENABLE_RTTI)
+    list(APPEND CXX_FLAGS /GR-)
+  endif()
+
   list(APPEND CXX_FLAGS_DEBUG           /Zi)
   list(APPEND CXX_FLAGS_RELEASE         /Ox /INCREMENTAL:NO /DEBUG:NONE /DNDEBUG)
   list(APPEND CXX_FLAGS_RELWITHDEBINFO  ${CXX_FLAGS_RELEASE} /Ox /Zi)
@@ -293,6 +321,7 @@ endif()
 
 # Defines LIBM_LIBRARIES for mathematics, if needed.
 helpers_findLibM()
+list(APPEND CustomLibs ${LIBM_LIBRARIES})
 
 if(OS_ANDROID)
 
@@ -485,9 +514,6 @@ list(APPEND Thirdparties
 
 if(OS_LINUX)
   include(FindPkgConfig)
-  if(NOT DEBUG)
-    list(APPEND CustomDefinitions NDEBUG)
-  endif()
 
   # On GNU / Linux, we generate an app shortcut to be executed using the WM.
   helpers_generateUnixShortcut(${BARBU_BINARY_DIR})
@@ -529,12 +555,18 @@ list(APPEND CustomDefinitions
   -DASSETS_DIR="${BARBU_ASSETS_DIR}"
   -DBARBU_NPROC_MAX=${BARBU_NPROC_MAX}
 )
-
 if(OPT_ENABLE_DEBUG_LOG)
   list(APPEND CustomDefinitions 
     -DBARBU_ENABLE_DEBUG_LOG=1
   )
 endif()
+
+# Transform the linker flags from a list to a string to be accepted by set_target_properties LINK_FLAG.
+# On CMake 3.13+, we could use LINK_OPTIONS instead.
+set(LinkFlagsString "")
+foreach(flag ${CustomLinkFlags})
+  set(LinkFlagsString "${LinkFlagsString} ${flag}")
+endforeach()
 
 # -----------------------------------------------------------------------------
 # Frameworks library.
