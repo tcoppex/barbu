@@ -121,6 +121,9 @@ void ClearColor(int32_t r, int32_t g, int32_t b, bool bGammaCorrect = false);
 
 void CullFace(Face mode);
 
+void ColorMask(bool r, bool g, bool b, bool a, int32_t buffer_id = 0);
+void ColorMask(bool state, int32_t buffer_id = 0);
+
 void DepthMask(bool state);
 
 void LineWidth(float width); //
@@ -190,6 +193,9 @@ void DispatchCompute(int x = 1, int y = 1, int z = 1) {
 bool GetB(uint32_t pname);
 int32_t GetI(uint32_t pname);
 float GetF(uint32_t pname);
+
+//int32_t GetMaxFramebufferWidth() { return gx::GetI(GL_MAX_FRAMEBUFFER_WIDTH); }
+//int32_t GetMaxFramebufferHeight() { return gx::GetI(GL_MAX_FRAMEBUFFER_HEIGHT); }
 
 // Error ----------------------------------------------------------------------
 

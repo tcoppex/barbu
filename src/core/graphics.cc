@@ -322,13 +322,13 @@ void BlendFunc(BlendFactor src_factor, BlendFactor dst_factor) {
 
 void ClearColor(glm::vec4 const& rgba, bool bGammaCorrect) {
   auto c{ ([&](auto const& rgb) { 
-    return bGammaCorrect ? glm::pow( rgb, kGammaRGBFactor) : rgb; 
-  })(glm::vec3(rgba)) };
+    return bGammaCorrect ? glm::pow(rgb, kGammaRGBFactor) : rgb; 
+  })(glm::vec3(rgba))};
   glClearColor(c.x, c.y, c.z, rgba.w);
 }
 
 void ClearColor(glm::vec3 const& rgb, bool bGammaCorrect) {
-  ClearColor( glm::vec4(rgb, 1.0f), bGammaCorrect);
+  ClearColor(glm::vec4(rgb, 1.0f), bGammaCorrect);
 }
 
 void ClearColor(float r, float g, float b, float a, bool bGammaCorrect) {
@@ -336,20 +336,20 @@ void ClearColor(float r, float g, float b, float a, bool bGammaCorrect) {
 }
 
 void ClearColor(float r, float g, float b, bool bGammaCorrect) {
-  ClearColor(glm::vec4(r, g, b, 1.0f), bGammaCorrect);
+  ClearColor(glm::vec4(r, g, b, 0.0f), bGammaCorrect);
 }
 
 void ClearColor(float c, bool bGammaCorrect) {
-  ClearColor( glm::vec3(c), bGammaCorrect);
+  ClearColor(glm::vec3(c), bGammaCorrect);
 }
 
 void ClearColor(int32_t r, int32_t g, int32_t b, int32_t a, bool bGammaCorrect) {
   float constexpr s{ 1.0f / 255.0f };
-  ClearColor( (r & 0xff) * s, (g & 0xff) * s, (b & 0xff) * s, (a & 0xff) * s, bGammaCorrect);
+  ClearColor((r & 0xff) * s, (g & 0xff) * s, (b & 0xff) * s, (a & 0xff) * s, bGammaCorrect);
 }
 
 void ClearColor(int32_t r, int32_t g, int32_t b, bool bGammaCorrect) {
-  ClearColor( r, g, b, 0xff, bGammaCorrect);
+  ClearColor(r, g, b, 0xff, bGammaCorrect);
 }
 
 // void ClearColor(int32_t c, bool bGammaCorrect) {
@@ -360,6 +360,16 @@ void CullFace(Face mode) {
 #ifndef GL_ES_VERSION_2_0  
   glCullFace( gl_facemode[mode] );
 #endif // GL_ES_VERSION_2_0
+}
+
+
+void ColorMask(bool r, bool g, bool b, bool a, int32_t buffer_id) {
+  auto m = [](bool x) { return x ? GL_TRUE : GL_FALSE; };
+  glColorMaski(buffer_id, m(r), m(g), m(b), m(a));
+}
+
+void ColorMask(bool state, int32_t buffer_id) {
+  ColorMask(state, state, state, state, buffer_id);
 }
 
 void DepthMask(bool state) {
