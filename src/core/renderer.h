@@ -17,6 +17,8 @@ class UIView;
 // ----------------------------------------------------------------------------
 
 // Bitflags to filter which pass to render.
+// Note : The skybox needs to be tonemap, but probably not postprocessed like the
+//        rest of the scene.
 enum RendererPassBit : uint32_t {
   SCENE_EVERYTHING        = 0x7fffffff,
   SCENE_NONE              = 0,
@@ -47,6 +49,10 @@ class Renderer {
     bool enable_particle    = false;
     bool enable_postprocess = true;
 
+    inline void toggleSkybox()    noexcept { show_skybox ^= true; } //
+    inline void toggleGrid()      noexcept { show_grid ^= true; } //
+    inline void toggleWireframe() noexcept { show_wireframe ^= true; } //
+
     std::shared_ptr<UIView> sub_view = nullptr; //
   };
 
@@ -62,7 +68,7 @@ class Renderer {
   void init();
   void frame(SceneHierarchy &scene, Camera &camera, UpdateCallback_t update_cb, DrawCallback_t draw_cb);
 
-  inline Parameters_t& params() { return params_; }
+  inline Parameters_t& params() noexcept { return params_; }
 
   // Getters to inner subsystems [tmp ?]
   inline Skybox&        skybox()    noexcept { return skybox_; }

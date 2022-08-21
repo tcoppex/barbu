@@ -87,24 +87,26 @@ void Renderer::draw(SceneHierarchy &scene, Camera &camera) {
 
   // "Deferred"-pass, post-process the solid objects.
   postprocess_.begin();
-  drawPass( RendererPassBit::PASS_DEFERRED, scene, camera);
+    // Warning : The PostProcess fbo outputs to 2 ColorBuffer, so materials that
+    //           does not handle this should set their colormask accordingly. 
+    drawPass(RendererPassBit::PASS_DEFERRED, scene, camera);
   postprocess_.end(camera);
 
   // Forward-pass, render the special effects.
-  drawPass( RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
+  drawPass(RendererPassBit::PASS_FORWARD, scene, camera); // [to tonemap !]
 
   // [ should have a final composition pass here to tonemap the forwards ].
 }
 
 void Renderer::drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Camera const& camera) {
   // Reset default states.
-  gx::PolygonMode( gx::Face::FrontAndBack, gx::RenderMode::Fill);
-  gx::Disable( gx::State::Blend );
-  gx::Enable( gx::State::DepthTest );
-  gx::DepthMask( true );
-  gx::Enable( gx::State::CullFace );
-  gx::CullFace( gx::Face::Back );
-  gx::Enable( gx::State::CubeMapSeamless );
+  gx::PolygonMode(gx::Face::FrontAndBack, gx::RenderMode::Fill);
+  gx::Disable(gx::State::Blend);
+  gx::Enable(gx::State::DepthTest);
+  gx::DepthMask(true);
+  gx::Enable(gx::State::CullFace);
+  gx::CullFace(gx::Face::Back);
+  gx::Enable(gx::State::CubeMapSeamless);
 
   // -------------------------
   // -- SKYBOX
@@ -113,19 +115,22 @@ void Renderer::drawPass(RendererPassBit bitmask, SceneHierarchy const& scene, Ca
   {
     // We could disable depth testing here when the skybox is always the
     // first rendered object, which is supposed to, but it depends on the pass.
-    gx::Disable( gx::State::DepthTest );
-    gx::CullFace( gx::Face::Front );
-    //gx::Enable( gx::State::CubeMapSeamless );
-    gx::DepthMask( false );
+    gx::Disable(gx::State::DepthTest);
+    gx::CullFace(gx::Face::Front);
+    gx::Enable(gx::State::CubeMapSeamless);
+    gx::DepthMask(false);
+    gx::ColorMask(false, 1);
 
     if (params_.show_skybox) {
       skybox_.render(camera);
     }
 
-    gx::DepthMask( true );
-    //gx::Disable( gx::State::CubeMapSeamless );
-    gx::CullFace( gx::Face::Back );
-    gx::Enable( gx::State::DepthTest );
+    gx::ColorMask(true, 1);
+    gx::DepthMask(true);
+    gx::Disable(gx::State::CubeMapSeamless);
+    gx::CullFace(gx::Face::Back);
+    gx::Enable(gx::State::DepthTest);
+
   }
   CHECK_GX_ERROR();
 
