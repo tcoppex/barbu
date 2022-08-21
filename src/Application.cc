@@ -6,65 +6,65 @@
 // ----------------------------------------------------------------------------
 //
 // TODO clean usage :
-//    * no inherited fields.
-//    * no boolean without clear intents.
-//    * no weird indirection.
-//    * fix scene hierarchy reindexing issue.
+//    * [✓] no inherited fields.
+//    * [✓] no weird indirections.
+//    * [ ] no boolean without clear intents.
+//    * [ ] fix scene hierarchy reindexing issue.
 //
 // ----------------------------------------------------------------------------
 
 void Application::setup() {
   // Gamma-corrected clear color.
   gx::ClearColor(0.25f, true);
-  //setBackground( Color::kDarkSalmon.gamma() );
-
-  // Camera.
-  {
-    //auto &camera{ getDefaultCamera() };
-
-    camera_.setController(&arcball_);
-    camera_.setPerspective(glm::radians(60.0f), resolution(), 0.01f, 500.0f);
-    
-    arcball_.setView( kPi / 16.0f, kPi / 8.0f, !kSmooth);
-    arcball_.setDolly( 15.0f, !kSmooth);
-  }
-
-  // Scene Hierarchy.
-  {
-    //auto &scene{ getSceneHierarchy() };
-    
-    focus_ = scene_.importModel( ResourceId::fromPath("models/InfiniteScan/Head.glb") );
-    scene_.createEntity<BSphereEntity>( 0.25f );
-    
-    // Refocus on the next update.
-    bRefocus_ = true;
-  }
   
+  // setBackground( Color::kDarkSalmon.gamma() );
+
   // Renderer.
   {
-    auto &params{ getRendererParameters() };
+    auto &renderer{ getRenderer() };
+    
+    // Parameters.
+    auto &params{ renderer.params() };
     params.show_skybox      = true;
     params.show_grid        = true;
     params.enable_hair      = true;
     params.enable_particle  = false;
-  }
-
-  // Experimental features (future components).
-  {
-    //auto &renderer{ getRenderer() };
 
     // Skybox.
-    auto &skybox{ renderer_.skybox() };
+    auto &skybox{ renderer.skybox() };
     skybox.setup( ResourceId::fromPath("textures/forest_slope_2k.hdr") );
    
     // Hair.
-    auto &hair{ renderer_.hair() };
-    hair.setup( ResourceId::fromPath("models/InfiniteScan/Head_scalp.obj") );
+    // auto &hair{ renderer.hair() };
+    // hair.setup( ResourceId::fromPath("models/InfiniteScan/Head_scalp.obj") );  
+  }
+
+  // Camera.
+  {
+    auto &camera{ getDefaultCamera() };
+
+    camera.setController(&arcball_);
+    camera.setPerspective(glm::radians(60.0f), getWindow()->resolution(), 0.01f, 500.0f);
+
+    arcball_.setView(kPi / 16.0f, kPi / 8.0f, !kSmooth);
+    arcball_.setDolly(15.0f, !kSmooth);
+  }
+
+  // Scene Hierarchy.
+  {
+    auto &scene{ getSceneHierarchy() };
+
+    focus_ = scene.importModel( ResourceId::fromPath("models/InfiniteScan/Head.glb") );
+    scene.createEntity<BSphereEntity>( 0.25f );
+
+    // Refocus on the next update.
+    bRefocus_ = true;
   }
 }
 
 void Application::update() {
-  auto const& selected{ scene_.selected() };
+  auto &scene{ getSceneHierarchy() };
+  auto const& selected{ scene.selected() };
 
   // Refocus the camera when asked for.
   if (bRefocus_) {
@@ -97,19 +97,25 @@ void Application::draw() {
   // setColor( Color4f(0.5, 1.0, 0.0) );
   // drawRectangle( x, y, w, h);
   //
+
+  CHECK_GX_ERROR();
 }
 
 // ----------------------------------------------------------------------------
 
 void Application::onInputChar(uint16_t inputChar) {
-  auto const& selected{ scene_.selected() };
+  auto &scene{ getSceneHierarchy() };
+  auto &rendererParams{ getRenderer().params() };
+
+  auto const& selected{ scene.selected() };
+  
   int cycling_step = 0;
 
   // -- Key bindings.
   switch (inputChar) {
     // Select / Deselect all.
     case 'a':
-      selected.empty() ? scene_.selectAll() : scene_.deselectAll();
+      selected.empty() ? scene.selectAll() : scene.deselectAll();
     break;
     
     // Focus on current entity.
@@ -130,12 +136,12 @@ void Application::onInputChar(uint16_t inputChar) {
 
     // Toggle UI display.
     case 'h':
-      App::toggleUI();
+      params().toggleUI();
     break;
 
     // Toggle Wireframe display.
     case 'w':
-      getRendererParameters().show_wireframe ^= true;
+      rendererParams.toggleWireframe();
     break;
 
     default:
@@ -143,35 +149,37 @@ void Application::onInputChar(uint16_t inputChar) {
   } 
 
   if (0 != cycling_step) {
-    focus_ = selected.front() ? scene_.next(selected.front(), cycling_step) 
-                              : scene_.first()
+    focus_ = selected.front() ? scene.next(selected.front(), cycling_step) 
+                              : scene.first()
                               ;
     refocusCamera( !kCentroid, kSmooth, focus_);
   }
 }
 
 void Application::onResize(int w, int h) {
-  LOG_MESSAGE("Resize :", w, h);
+  LOG_MESSAGE("onResize :", w, h);
   gx::Viewport( w, h);
 }
 
 // ----------------------------------------------------------------------------
 
 void Application::refocusCamera(bool _bCentroid, bool _bSmooth, EntityHandle _focus) {
-  // FIXME : issue when called before the scene reindexing.
+  // [ FIXME : issue when called before the scene reindexing. ]
+
+  auto &scene{ getSceneHierarchy() };
 
   // Select new focus & retrieve target position.
   glm::vec3 target{};
   if (_focus && _focus->indexed()) {
     focus_ = _focus;
-    scene_.deselectAll();
-    scene_.select(focus_, true);
-    target = _bCentroid ? scene_.globalCentroid(focus_) 
-                        : scene_.globalPosition(focus_)
+    scene.deselectAll();
+    scene.select(focus_);
+    target = _bCentroid ? scene.globalCentroid(focus_) 
+                        : scene.globalPosition(focus_)
                         ;
   } else {
-    target = _bCentroid ? scene_.centroid() 
-                        : scene_.pivot()
+    target = _bCentroid ? scene.centroid() 
+                        : scene.pivot()
                         ;
   }
 
@@ -197,14 +205,15 @@ void Application::updateHierarchyEvents() {
   //
 
   auto const& events{ Events::Get() }; 
+  auto &scene{ getSceneHierarchy() };
   
   // Modify selected entities.
-  if (auto const& selected{ scene_.selected() }; !selected.empty()) {
+  if (auto const& selected{ scene.selected() }; !selected.empty()) {
     switch (events.lastInputChar()) {
       // Reset transform.
       case 'x':
         for (auto &e : selected) {
-          scene_.resetEntity(e);
+          scene.resetEntity(e);
         }
       break;
 
@@ -212,9 +221,9 @@ void Application::updateHierarchyEvents() {
       case 'X':
         for (auto &e : selected) {
           focus_ = (focus_ == e) ? nullptr : focus_;
-          scene_.removeEntity(e, true);
+          scene.removeEntity(e, true);
         }
-        scene_.deselectAll();
+        scene.deselectAll();
       break;
 
       default:
@@ -223,12 +232,12 @@ void Application::updateHierarchyEvents() {
   }
 
   // Import drag-n-dropped objects & center them to the camera target.
-  auto const get_extension{ [](auto path) { 
+  auto const get_extension{[](auto path) { 
     return path.substr(path.find_last_of(".") + 1);
   }};
   for (auto &fn : events.droppedFilenames()) {
     if (auto const ext{get_extension(fn)}; MeshDataManager::CheckExtension(ext)) {
-      if (auto entity = scene_.importModel(fn); entity) {
+      if (auto entity = scene.importModel(fn); entity) {
         entity->setPosition( camera_.target() );
       }
     }
