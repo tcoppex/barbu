@@ -1,6 +1,8 @@
 #ifndef BARBU_UI_IMGUI_WRAPPER_H_
 #define BARBU_UI_IMGUI_WRAPPER_H_
 
+// ----------------------------------------------------------------------------
+
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wold-style-cast"
@@ -13,5 +15,13 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif // __GNUC__
+
+// ----------------------------------------------------------------------------
+
+namespace imgui_utils {
+  void display_texture(unsigned int tex_id, float width, float height);
+}
+
+// ----------------------------------------------------------------------------
 
 #endif // BARBU_UI_IMGUI_WRAPPER_H_
