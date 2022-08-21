@@ -6,19 +6,13 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-// #ifdef WIN32
-//   // MSVC likes to define those for some reasons.
-//   // (could be bypassed if windows.h is included afterwards)
-//   #ifdef far
-//     #undef far
-//   #endif
-//   #ifdef near
-//     #undef near
-//   #endif
-// #endif
-
 // ----------------------------------------------------------------------------
 
+//
+// Camera class
+//
+// @todo : Individual setters with dirtyness flag. 
+//
 class Camera {
  public:
   static constexpr float kDefaultFOV    = glm::radians(90.0f);
@@ -28,20 +22,39 @@ class Camera {
 
   class ViewController {
    public:
-    virtual ~ViewController() {}
+    virtual ~ViewController() = default;
     virtual void update(float dt) {} 
     virtual void getViewMatrix(float *m) = 0; 
-    virtual glm::vec3 target() const = 0; //
+    virtual glm::vec3 target() const = 0;
   };
 
+#if 0
+  class DefaultViewController : public ViewController {
+   public:
+    ~DefaultViewController() = default; 
+
+    void getViewMatrix(float *m) final {
+      memcpy( m, glm::value_ptr(view_), sizeof(view_));
+    }
+
+    glm::vec3 target() const final { 
+      return glm::vec3(0.0f);
+    }
+    
+    glm::mat4 view_ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -1.0));
+  };
+#endif
+  
  public:
   Camera()
     : controller_{nullptr}
     , fov_(0.0f)
     , width_(0)
     , height_(0)
-    , linear_params_{0.0f, 0.0f, 0.0f, 0.0f} 
-  {}
+    , linear_params_{0.0f, 0.0f, 0.0f, 0.0f}
+  {
+    view_ = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, -1.0));
+  }
 
   Camera(ViewController *controller) 
     : Camera()
@@ -49,10 +62,12 @@ class Camera {
     controller_ = controller;
   }
 
+  /* Check if the camera settings are valid. */
   inline bool initialized() const noexcept {
     return (fov_ > 0.0f) && (width_ > 0) && (height_ > 0);
   }
 
+  /* Create a perspective projection matrix. */
   void setPerspective(float fov, int32_t w, int32_t h, float znear, float zfar) {
     assert( fov > 0.0f );
     assert( (w > 0) && (h > 0) );
@@ -61,25 +76,32 @@ class Camera {
     fov_    = fov;
     width_  = w;
     height_ = h;
+
     // Projection matrix.
     float const ratio = static_cast<float>(width_) / static_cast<float>(height_);
     proj_ = glm::perspective( fov_, ratio, znear, zfar);
     bUseOrtho_ = false;
+
     // Linearization parameters.
     float const A  = zfar / (zfar - znear);
     linear_params_ = glm::vec4( znear, zfar, A, - znear * A);
   }
 
-  void setPerspective(float fov, glm::ivec2 const& res, float znear, float zfar) {
-    setPerspective( fov, res.x, res.y, znear, zfar);
+  inline void setPerspective(float fov, glm::ivec2 const& resolution, float znear, float zfar) {
+    setPerspective( fov, resolution.x, resolution.y, znear, zfar);
   }
 
-  void setDefault() {
+  /* Create a default perspective projection camera. */
+  inline void setDefault() {
     setPerspective( kDefaultFOV, kDefaultSize, kDefaultSize, kDefaultNear, kDefaultFar);
   }
 
+  inline void setDefault(glm::ivec2 const& resolution) {
+    setPerspective( kDefaultFOV, resolution, kDefaultNear, kDefaultFar);
+  }
+
   // Update controller and rebuild all matrices.
-  void update(float dt) {
+  inline void update(float dt) {
     if (controller_) {
       controller_->update(dt);
     }
@@ -87,7 +109,7 @@ class Camera {
   }
 
   // Rebuild all matrices.
-  void rebuild(bool bRetrieveView = true) {
+  inline void rebuild(bool bRetrieveView = true) {
     if (controller_ && bRetrieveView) {
       controller_->getViewMatrix(glm::value_ptr(view_));
     }
