@@ -39,15 +39,15 @@ bool LoadFile(std::string_view filename, char **buffer, size_t *buffersize) {
     delete [] *buffer;
     *buffer = nullptr;
   }
+
   if (*buffer == nullptr) {
     *buffer = new char[filesize]();
     *buffersize = filesize;
-  }
-
-  if (*buffer == nullptr) {
-    LOG_ERROR( filename, " : buffer allocation failed.");
-    fclose(fd);
-    return false; 
+    if (*buffer == nullptr) {
+      LOG_ERROR( filename, " : buffer allocation failed.");
+      fclose(fd);
+      return false; 
+    }
   }
 
   // Read it.
@@ -59,7 +59,6 @@ bool LoadFile(std::string_view filename, char **buffer, size_t *buffersize) {
   if (!succeed) {
     LOG_ERROR( "Failed to load file :", filename);
     delete [] *buffer;
-    return false;
   }
   
   return succeed;
@@ -131,7 +130,7 @@ void ParseOBJ(char *input, RawMeshFile &meshfile, bool bSeparateObjects) {
         meshfile.material_id = std::string(namebuffer);
       }
 
-      // [the other captured parameters has their first char last bit set to 0, so we can skip here]
+      // [the other captured parameters have their first char last bit set to 0, so we can skip here]
       continue;
     }
 
@@ -247,13 +246,13 @@ void ParseMTL(char *input, MaterialFile &matfile) {
 
   // For MTL, as there is no way to determine proper shading properties, we
   // decide that materials are :
-  //  * opaque by default, 
-  //  * alpha_tested if they have a map_Kd (with a potential alpha value) or an map_d, 
-  //  * transparent if they have an opacity value ('d').
-  //  * double sided when certain tokens are found in the material name, &
-  //  * unlit if there is no specular / normal map as well.
+  //  * Opaque by default, 
+  //  * Alpha_tested if they have a map_Kd (with a potential alpha value) or a map_d, 
+  //  * Transparent if they have an opacity value ('d').
+  //  * Double sided when certain tokens are found in the material name, &
+  //  * Unlit if there is no specular / normal map as well.
   //
-  // Bump map are bypassed because there are often not used as normal maps.
+  // Bump map are bypassed because they are rarely used as normal maps.
   //
 
   char *s = input;
@@ -479,10 +478,8 @@ std::string SetupTextureGLTF(cgltf_texture *tex, std::string const& dirname, std
   if (!tex) {
     return texname;
   }
-
-  auto img = tex->image;
- 
-  if (img->uri) {
+  
+  if (auto img = tex->image; img->uri) {
     // GLTF file with external data.
     
     if (img->uri[0] != '/') {
@@ -496,13 +493,12 @@ std::string SetupTextureGLTF(cgltf_texture *tex, std::string const& dirname, std
     texname = img->name ? img->name : default_name; //
     if (img->buffer_view) {
       auto buffer_view = img->buffer_view;
+      int32_t bv_size = static_cast<int32_t>(buffer_view->size);
+      uint8_t* bv_data = ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset;
 
       // Create the resource internally.
       Resources::LoadInternal<Image>( 
-        ResourceId(texname), 
-        static_cast<int32_t>(buffer_view->size), 
-        ((uint8_t*)buffer_view->buffer->data) + buffer_view->offset,
-        img->mime_type
+        ResourceId(texname), bv_size, bv_data, img->mime_type
       ); 
       // [optional] Create the texture directly.
       //TEXTURE_ASSETS.create2d(AssetId(texname)); 
@@ -517,7 +513,7 @@ void LoadAnimationGLTF(std::string const& basename, cgltf_data const* data, Mesh
   std::vector<float> outputs;
   char tmpname[256]{};
 
-  auto skl = meshdata.skeleton;
+  SkeletonHandle skl{ meshdata.skeleton };
   if (nullptr == skl) {
     LOG_ERROR( "GLTF : non skeletal animation are not supported yet." );
     return;
@@ -578,12 +574,10 @@ void LoadAnimationGLTF(std::string const& basename, cgltf_data const* data, Mesh
         }
       }
 
-      // ---------------------------
-
       LOG_CHECK( skl->index_map.find(node_name) != skl->index_map.end() );
       int32_t const joint_id = skl->index_map[node_name]; 
 
-      // 
+      // Translation.
       if ((target_path == cgltf_animation_path_type_translation) && (out_type == cgltf_type_vec3)) {
 
         for (int sample_id = 0; sample_id < nsamples; ++sample_id) {
@@ -593,7 +587,9 @@ void LoadAnimationGLTF(std::string const& basename, cgltf_data const* data, Mesh
 
           joint.vTranslation = glm::vec3(v[0], v[1], v[2]);
         }
-      } else if ((target_path == cgltf_animation_path_type_rotation) && (out_type == cgltf_type_vec4)) {
+      } 
+      // Rotation.
+      else if ((target_path == cgltf_animation_path_type_rotation) && (out_type == cgltf_type_vec4)) {
 
         for (int sample_id = 0; sample_id < nsamples; ++sample_id) {
           auto &sample = clip.samples[sample_id];
@@ -601,22 +597,24 @@ void LoadAnimationGLTF(std::string const& basename, cgltf_data const* data, Mesh
           float *v = &outputs[sample_id * out_type];
           joint.qRotation = glm::quat(v[3], v[0], v[1], v[2]);
         }
-      } else if ((target_path == cgltf_animation_path_type_scale) && (out_type == cgltf_type_vec3)) {
+      } 
+      // Scaling.
+      else if ((target_path == cgltf_animation_path_type_scale) && (out_type == cgltf_type_vec3)) {
 
         for (int sample_id = 0; sample_id < nsamples; ++sample_id) {
           auto &sample = clip.samples[sample_id];
           auto &joint = sample.joints[joint_id];
           float *v = &outputs[sample_id * out_type];
 
+          // Check the scaling is uniform.
           float const eps{ 1.e-4f };
           if (almost_equal(v[0], v[1], eps) && almost_equal(v[0], v[2], eps)) {
             joint.fScale = v[0]; 
           } else {
-            LOG_WARNING( "GLTF : non uniform scale are not supported for skin animation.", v[0], v[1], v[0] );
+            LOG_WARNING( "GLTF : non uniform scale are not supported for skinning animation.", v[0], v[1], v[0] );
           }
         }
-
-      } else if ((target_path == cgltf_animation_path_type_weights) && (out_type == cgltf_type_scalar)) {
+      } else if ((target_path == cgltf_animation_path_type_weights)/* && (out_type == cgltf_type_scalar)*/) {
         LOG_WARNING( "GLTF : BlendShape animation are not supported." );
       } else {
         LOG_WARNING( "GLTF : unknown animation format requested." );
@@ -630,23 +628,23 @@ void LoadAnimationGLTF(std::string const& basename, cgltf_data const* data, Mesh
 // -----------------------------------------------------------------------------
 
 bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
+  // Load file's headers.
   cgltf_options options{};
   cgltf_data* data = nullptr;
   cgltf_result result = cgltf_parse_file(&options, filename.data(), &data);
-  
   if (result != cgltf_result_success) {
     LOG_WARNING( "GLTF : failed to parse :", filename );
     return false;
   }
 
-  // Load buffers data.
+  // Load file's buffers data.
   result = cgltf_load_buffers(&options, data, filename.data());
-
   if (result != cgltf_result_success) {
     LOG_WARNING( "GLTF : failed to load buffers :", filename );
     return false;
   }
 
+  // Basename we will use to identify the file's data.
   std::string basename(filename);
   basename = Logger::TrimFilename(basename);
   basename = basename.substr(0, basename.find_last_of('.'));
@@ -655,6 +653,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
   /* ------------ */
 
+  // This will be set to true if we need to generate tangents attributes.
   bool bNeedTangents = false;
 
   RawMeshFile meshfile;
@@ -663,7 +662,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
     if (meshfile.meshes.empty()) {
       meshfile.meshes.resize(1);
     }
-
+    
     char tmpname[256]{};
 
     // Map to solve name for unknown materials. Key is material's pointer in datastructure.
@@ -676,10 +675,11 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
     // -- MESH ATTRIBUTES & INDICES.
     cgltf_size last_vertex_index = 0;
-    for (cgltf_size i=0; i < data->nodes_count; ++i) {
-      auto node = data->nodes[i];
-      auto *mesh = node.mesh;
+    for (cgltf_size node_index = 0; node_index < data->nodes_count; ++node_index) {
+      cgltf_node node = data->nodes[node_index];
 
+      // Discard node with no mesh.
+      cgltf_mesh *mesh = node.mesh;
       if (!mesh) {
         continue;
       }
@@ -690,50 +690,70 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
       // RawMeshData to update.
       auto &raw = meshfile.meshes.back();
-      sprintf(tmpname, "%s::mesh_%02d", basename.c_str(), int(i));
+      
+      // Determine a unique name for this raw mesh if none exists.
+      sprintf(tmpname, "%s::mesh_%02d", basename.c_str(), static_cast<int32_t>(node_index));
       raw.name = std::string(mesh->name ? mesh->name : node.name ? node.name : tmpname); //
 
       // When meshes are not joined, we should probably reset this to 0.
       //last_vertex_index = 0;
 
       // Morph Targets.
-      if (auto ntargets = mesh->target_names_count; ntargets) {
-        LOG_DEBUG_INFO( basename, "has", ntargets, "targets :");
-        for (cgltf_size j = 0; j < ntargets; ++j) {
-          LOG_DEBUG_INFO( j, mesh->target_names[j]);
-        }
-      }
+      // if (auto ntargets = mesh->target_names_count; ntargets) {
+      //   LOG_MESSAGE( basename, "has", ntargets, "targets :");
+      //   for (cgltf_size j = 0; j < ntargets; ++j) {
+      //     LOG_MESSAGE( j, mesh->target_names[j]);
+      //   }
+      // }
+
 
       // Primitives / submeshes.
-      for (cgltf_size j = 0; j < mesh->primitives_count; ++j) {
-        auto const& prim = mesh->primitives[j];
+      for (cgltf_size prim_index = 0; prim_index < mesh->primitives_count; ++prim_index) {
+        auto const& prim = mesh->primitives[prim_index];
 
+        // Draco-compression.
         if (prim.has_draco_mesh_compression) {
           LOG_WARNING( "GLTF : Draco mesh compression is not supported." );
           continue;
         }
 
+        // Non triangles primitives.
         if (prim.type != cgltf_primitive_type_triangles) {
           LOG_WARNING( "GLTF : non TRIANGLES primitives are not implemented :", raw.name );
         }
 
-        /*
+
+        // ------------------------------------
+
+        // Morph targets.
         if (prim.targets_count > 0) {
           LOG_WARNING( "GLTF : morph targets are not supported.");
-          LOG_MESSAGE(j, prim.targets_count, "morph targets available.");
+          LOG_MESSAGE( "submesh", prim_index, ":", prim.targets_count, "morph targets available.");
         }
-
         for (cgltf_size target_index = 0; target_index < prim.targets_count; ++target_index) {
-          auto target = prim.targets[target_index];
+          auto const& target = prim.targets[target_index];
           // LOG_MESSAGE( target_index, target.attributes_count);
 
+          // Target's attributes
           for (cgltf_size attrib_index = 0; attrib_index < target.attributes_count; ++attrib_index) {
-            auto attrib = target.attributes[attrib_index];
+            auto const& attrib = target.attributes[attrib_index];
+            
+            // Check accessors layout.
+            if (attrib.data->is_sparse) {
+              LOG_WARNING( "GLTF : sparse target attributes are not supported." );
+              continue;
+            }
+            
+            auto &bv = attrib.data->buffer_view;
+
+            sprintf( tmpname, "%s::morphtarget_%02d_%02d_%1d", raw.name.c_str(), int(prim_index), int(target_index), int(attrib_index));
+            LOG_MESSAGE( " -", bv->name ? bv->name : tmpname );
+
             // LOG_MESSAGE( "  ", attrib.name ? attrib.name : "", attrib.type, attrib.index, attrib.data);
-            LOG_MESSAGE( attrib.data->buffer_view->name ? attrib.data->buffer_view->name : "-" );
           }    
         }
-        */
+
+        // ------------------------------------
 
         // Attributes.
         for (cgltf_size attrib_index = 0; attrib_index < prim.attributes_count; ++attrib_index) {
@@ -756,8 +776,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             raw.vertices.reserve(attribsize);
             
             glm::vec3 vertex;
-            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
-              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(vertex), 3);
+            for (cgltf_size i = 0; i < attrib.data->count; ++i) {
+              cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(vertex), 3);
               vertex = glm::vec3(world_matrix * glm::vec4(vertex, 1.0f));
               raw.vertices.push_back( vertex );
             }
@@ -769,8 +789,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             raw.normals.reserve(attribsize);
             
             glm::vec3 normal;
-            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
-              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(normal), 3);
+            for (cgltf_size i = 0; i < attrib.data->count; ++i) {
+              cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(normal), 3);
               normal = glm::vec3(world_matrix * glm::vec4(normal, 0.0f));
               raw.normals.push_back( normal );
             }
@@ -782,8 +802,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             raw.tangents.reserve(attribsize);
             
             glm::vec4 tangent;
-            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
-              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(tangent), 4);
+            for (cgltf_size i = 0; i < attrib.data->count; ++i) {
+              cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(tangent), 4);
               glm::vec3 t3 = glm::vec3(tangent);
                         t3 = glm::vec3(world_matrix * glm::vec4(t3, 0.0f));
               tangent = glm::vec4(t3, tangent.w);
@@ -804,8 +824,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             raw.texcoords.reserve(attribsize);
 
             glm::vec2 texcoord;
-            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
-              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(texcoord), 2);
+            for (cgltf_size i = 0; i < attrib.data->count; ++i) {
+              cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(texcoord), 2);
               raw.texcoords.push_back( texcoord );
             }
           }
@@ -816,8 +836,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             raw.joints.reserve(attribsize);
             
             glm::uvec4 joints;
-            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
-              cgltf_accessor_read_uint( attrib.data, index, glm::value_ptr(joints), 4);
+            for (cgltf_size i = 0; i < attrib.data->count; ++i) {
+              cgltf_accessor_read_uint( attrib.data, i, glm::value_ptr(joints), 4);
               raw.joints.push_back( joints );
               //LOG_MESSAGE("* joint (", index, ") :", joints.x, joints.y, joints.z, joints.w);
             }
@@ -829,8 +849,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             raw.weights.reserve(attribsize);
 
             glm::vec4 weights;
-            for (cgltf_size index = 0; index < attrib.data->count; ++index) {
-              cgltf_accessor_read_float( attrib.data, index, glm::value_ptr(weights), 4);
+            for (cgltf_size i = 0; i < attrib.data->count; ++i) {
+              cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(weights), 4);
               raw.weights.push_back( weights );
               // LOG_MESSAGE("* weights (", index, ") :", weights.x, weights.y, weights.z, weights.w);
             }
@@ -850,7 +870,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             }
           }
 
-          // Vertex Group.
+          // Material / Vertex Group.
           if (auto mat = prim.material; mat) {
             VertexGroup vg;
 
@@ -864,17 +884,27 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         }
 
         last_vertex_index = raw.vertices.size(); //
+      } // end foreach primitives.
+
+      // ----
+
+      // Weights.
+      if (0 < mesh->weights_count) {
+        LOG_WARNING( "GLTF : weights arrays of size", mesh->weights_count, "not read." );
       }
+
+      // ----
 
       // Skeleton datas.
       if (auto *skin = node.skin; skin) {
         auto const njoints = skin->joints_count;
 
-        meshdata.skeleton = std::make_shared<Skeleton>( njoints );
-        auto skl = meshdata.skeleton;
+        // Add a Skeleton instance to the mesh.
+        auto skl = std::make_shared<Skeleton>( njoints );
+        meshdata.skeleton = skl;
 
         // Map to find (parent) nodes index.
-        std::unordered_map< cgltf_node*, int32_t> joint_indices( njoints );
+        std::unordered_map<cgltf_node*, int32_t> joint_indices( njoints );
         for (cgltf_size index = 0; index < njoints; ++index) {
           auto *joint = skin->joints[index];
           joint_indices[joint] = static_cast<int32_t>(index);
@@ -885,7 +915,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           auto *joint = skin->joints[index];
 
           // Joint name.
-          sprintf(tmpname, "%s::joint_%02d", basename.c_str(), int(index)); //
+          sprintf(tmpname, "%s::joint_%02d", basename.c_str(), static_cast<int32_t>(index)); //
           auto const joint_name = (joint->name) ? joint->name : tmpname;
 
           // Joint parent index.
@@ -901,7 +931,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         auto const inverse_world_matrix{ glm::inverse(world_matrix) };
         
         // Retrieve the global inverse bind matrices.
-        auto &matrices = skl->inverse_bind_matrices; 
+        auto &matrices = skl->inverse_bind_matrices;
         matrices.resize(njoints); 
         cgltf_accessor_unpack_floats( skin->inverse_bind_matrices, glm::value_ptr(*matrices.data()), 16 * njoints );
 
