@@ -422,7 +422,7 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
       }
       // (tangents)
       if (has_tangent) {
-        vertices[ i ].tangent = _raw.tangents[ bNeedTangents ? index.w : i ]; // XXX XXX XXX
+        vertices[i].tangent = _raw.tangents[ bNeedTangents ? index.w : i ]; // XXX XXX XXX
       }
     }
   
@@ -430,8 +430,9 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
     if (!_raw.joints.empty()) {
       skinnings.resize(nvertices);
       for (int i = 0; i < nvertices; ++i) {
-        skinnings[i].joint_indices = _raw.joints[i];
-        skinnings[i].joint_weights = _raw.weights[i];
+        auto const& index = attribIndices[i];
+        skinnings[i].joint_indices = _raw.joints[index.x];
+        skinnings[i].joint_weights = _raw.weights[index.x];
       }
     }
   }
