@@ -61,7 +61,7 @@ bool ComputePose(float const global_time,
   // Interpolated frame.
   float const lerped_frame = local_time * clip->framerate;
 
-  // Found the frame boundaries.
+  // Find the frame boundaries.
   int32_t const frame_a = static_cast<int32_t>(lerped_frame) % clip->framecount;
   int32_t const frame_b = (frame_a + next_frame) % clip->framecount;
 

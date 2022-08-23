@@ -23,8 +23,8 @@ layout(location = 3) out vec4 outTangentWS;
 #include "shared/inc_skinning.glsl"
 
 // Uniforms.
-uniform mat4 uMVP; // [use viewProj instead ?]
 uniform mat4 uModelMatrix;
+uniform mat4 uMVP; // [use viewProj instead ?]
 
 // ----------------------------------------------------------------------------
 
@@ -33,8 +33,8 @@ void main() {
   vec3 normal   = inNormal;
   vec3 tangent  = inTangent.xyz;
 
-  // [should transform the tangent too]
-  apply_skinning( inJointIndices, inJointWeights, position.xyz, normal); //
+  // [should transform BTN too]
+  apply_skinning(inJointIndices, inJointWeights, position.xyz, normal); //
   
   // Transform vectors.
   const mat3 normalMatrix = mat3(uModelMatrix);

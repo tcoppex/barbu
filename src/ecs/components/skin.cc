@@ -47,33 +47,34 @@ void SkinComponent::updateSkinningBuffer() {
   // [ TODO : use an external wrapper, eg. 'TextureBuffer' ]
 
   // 1) Create an *immutable* device buffer with texture buffer.
+  //    [This is unique to each instance but they could share a larger one instead]
   if (0u == buffer_id_) {
-    glCreateBuffers(1u, &buffer_id_);
-
-    // Upper boundary of skinning data.
-    GLsizeiptr constexpr kElemsize{ static_cast<GLsizeiptr>(glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat))) };
+    // Upper boundary for skinning data.
+    GLsizeiptr constexpr kElemsize{ static_cast<GLsizeiptr>(glm::max(sizeof(glm::mat3x4), sizeof(glm::dualquat))) }; //
     GLsizeiptr const kBytesize{ skeleton_->njoints() * kElemsize };
 
-    glNamedBufferStorage( buffer_id_, kBytesize, nullptr, GL_DYNAMIC_STORAGE_BIT);
-    glCreateTextures( GL_TEXTURE_BUFFER, 1u, &texture_id_);
-    glTextureBuffer( texture_id_, GL_RGBA32F, buffer_id_);
+    glCreateBuffers(1u, &buffer_id_);
+    glNamedBufferStorage(buffer_id_, kBytesize, nullptr, GL_DYNAMIC_STORAGE_BIT);
+    glCreateTextures(GL_TEXTURE_BUFFER, 1u, &texture_id_);
+    glTextureBuffer(texture_id_, GL_RGBA32F, buffer_id_);
 
     CHECK_GX_ERROR();
   }
-  
+
   // 2) Retrieve the underlying data depending on the skinning blending mode.
-  float const* data_ptr{nullptr};
   GLsizeiptr bytesize{0};
+  float const* data_ptr{nullptr};
+  
   if (SkinningMode::DualQuaternion == mode_) {
-    // DUAL QUATERNION BLENDING
+    // DUAL QUATERNION BLENDING.
     auto *const data = controller_.dual_quaternions().data();
-    data_ptr = reinterpret_cast<float const*>(data);
     bytesize = skeleton_->njoints() * sizeof(data[0]);
+    data_ptr = reinterpret_cast<float const*>(data);
   } else {
-    // LINEAR BLENDING
-    auto const& skinning = controller_.skinning_matrices();
-    data_ptr = glm::value_ptr(skinning[0]);
-    bytesize = skeleton_->njoints() * sizeof(skinning[0]);
+    // LINEAR BLENDING.
+    auto const& data = controller_.skinning_matrices();
+    bytesize = skeleton_->njoints() * sizeof(data[0]);
+    data_ptr = glm::value_ptr(data[0]);
   }
 
   // 3) Upload skinning data.

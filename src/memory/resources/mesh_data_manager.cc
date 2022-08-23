@@ -373,16 +373,16 @@ MeshDataManager::Handle MeshDataManager::_load(ResourceId const& id) {
 
   auto const path = id.path;
   auto ext = path.substr(path.find_last_of(".") + 1);
-  std::transform( ext.cbegin(), ext.cend(), ext.begin(), ::tolower);
+  std::transform(ext.cbegin(), ext.cend(), ext.begin(), ::tolower);
 
   auto &meshdata = *h.data;
 
   if ("obj" == ext) {
-    load_obj( path, meshdata);
+    load_obj(path, meshdata);
   } else if (("glb" == ext) || ("gltf" == ext)) {
-    load_gltf( path, meshdata);
+    load_gltf(path, meshdata);
   } else {
-    LOG_WARNING( ext, "models are not supported." );
+    LOG_WARNING(ext, "models are not supported.");
   }
 
   return h;
@@ -719,9 +719,8 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
         // Non triangles primitives.
         if (prim.type != cgltf_primitive_type_triangles) {
-          LOG_WARNING( "GLTF : non TRIANGLES primitives are not implemented :", raw.name );
+          LOG_WARNING( "GLTF : non TRIANGLES primitives are not supported :", raw.name );
         }
-
 
         // ------------------------------------
 
@@ -816,7 +815,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             LOG_CHECK(attrib.index == 0);
 
             if (attrib.index > 0) {
-              LOG_WARNING( "Multitexturing is not supported yet." );
+              LOG_WARNING( "MultiTexturing is not supported yet." );
               continue;
             }
             LOG_DEBUG( "> loading texture coordinates." );
@@ -825,7 +824,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
             glm::vec2 texcoord;
             for (cgltf_size i = 0; i < attrib.data->count; ++i) {
-              cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(texcoord), 2);
+              LOG_CHECK(0 != cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(texcoord), 2));
               raw.texcoords.push_back( texcoord );
             }
           }
@@ -837,9 +836,10 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
             
             glm::uvec4 joints;
             for (cgltf_size i = 0; i < attrib.data->count; ++i) {
-              cgltf_accessor_read_uint( attrib.data, i, glm::value_ptr(joints), 4);
+              LOG_CHECK(0 != cgltf_accessor_read_uint( attrib.data, i, glm::value_ptr(joints), 4));
+              // LOG_MESSAGE("* joint (", i, ") :", joints.x, joints.y, joints.z, joints.w);
+              
               raw.joints.push_back( joints );
-              //LOG_MESSAGE("* joint (", index, ") :", joints.x, joints.y, joints.z, joints.w);
             }
           }
           // Weights.
@@ -850,9 +850,11 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
 
             glm::vec4 weights;
             for (cgltf_size i = 0; i < attrib.data->count; ++i) {
-              cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(weights), 4);
+              LOG_CHECK(0 != cgltf_accessor_read_float( attrib.data, i, glm::value_ptr(weights), 4));
+              // LOG_MESSAGE("* weights (", i, ") :", weights.x, weights.y, weights.z, weights.w);
+              
+              // weights = glm::vec4(0.0, 0.0, 0.0, 0.0);
               raw.weights.push_back( weights );
-              // LOG_MESSAGE("* weights (", index, ") :", weights.x, weights.y, weights.z, weights.w);
             }
           }
         }
@@ -860,12 +862,12 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
         // Indices.
         if (prim.indices) {
           if (prim.indices->is_sparse) {
-            LOG_WARNING( "GLTF sparse indexing is not implemented." );
+            LOG_WARNING( "GLTF sparse indexing is not supported." );
           } else {
-            for (cgltf_size index = 0; index < prim.indices->count; ++index) {
-              auto const vid = cgltf_accessor_read_index(prim.indices, index);
+            for (cgltf_size i = 0; i < prim.indices->count; ++i) {
+              auto const vertex_index = cgltf_accessor_read_index(prim.indices, i);
               raw.elementsAttribs.push_back(
-                glm::ivec3( static_cast<int32_t>(last_vertex_index + vid) )
+                glm::ivec3( static_cast<int32_t>(last_vertex_index + vertex_index) )
               );
             }
           }
@@ -873,7 +875,6 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           // Material / Vertex Group.
           if (auto mat = prim.material; mat) {
             VertexGroup vg;
-
             vg.name = material_names[mat];
             vg.start_index = static_cast<int32_t>(raw.elementsAttribs.size() - prim.indices->count); // 
             vg.end_index   = static_cast<int32_t>(raw.elementsAttribs.size()); //
@@ -962,7 +963,7 @@ bool MeshDataManager::load_gltf(std::string_view filename, MeshData &meshdata) {
           info.roughness          = pmr.roughness_factor;
 
           info.diffuse_map        = SetupTextureGLTF( pmr.base_color_texture.texture,         dirname, info.name + "_diffuse");
-          info.metallic_rough_map = SetupTextureGLTF( pmr.metallic_roughness_texture.texture, dirname, info.name + "_metallic_rough");
+          info.metallic_rough_map = SetupTextureGLTF( pmr.metallic_roughness_texture.texture, dirname, info.name + "_metallic_roughness");
         }
 
         // Alpha Test / Blend.

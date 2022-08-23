@@ -28,9 +28,9 @@ struct RenderAttributes {
   SkinningMode skinning_mode;
 
   // (fragment)
-  uint32_t brdf_lut_texid     = 0u;
-  uint32_t prefilter_texid    = 0u;
-  uint32_t irradiance_texid   = 0u;
+  uint32_t brdf_lut_texid = 0u;
+  uint32_t prefilter_texid = 0u;
+  uint32_t irradiance_texid = 0u;
   glm::mat4 const* irradiance_matrices = nullptr;
   glm::vec3 eye_position;
   //int32_t tonemap_mode;
