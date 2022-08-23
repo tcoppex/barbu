@@ -11,7 +11,7 @@
 
 // Note : 
 // The specialized mesh generators could be simplified by using the MeshData 
-// structure directly but were kept for simplicity, due to legacy.
+// structure directly but were kept for simplicity / legacy.
 
 void MeshData::Plane(MeshData &mesh, float size) {
   RawMeshData raw;
@@ -31,12 +31,10 @@ void MeshData::Plane(MeshData &mesh, float size) {
     glm::vec2{ 1.0f, 0.0f },
   };
 
-  // (this elements arrays could be discarded)
-  constexpr std::array<int32_t, 4> indices{ 0, 1, 2, 3 };
-  for (auto &index : indices) {
-    raw.addIndex(index);
-    //raw.elementsAttribs.push_back( glm::ivec3(index) );
-  }
+  // [ optional ]
+  // for (int i = 0; i < 4; ++i) {
+  //   raw.addIndex(i);
+  // }
 
   mesh.setup( PrimitiveType::TRIANGLE_STRIP, raw );
 }
@@ -55,7 +53,7 @@ void MeshData::Grid(MeshData &mesh, int resolution, float size) {
   std::vector<float> lines(buffersize);
   for (int i = 0; i <= resolution; ++i) {
 
-    // hack to have middle lines draw last.
+    // hack to have middle lines drawn last.
     int const i_offset{ (i < resolution/2) ? 0 : (i < resolution) ? 1 : -resolution/2 };
 
     // Position on the grid.
@@ -169,11 +167,9 @@ void MeshData::Cube(MeshData &mesh, float size) {
   }
 
   // Indices (as triangles).
-  raw.elementsAttribs.resize(indices.size());
-  for (int i = 0; i < nelems; ++i) {
-    auto const& index = indices[i];
-    auto& dst = raw.elementsAttribs[i];
-    dst.x = dst.y = dst.z = index;
+  raw.elementsAttribs.reserve(indices.size());
+  for (auto &index : indices) {
+    raw.addIndex( index );
   }
 
   // -----
@@ -234,7 +230,7 @@ void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
   auto &Positions = raw.vertices;
   auto &Texcoords = raw.texcoords;
   auto &Normals   = raw.normals;
-  auto &Indices   = raw.elementsAttribs;
+  // auto &Indices   = raw.elementsAttribs;
 
   int const cols = xres + 1;
   int const rows = yres + 1;
@@ -284,31 +280,30 @@ void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
     ++vertex_id;
   }
 
-  // Indices datas (as tristrip).
+  // Indices.
   {
-    int const nelems = 2 * cols * (rows-1) + 2 * (rows-3);
-    Indices.resize(nelems);
+    size_t const nelems = 2 * cols * (rows-1) + 2 * (rows-3);
+    raw.elementsAttribs.reserve(nelems);
 
-    int index = 0;
-    for (int i = 0; i < cols; ++i) {
-      Indices[index++] = glm::ivec3( 0 );
-      Indices[index++] = glm::ivec3( 1 + i );
+    for (int32_t i = 0; i < cols; ++i) {
+      raw.addIndex( 0 );
+      raw.addIndex( 1 + i );
     }
-    for (int j = 1; j < rows-2; ++j) {
-      Indices[index] = Indices[index-1]; ++index;
-      Indices[index] = Indices[index-1]; ++index;
+    for (int32_t j = 1; j < rows-2; ++j) {
+      raw.addIndex( cols );
+      raw.addIndex( cols );
 
-      int const first_vertex_id = Indices[index-1].x - cols + 1;
-      for (int i = 0; i < cols; ++i) {
-        Indices[index++] = glm::ivec3( first_vertex_id + i );
-        Indices[index++] = glm::ivec3( first_vertex_id + i + cols );
+      int32_t const first_vertex_id = raw.elementsAttribs.back().x - cols + 1;
+      for (int32_t i = 0; i < cols; ++i) {
+        raw.addIndex( first_vertex_id + i );
+        raw.addIndex( first_vertex_id + i + cols );
       }
     }
 
     auto const npositions = static_cast<int32_t>(Positions.size());
-    for (int i = 0; i < cols; ++i) {
-      Indices[index++] = glm::ivec3( npositions - cols - 1 + i );
-      Indices[index++] = glm::ivec3( npositions - 1 );
+    for (int32_t i = 0; i < cols; ++i) {
+      raw.addIndex( npositions - cols - 1 + i );
+      raw.addIndex( npositions - 1 );
     }
   }
 
@@ -371,7 +366,6 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
     if (!_raw.elementsAttribs.empty()) { 
       if (_raw.normals.empty()) {
         LOG_DEBUG_INFO( "Recalculating normals for :", meshname );
-
         _raw.recalculateNormals();
       }
 
@@ -414,7 +408,7 @@ bool MeshData::setup(PrimitiveType _type, RawMeshData &_raw, bool bNeedTangents)
     
     vertices.resize(nvertices);
     for (int i = 0; i < nvertices; ++i) {
-      auto const& index = attribIndices[ i ];
+      auto const& index = attribIndices[i];
 
       // (positions)
       vertices[i].position = _raw.vertices[index.x];
