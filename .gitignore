@@ -4,7 +4,7 @@ android
 assets/
 bin/
 build/
-BUILDs/
+BUILD/
 CMakeLists.txt.user
 src/_wip/
 src/core/_backend/
