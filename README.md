@@ -84,6 +84,10 @@ The binary can be found in the project `./bin/` directory:
 ../bin/barbu
 ```
 
+### Known issues
+
+This project will not run on integrated GPU with Compatibility Profile only driver.
+
 ## References
 
 * ["An Efficient Representation for Irradiance Environment Maps"](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.458.6377&rep=rep1&type=pdf), Ramamoorthi, Ravi, and Pat Hanrahan. _Proceedings of the 28th annual conference on Computer graphics and interactive techniques_. 2001.
