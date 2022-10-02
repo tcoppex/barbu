@@ -4,8 +4,10 @@
 
 #include "core/global_clock.h"
 #include "core/graphics.h" //
+#include "core/display.h"
 #include "core/logger.h"
 #include "core/window.h"
+#include "memory/hash_id.h"
 
 #include "ui/imgui_wrapper.h"
 #include "ui/ui_view.h"
@@ -53,10 +55,19 @@ void UIController::init(/*GLFWwindow* window*/) {
   //io.ImeWindowHandle = glfwGetWin32Window(window_ptr_);
 #endif
 
+
   // Setup style.
   ImGui::StyleColorsDark();
   ImGuiStyle& style = ImGui::GetStyle();
   style.Alpha = 0.85f;
+
+  // ----------------------------------------
+  style.ScaleAllSizes(DEBUG_HDPI_SCALING);
+  io.Fonts->AddFontFromFileTTF(
+    HashId::fromPath("fonts/Source_Code_Pro/SourceCodePro-Regular.ttf").c_str(),
+    DEBUG_HDPI_SCALING * 22
+  );
+  // ----------------------------------------
 }
 
 void UIController::deinit() {

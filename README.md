@@ -6,7 +6,7 @@
 
 Barbü is a prototyping framework for real-time 3D graphics aimed at simulating hairy creatures.
 
-It is written in **C++ 17** and **OpenGL 4.6**.
+It is written in **C++ 17** and **OpenGL 4.6 (Core Profile)**.
 
 Check the gallery [here](https://imgur.com/a/MgJyFNG), or take a [sneak peek](https://imgur.com/ZyjYbiN).
 
@@ -76,6 +76,7 @@ cmake --build . --target ALL_BUILD --config Release
  1. *Using CMake, the build configuration type (ie. Debug, Release) is set at Build Time with MSVC and at Cache Generation Time with Makefile.*
  2. *OpenGL extensions are generated automatically by a custom [Python](https://www.python.org/downloads/) script.  Alternatively [GLEW](http://glew.sourceforge.net/) can be used by specifying the option `-DOPT_USE_GLEW=ON` to CMake. __If something does not compile due to OpenGL functions, try to use GLEW instead.__*
  3. *By default some third parties are compiled as shared libraries. You can switch them to static by using the option `-DOPT_BUILD_SHARED_LIBS=OFF`.*
+ 4. *When using an HDPI screen you can specify the UI scaling with `-DOPT_HDPI_SCALING=1.5`.*
 
 ### Run
 

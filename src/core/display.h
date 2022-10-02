@@ -12,6 +12,10 @@
 
 #include <cstdint>
 
+#ifndef DEBUG_HDPI_SCALING
+#define DEBUG_HDPI_SCALING 1.5
+#endif
+
 /* -------------------------------------------------------------------------- */
 
 // Integer type describing a displayable surface (aka. a matrices of pixels).
@@ -22,9 +26,10 @@ using SurfaceSize = int16_t;
 // - a value <= 0 set it to a scale of the maximum resolution for its monitor.
 // - otherwise clamp between 1 and the maximum resolution.
 inline constexpr SurfaceSize ClampSurfaceSize(SurfaceSize size, SurfaceSize max_size) {
-  return (size > max_size) ? max_size :
-               (size <= 0) ? static_cast<SurfaceSize>(0.8*max_size) //
-                           : size;
+  return ((size > max_size) ? max_size :
+                (size <= 0) ? static_cast<SurfaceSize>(0.8 * max_size) //
+                            : size) * 
+          DEBUG_HDPI_SCALING;
 }
 
 /* -------------------------------------------------------------------------- */
