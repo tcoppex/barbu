@@ -12,7 +12,9 @@
 
 #include <cstdint>
 
+#ifndef DEBUG_HDPI_SCALING
 #define DEBUG_HDPI_SCALING 1.5
+#endif
 
 /* -------------------------------------------------------------------------- */
 
