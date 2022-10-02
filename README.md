@@ -71,12 +71,13 @@ cmake .. -G "Visual Studio 15 2017 Win64"
 cmake --build . --target ALL_BUILD --config Release
 ```
 
-*Notes:*
+*Notes : Using CMake, the build configuration type (ie. Debug, Release) is set at Build Time with MSVC and at Cache Generation Time with Makefile.*
 
- 1. *Using CMake, the build configuration type (ie. Debug, Release) is set at Build Time with MSVC and at Cache Generation Time with Makefile.*
- 2. *OpenGL extensions are generated automatically by a custom [Python](https://www.python.org/downloads/) script.  Alternatively [GLEW](http://glew.sourceforge.net/) can be used by specifying the option `-DOPT_USE_GLEW=ON` to CMake. __If something does not compile due to OpenGL functions, try to use GLEW instead.__*
- 3. *By default some third parties are compiled as shared libraries. You can switch them to static by using the option `-DOPT_BUILD_SHARED_LIBS=OFF`.*
- 4. *When using an HDPI screen you can specify the UI scaling with `-DOPT_HDPI_SCALING=1.5`.*
+#### CMake Options
+
+ 1. When using a HDPI screen, you can specify the UI scaling with via `OPT_HDPI_SCALING` (eg. `-DOPT_HDPI_SCALING=1.5`).
+ 2. OpenGL extensions are generated automatically by a custom [Python](https://www.python.org/downloads/) script.  Alternatively [GLEW](http://glew.sourceforge.net/) can be used by specifying the option `-DOPT_USE_GLEW=ON` to CMake. __If something does not compile due to OpenGL functions, try to use GLEW instead.__
+ 3. By default some third parties are compiled as shared libraries. You can switch them to static by using the option `-DOPT_BUILD_SHARED_LIBS=OFF`.
 
 ### Run
 
@@ -87,7 +88,7 @@ The binary can be found in the project `./bin/` directory:
 
 ### Known issues
 
-This project will not run on integrated GPU with Compatibility Profile only driver.
+This project will not run on integrated GPUs with a "Compatibility Profile"-only driver.
 
 ## References
 
