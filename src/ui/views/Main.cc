@@ -1,6 +1,8 @@
 #include "ui/views/Main.h"
 #include "ui/imgui_wrapper.h"
 
+#include "core/display.h"
+
 #ifndef UI_DBG_STR
 #ifdef NDEBUG
   #define UI_DBG_STR ""
@@ -12,8 +14,13 @@
 namespace views {
 
 void Main::render() {
-  ImGui::SetNextWindowPos(ImVec2(8,8));
-  ImGui::SetNextWindowSize(ImVec2(316, 850));
+  // TODO : switch for absolution coordinates.
+  ImGui::SetNextWindowPos(
+    ImVec2(8 * DEBUG_HDPI_SCALING, 8 * DEBUG_HDPI_SCALING)
+  );
+  ImGui::SetNextWindowSize(
+    ImVec2(450 * DEBUG_HDPI_SCALING, 900 * DEBUG_HDPI_SCALING)
+  );
 
   auto flags = ImGuiWindowFlags_NoMove 
              // | ImGuiWindowFlags_NoBringToFrontOnFocus 
