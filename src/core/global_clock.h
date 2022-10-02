@@ -4,6 +4,7 @@
 // ----------------------------------------------------------------------------
 
 #include <cstdint>
+#include <cstdlib>
 #include <array>
 
 #include "memory/enum_array.h"
