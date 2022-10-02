@@ -56,7 +56,8 @@ git submodule update --init --recursive
 We will first create a build directory then generate the CMake cache depending on your system.
 
 ```bash
-mkdir BUILDs && cd BUILDs
+cd barbu
+mkdir BUILD && cd BUILD
 ```
 
 On **Unix**, using Makefile :
