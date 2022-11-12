@@ -51,7 +51,6 @@ option(OPT_ENABLE_DEBUG_LOG         "Enable complementary debug log ?"      OFF)
 # Choose how to compile the libraries.
 option(OPT_BUILD_SHARED_LIBS        "Compile libraries as shared ?"         ON)
 
-option(OPT_HDPI_SCALING             "Custom scaling for HDPI screen"        1.0)
 
 if (OPT_BUILD_SHARED_LIBS)
   set(BARBU_LIB_TYPE SHARED)
@@ -59,6 +58,13 @@ else()
   set(BARBU_LIB_TYPE STATIC)
 endif()
 
+# -----------------------------------------------------------------------------
+# User variables.
+# -----------------------------------------------------------------------------
+
+if (NOT DEFINED HDPI_SCALING)
+  set(HDPI_SCALING        1.0)
+endif()
 
 # -----------------------------------------------------------------------------
 # Project paths.
@@ -556,7 +562,7 @@ list(APPEND CustomDefinitions
   -DSHADERS_DIR="${BARBU_SHADERS_DIR}"
   -DASSETS_DIR="${BARBU_ASSETS_DIR}"
   -DBARBU_NPROC_MAX=${BARBU_NPROC_MAX}
-  -DDEBUG_HDPI_SCALING=${OPT_HDPI_SCALING}
+  -DDEBUG_HDPI_SCALING=${HDPI_SCALING}
 )
 if(OPT_ENABLE_DEBUG_LOG)
   list(APPEND CustomDefinitions 

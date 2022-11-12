@@ -76,7 +76,7 @@ cmake --build . --target ALL_BUILD --config Release
 
 #### CMake Options
 
- 1. When using a HDPI screen, you can specify the UI scaling with `OPT_HDPI_SCALING` (eg. `-DOPT_HDPI_SCALING=1.5`).
+ 1. When using a HDPI screen, you can specify the UI scaling with `HDPI_SCALING` (eg. `-DHDPI_SCALING=1.5`).
  2. OpenGL extensions are generated automatically by a custom [Python](https://www.python.org/downloads/) script.  Alternatively [GLEW](http://glew.sourceforge.net/) can be used by specifying the option `-DOPT_USE_GLEW=ON` to CMake. __If something does not compile due to OpenGL functions, try to use GLEW instead.__
  3. By default some third parties are compiled as shared libraries. You can switch them to static by using the option `-DOPT_BUILD_SHARED_LIBS=OFF`.
 
