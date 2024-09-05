@@ -557,7 +557,7 @@ void MarchingCube::init_shaders() {
   // 1) build the density volume.
   {
     programs_.build_density = PROGRAM_ASSETS.createCompute(
-      SHADERS_DIR "/marching_cube/01_density_volume/cs_buildDensityVolume.glsl"
+      SHADERS_DIR "/marching_cube/01_density_volume/cs_build_density_volume.glsl"
     );
 
     double const random_value = static_cast<double>(rand()) / static_cast<double>(RAND_MAX);
@@ -589,8 +589,8 @@ void MarchingCube::init_shaders() {
 
     programs_.genvertices = PROGRAM_ASSETS.createGeo(
       asset_id,
-      SHADERS_DIR "/marching_cube/03_generateVertices/vs_generateVertices.glsl",
-      SHADERS_DIR "/marching_cube/03_generateVertices/gs_generateVertices.glsl"
+      SHADERS_DIR "/marching_cube/03_generate_vertices/vs_generate_vertices.glsl",
+      SHADERS_DIR "/marching_cube/03_generate_vertices/gs_generate_vertices.glsl"
     );
 
     auto const pgm = programs_.genvertices->id;
