@@ -290,10 +290,12 @@ void MeshData::Sphere(MeshData &mesh, int xres, int yres, float radius) {
       raw.addIndex( 1 + i );
     }
     for (int32_t j = 1; j < rows-2; ++j) {
-      raw.addIndex( cols );
-      raw.addIndex( cols );
+      int32_t const last_elem = raw.elementsAttribs.back().x;
 
-      int32_t const first_vertex_id = raw.elementsAttribs.back().x - cols + 1;
+      raw.addIndex( last_elem );
+      raw.addIndex( last_elem );
+
+      int32_t const first_vertex_id = last_elem - cols + 1;
       for (int32_t i = 0; i < cols; ++i) {
         raw.addIndex( first_vertex_id + i );
         raw.addIndex( first_vertex_id + i + cols );
