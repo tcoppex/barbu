@@ -35,8 +35,8 @@ void Application::setup() {
     skybox.setup( ResourceId::fromPath("textures/forest_slope_2k.hdr") );
    
     // Hair.
-    // auto &hair{ renderer.hair() };
-    // hair.setup( ResourceId::fromPath("models/InfiniteScan/Head_scalp.obj") );  
+    auto &hair{ renderer.hair() };
+    hair.setup( ResourceId::fromPath("models/InfiniteScan/Head_scalp.obj") );
   }
 
   // Camera.
