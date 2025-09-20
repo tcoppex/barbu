@@ -8,7 +8,7 @@ Barbü is a prototyping framework for real-time 3D graphics aimed at simulating 
 
 It is written in **C++ 17** and **OpenGL 4.6 (Core Profile)**.
 
-Check the gallery [here](https://imgur.com/a/MgJyFNG), or take a [sneak peek](https://imgur.com/ZyjYbiN).
+Check the gallery [here](https://imgur.com/a/MgJyFNG), or take a [sneak peek](https://imgur.com/dIGNoIU)  :bearded_person:.
 
 ## Some Features
 
